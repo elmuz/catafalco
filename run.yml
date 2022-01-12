@@ -2,15 +2,22 @@
 #
 # Tasks and roles for all hosts
 #
-- hosts: fleet
+#- hosts: gaia
+#  gather_facts: no
+#
+#  pre_tasks:
+#    - import_tasks: tasks/ssh_juggle_port.yml
+#      tags:
+#        - port
+- hosts: gaia
   gather_facts: no
 
   pre_tasks:
-    - import_tasks: tasks/ssh_juggle_port.yml
+    - import_tasks: tasks/ssh.yml
       tags:
         - port
 
-- hosts: fleet
+- hosts: gaia
   become: yes
   roles:
 
@@ -44,12 +51,6 @@
     - role: security/fail2ban
       tags:
       - fail2ban
-
-    # TODO: Write my own role
-    - role: ../ansible-role-crowdsec
-      tags:
-      - crowdsec
-      when: enable_crowdsec
 
     - role: security/endlessh
       tags:
@@ -152,11 +153,11 @@
         - smartd
       when: enable_nas_stuff | default(False)
 
-    - role: ironicbadger.ansible_role_snapraid
-      become: yes
-      tags:
-        - snapraid
-      when: enable_nas_stuff | default(False)
+#    - role: ironicbadger.ansible_role_snapraid
+#      become: yes
+#      tags:
+#        - snapraid
+#      when: enable_nas_stuff | default(False)
 
     #
     # Homer

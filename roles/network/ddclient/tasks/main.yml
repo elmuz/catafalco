@@ -5,7 +5,6 @@
     state: latest
     update_cache: yes
 
-
 - name: Install the configuration file
   template:
     src: ddclient.conf.j2

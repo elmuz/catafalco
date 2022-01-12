@@ -50,7 +50,7 @@
   authorized_key:
     user: "{{ username }}"
     state: present
-    key: "{{ ssh_public_key }}"
+    key: "{{ lookup('file', ssh_public_key) }}"
 
 - name: Set the default shell
   user: 

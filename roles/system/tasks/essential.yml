@@ -54,17 +54,17 @@
     name: "{{ extra_packages }}" 
     state: present 
   
-- name: Clone the latest dotfiles repo
-  git:
-    repo: "{{ dotfiles_repo }}"
-    dest: /home/{{ username }}/dotfiles
-    recursive: no
-    force: yes
+#- name: Clone the latest dotfiles repo
+#  git:
+#    repo: "{{ dotfiles_repo }}"
+#    dest: /home/{{ username }}/dotfiles
+#    recursive: no
+#    force: yes
 
-- name: Stow the dotfiles
-  shell: cd /home/{{ username }}/dotfiles && stow -v */
-  register: stow_result
-  changed_when: stow_result.stdout != ""
+#- name: Stow the dotfiles
+#  shell: cd /home/{{ username }}/dotfiles && stow -v */
+#  register: stow_result
+#  changed_when: stow_result.stdout != ""
 
 - name: Set the default shell
   user: 

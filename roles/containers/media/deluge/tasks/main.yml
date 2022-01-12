@@ -1,4 +1,9 @@
 ---
+- name: Create the configuration directory
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}"
+    state: directory
+
 - name: Install the iptables.sh config
   copy:
     src: "files/iptable.sh"

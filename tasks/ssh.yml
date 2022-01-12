@@ -1,0 +1,4 @@
+---
+- name: Change ssh port
+  set_fact:
+    ansible_port: "{{ security_ssh_port }}"
