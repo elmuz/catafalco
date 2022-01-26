@@ -1,2 +1,2 @@
 ---
-container_name: cloudflare-ddns
+container_name: cloudflare

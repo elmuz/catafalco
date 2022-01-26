@@ -1,0 +1,4 @@
+- handle influxdb token as system var
+- dns
+- verify networks and open ports
+- verify creation process for nextcloud

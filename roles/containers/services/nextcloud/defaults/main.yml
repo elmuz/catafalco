@@ -1,7 +1,3 @@
-mysql_db: "nextcloud_db"
-
-mysql_user: "nextcloud"
-
 container_name: nextcloud
 
 dashboard_url: "https://{{ subdomains['nextcloud'] }}.{{ host }}"

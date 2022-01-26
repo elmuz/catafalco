@@ -6,8 +6,8 @@
     pull: true
     state: 'started'
     env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
+      "UID": "{{ guid }}"
+      "GID": "{{ guid }}"
       "TZ": "{{ timezone }}"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}:/www/assets"
@@ -19,8 +19,6 @@
     image: "imjacobclark/cors-container"
     pull: yes
     state: 'started'
-    ports:
-      - 3000:3000
     restart_policy: unless-stopped
 
 - name: Add {{ container_name }} to the SWAG network (reverse-proxy)

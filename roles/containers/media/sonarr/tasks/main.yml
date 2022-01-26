@@ -15,13 +15,11 @@
       "PGID": "{{ guid }}"
       "TZ": "{{ timezone }}"
     volumes:
-      - "/etc/localtime:/etc/localtime"
+      - "/etc/localtime:/etc/localtime:ro"
       - "{{ docker_dir }}/{{ container_name }}:/config"
       - "{{ mergerfs_root }}/Media/TV:/tv"
       - "{{ mergerfs_root }}/Downloads:/downloads"
     restart_policy: unless-stopped
-    ports:
-      - 8989:8989
 
 - name: Add {{ container_name }} to the SWAG network (reverse-proxy)
   docker_network:

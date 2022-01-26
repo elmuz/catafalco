@@ -1,0 +1,59 @@
+---
+# 1. Solve DNS and routing for the internal network "https://influxdb.catafal.co" or change to "http://127.0.0.1:8086".
+# 2. Ensure the token is valid
+# 3. Ensure configuration file is chmod 644
+
+- name: Add InfluxDB repository key
+  ansible.builtin.apt_key:
+    url: https://repos.influxdata.com/influxdb.key
+    state: present
+
+- name: Add specified repository into sources list
+  ansible.builtin.apt_repository:
+    repo: deb https://repos.influxdata.com/ubuntu {{ version }} stable
+    state: present
+    filename: influxdb
+
+- name: Update repositories cache and install telegraf package
+  apt:
+    name: telegraf
+    update_cache: yes
+
+- name: Copy the main telegraf config
+  template:
+    src: templates/telegraf.conf.j2
+    dest: /etc/telegraf/telegraf.conf
+    owner: root
+    group: root
+    mode: 644
+
+- name: Update telegraf configuration file (1)
+  replace:
+    path: "/etc/telegraf/telegraf.conf"
+    regexp: "\\$INFLUX_URL"
+#    replace: "https://influxdb.{{ host_local }}"
+    replace: "http://127.0.0.1:8086"
+
+- name: Update telegraf configuration file (2)
+  replace:
+    path: "/etc/telegraf/telegraf.conf"
+    regexp: "\\$INFLUX_TOKEN"
+    replace: "{{ influxdb_token }}"
+
+- name: Update telegraf configuration file (3)
+  replace:
+    path: "/etc/telegraf/telegraf.conf"
+    regexp: "\\$INFLUX_ORG"
+    replace: "{{ influxdb_org }}"
+
+- name: Update telegraf configuration file (3)
+  replace:
+    path: "/etc/telegraf/telegraf.conf"
+    regexp: "\\$INFLUX_BUCKET"
+    replace: "{{ influxdb_bucket }}"
+
+- name: Restart telegraf unit
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: telegraf

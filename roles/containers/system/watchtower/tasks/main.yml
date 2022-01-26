@@ -5,6 +5,9 @@
     image: "containrrr/watchtower"
     pull: yes
     state: 'started'
+    env:
+      "WATCHTOWER_CLEANUP": "true"
+      "WATCHTOWER_POLL_INTERVAL": "7200"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     restart_policy: unless-stopped

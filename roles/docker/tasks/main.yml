@@ -3,8 +3,8 @@
   include_vars: "{{ ansible_facts['os_family'] }}.yml"
 
 - name: Install required system packages
-  package: 
-    state: latest
+  package:
+    state: present
     name: "{{ docker_deps }}"
 
 - name: Install Docker (Ubuntu)
@@ -46,8 +46,8 @@
       repo: deb http://deb.debian.org/debian buster-backports main contrib non-free
 
   - name: Update to the latest version of libseccomp2
-    apt: 
-      update_cache: yes 
+    apt:
+      update_cache: yes
       name: libseccomp2
       default_release: buster-backports
       state: latest
@@ -61,7 +61,7 @@
     alternatives:
       name: ip6tables
       path: /usr/sbin/ip6tables-legacy
-      
+
   - name: Switch to pip3
     alternatives:
       name: pip
@@ -77,10 +77,10 @@
 
 - name: Update apt and install docker-ce
   when: ansible_facts['os_family'] == 'Debian'
-  apt: 
-    update_cache: yes 
+  apt:
+    update_cache: yes
     name: "{{ docker_packages }}"
-    state: latest
+    state: present
 
 - name: Ensure group docker exists
   group:
@@ -90,7 +90,7 @@
 - name: Add user "{{ username }}" to group docker
   user:
     name: '{{ username }}'
-    groups: 
+    groups:
       - docker
     append: yes
 
@@ -99,16 +99,16 @@
     name: docker
 
 - name: Make sure Docker is running and enabled
-  service: 
-    name: docker 
-    state: started 
+  service:
+    name: docker
+    state: started
     enabled: yes
 
 - name: Get a list of containers
   delegate_to: localhost
   become: no
   find:
-    paths: 
+    paths:
       - "roles/containers/media"
       - "roles/containers/homeautomation"
       - "roles/containers/services"
@@ -119,7 +119,7 @@
 
 - name: Stop and remove all the disabled containers
   become: no
-  docker_container: 
+  docker_container:
     name: "{{ item.path.split('/')[-1] }}"
     state: absent
   when: not lookup('vars', 'enable_' + item.path.split('/')[-1])
@@ -137,7 +137,7 @@
 
   - name: Check if the persistent data folder is empty
     find:
-      paths: 
+      paths:
         - "{{ docker_dir }}/"
       recurse: yes
     register: persistent_data_find
@@ -149,13 +149,18 @@
       state: directory
       owner: "{{ username }}"
       group: "{{ username }}"
+      mode: 0755
       recurse: yes
-    when: persistent_data.stat.exists == false
+    when: not persistent_data.stat.exists
 
   - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
-    shell:
-      cmd: "rsync -avz --delete {{ mergerfs_root }}/docker_data/data/ {{ docker_dir }}/"
-    when: persistent_data_find.matched < 20 or persistent_data.stat.exists == false
+    synchronize:
+      src: "{{ mergerfs_root }}/docker_data/data"
+      dest: "{{ docker_dir }}/"
+      delete: true
+      recurse: yes
+    delegate_to: "{{ inventory_hostname }}"
+    when: persistent_data_find.matched < 20 or not persistent_data.stat.exists
 
   - name: Chmod the data folder
     become: yes

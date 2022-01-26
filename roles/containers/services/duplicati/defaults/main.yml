@@ -1,0 +1,7 @@
+container_name: duplicati
+
+dashboard_url: "https://duplicati.{{ host_local }}"
+
+dashboard_name: "Duplicati"
+
+homer_category: services

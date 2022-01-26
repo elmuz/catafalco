@@ -45,6 +45,7 @@
 #    src: /mnt/data*
     src: /mnt/data
 #    opts: direct_io,defaults,allow_other,moveonenospc=1,minfreespace=500G,fsname=mergerfs_slow
+    opts: defaults,cache.files=off,allow_other,fsname=mergerfs
     fstype: fuse.mergerfs
     state: mounted
   when: disks[0] is defined

@@ -4,7 +4,7 @@
     name: "{{ container_name }}"
     image: "oznu/cloudflare-ddns:latest"
     pull: yes
-    state: 'started'
+    state: "started"
     env:
       "PUID": "{{ guid }}"
       "PGID": "{{ guid }}"
@@ -12,5 +12,6 @@
       "API_KEY": "{{ cloudflare_dns_token }}"
       "ZONE": "{{ host }}"
       "PROXIED": "true"
-      "SUBDOMAIN": "ddns"
+      "SUBDOMAIN": "nextcloud"
+      "CRON": "@daily"
     restart_policy: unless-stopped

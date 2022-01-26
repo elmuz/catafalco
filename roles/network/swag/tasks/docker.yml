@@ -7,7 +7,7 @@
     networks:
       - name: swag_macvlan
       - name: swag_internal_network
-    capabilities: 
+    capabilities:
       - net_admin
     state: 'started'
     env:
@@ -19,6 +19,7 @@
       "VALIDATION": "dns"
       "DNSPLUGIN": "cloudflare"
       "EMAIL": "{{ email }}"
+      "DOCKER_MODS": "linuxserver/mods:swag-dashboard"
     volumes:
       - "{{ docker_dir }}/swag/internal/nginx:/config/nginx"
       - "{{ docker_dir }}/swag/dns-conf:/config/dns-conf"
@@ -30,7 +31,6 @@
     name: "swag_public"
     image: "ghcr.io/linuxserver/swag"
     pull: yes
-    network_mode: swag_network
     networks:
       - name: swag_network
     capabilities: 

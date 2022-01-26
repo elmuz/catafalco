@@ -6,12 +6,17 @@
       parent: enp2s0
     ipam_config:
       - subnet: "{{ lan_network }}"
-        gateway: "{{ ansible_default_ipv4.gateway }}"
+        gateway: "{{ lan_gateway }}"
+        iprange: "192.168.1.253/32"
 
 - name: Create an internal network
   docker_network:
     name: swag_internal_network
+    ipam_config:
+      - subnet: "172.18.0.0/16"
 
 - name: Create a public network
   docker_network:
     name: swag_network
+    ipam_config:
+    - subnet: "172.19.0.0/16"

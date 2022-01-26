@@ -9,6 +9,9 @@ server {
 
     client_max_body_size 0;
 
+    # enable for Authelia
+    #include /config/nginx/authelia-server.conf;
+
     location / {
         {% include "nginx/cors.j2" %}
         include /config/nginx/proxy.conf;

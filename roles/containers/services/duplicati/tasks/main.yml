@@ -1,0 +1,23 @@
+---
+- name: Make sure the Duplicati container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "ghcr.io/linuxserver/duplicati"
+    pull: yes
+    state: 'started'
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+      - "{{ mergerfs_root }}/Media:/source"
+    restart_policy: unless-stopped
+
+- name: Add {{ container_name }} to the SWAG network (reverse-proxy)
+  docker_network:
+    name: swag_internal_network
+    connected:
+      - "{{ container_name }}"
+    appends: yes
+  when: enable_swag

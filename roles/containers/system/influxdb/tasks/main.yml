@@ -1,0 +1,26 @@
+---
+- name: Make sure the InfluxDB container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "influxdb"
+    pull: yes
+    state: 'started'
+    env:
+      DOCKER_INFLUXDB_INIT_MODE: "setup"
+      DOCKER_INFLUXDB_INIT_USERNAME: "{{ influxdb_user }}"
+      DOCKER_INFLUXDB_INIT_PASSWORD: "{{ influxdb_pass }}"
+      DOCKER_INFLUXDB_INIT_ORG: "{{ influxdb_org}}"
+      DOCKER_INFLUXDB_INIT_BUCKET: "{{ influxdb_bucket }}"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}:/var/lib/influxdb2"
+    ports:
+      - 8086:8086/tcp
+    restart_policy: unless-stopped
+
+- name: Add {{ container_name }} to the SWAG network (reverse-proxy)
+  docker_network:
+    name: swag_internal_network
+    connected:
+      - "{{ container_name }}"
+    appends: yes
+  when: enable_swag
