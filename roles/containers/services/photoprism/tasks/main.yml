@@ -7,7 +7,7 @@
     group: "{{ username }}"
     mode: 0755
 
-- name: Create the necessary {{ container_name }} folder (1)
+- name: Create the necessary {{ container_name }} folder (2)
   file:
     path: "{{ docker_dir }}/{{ container_name }}/storage/"
     state: directory
@@ -61,6 +61,11 @@
       "PHOTOPRISM_DATABASE_NAME": "photoprism_db"
       "PHOTOPRISM_DATABASE_USER": "{{ mysql_user }}"
       "PHOTOPRISM_DATABASE_PASSWORD": "{{ mysql_password }}"
+      "PHOTOPRISM_ORIGINALS_PATH": "/photoprism/originals"
+      "PHOTOPRISM_STORAGE_PATH": "/photoprism/storage"
+      "PHOTOPRISM_SIDECAR_PATH": "/photoprism/storage/sidecar"
+      "PHOTOPRISM_CACHE_PATH": "/photoprism/storage/cache"
+      "PHOTOPRISM_BACKUP_PATH": "/photoprism/storage/backup"
       "PHOTOPRISM_DISABLE_CHOWN": "false"
       "PHOTOPRISM_DISABLE_BACKUPS": "true"
       "PHOTOPRISM_DISABLE_WEBDAV": "true"
@@ -72,14 +77,14 @@
       "PHOTOPRISM_THUMB_SIZE_UNCACHED": "7680"
       "PHOTOPRISM_JPEG_SIZE": "7680"
       "PHOTOPRISM_JPEG_QUALITY": "92"
-      "TF_CPP_MIN_LOG_LEVEL": "0"
       "PHOTOPRISM_FFMPEG_ENCODER": "h264_qsv"
       "PHOTOPRISM_INIT": "intel-graphics tensorflow-amd64-avx"
+      "TF_CPP_MIN_LOG_LEVEL": "0"
     devices:
       - "/dev/dri/renderD128:/dev/dri/renderD128" # Intel GPU
     working_dir: "/photoprism"
     volumes:
-      - "{{ mergerfs_root }}/Nextcloud/{{ username }}/files/Photos:/photoprism/originals"
+      - "{{ mergerfs_root }}/Media/Photos:/photoprism/originals:ro"
       - "{{ docker_dir }}/{{ container_name }}/storage:/photoprism/storage"
     restart_policy: unless-stopped
 
@@ -88,6 +93,12 @@
     name: Scan the PhotoPrism library
     hour: "1"
     job: "/usr/bin/docker exec photoprism /photoprism/bin/photoprism index"
+
+- name: Schedule a database backup at 3 AM every day
+  cron:
+    name: Backup PhotoPrism database
+    hour: "3"
+    job: "/usr/bin/docker exec --user {{ username }}:{{ username }} photoprism /photoprism/bin/photoprism backup -i /photoprism/storage/backup/mysql/backup.sql"
 
 - name: Add {{ container_name }} to the SWAG network (reverse-proxy)
   docker_network:

@@ -32,7 +32,7 @@
       "VPN_PROV": custom
       "VPN_CLIENT": "wireguard"
       "ENABLE_PRIVOXY": "yes"
-      "LAN_NETWORK": "172.20.0.0/16, {{ lan_network }}"
+      "LAN_NETWORK": "172.18.0.0/16, {{ lan_network }}"
       "NAME_SERVERS": "1.1.1.1, 1.0.0.1"
       "DELUGE_DAEMON_LOG_LEVEL": "info"
       "DELUGE_WEB_LOG_LEVEL": "info"

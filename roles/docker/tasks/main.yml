@@ -155,7 +155,7 @@
 
   - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
     synchronize:
-      src: "{{ mergerfs_root }}/docker_data/data"
+      src: "{{ mergerfs_root }}/docker-volumes-backup"
       dest: "{{ docker_dir }}/"
       delete: true
       recurse: yes

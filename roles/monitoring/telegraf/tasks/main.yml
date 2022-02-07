@@ -9,7 +9,7 @@
     state: present
 
 - name: Add specified repository into sources list
-  ansible.builtin.apt_repository:
+  apt_repository:
     repo: deb https://repos.influxdata.com/ubuntu {{ version }} stable
     state: present
     filename: influxdb
