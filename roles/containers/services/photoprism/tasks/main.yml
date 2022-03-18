@@ -1,5 +1,5 @@
 ---
-- name: Create the necessary {{ container_name }} folder (1)
+- name: Create the necessary {{ container_name }} folder (1) // mariadb
   file:
     path: "{{ docker_dir }}/{{ container_name }}/mariadb/"
     state: directory
@@ -7,7 +7,7 @@
     group: "{{ username }}"
     mode: 0755
 
-- name: Create the necessary {{ container_name }} folder (2)
+- name: Create the necessary {{ container_name }} folder (2) // storage
   file:
     path: "{{ docker_dir }}/{{ container_name }}/storage/"
     state: directory
@@ -15,11 +15,21 @@
     group: "{{ username }}"
     mode: 0755
 
+- name: Create the necessary {{ container_name }} folder (3) // cache
+  file:
+    path: "{{ cache_root }}/docker-volumes-cache/{{ container_name }}/storage/cache/"
+    state: directory
+    owner: "{{ username }}"
+    group: "100"  # users
+    mode: 0755
+
 - name: Make sure the PhotoPrism MariaDB container is created and running
   docker_container:
     name: "photoprism-mariadb"
     image: "mariadb:latest"
     pull: yes
+    networks:
+      - name: swag_internal_network
     command: "mysqld --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max-connections=512 --innodb-rollback-on-timeout=OFF --innodb-lock-wait-timeout=120"
     state: 'started'
     user: "{{ guid }}:{{ guid }}"
@@ -38,20 +48,20 @@
     name: "{{ container_name }}"
     image: photoprism/photoprism:latest
     pull: yes
-    expose:
-      - "2342"
+    networks:
+      - name: swag_internal_network
     security_opts:
       - seccomp:unconfined
       - apparmor:unconfined
-    state: 'started'
-    shm_size: 2G
+    state: "started"
+    shm_size: 3G
     env:
       "PHOTOPRISM_GID": "{{ guid }}"
       "PHOTOPRISM_UID": "{{ guid }}"
-      "PHOTOPRISM_UMASK": "0000"
+      "PHOTOPRISM_UMASK": "0002"
       "TZ": "{{ timezone }}"
       "PHOTOPRISM_ADMIN_PASSWORD": "{{ photoprism_password }}"
-      "PHOTOPRISM_SITE_URL": "http://{{ ansible_default_ipv4.address }}:2342/"
+      "PHOTOPRISM_SITE_URL": "https://photoprism.{{ host_local }}"
       "PHOTOPRISM_EXPERIMENTAL": "false"
       "PHOTOPRISM_HTTP_HOST": "0.0.0.0"
       "PHOTOPRISM_HTTP_PORT": "2342"
@@ -63,13 +73,16 @@
       "PHOTOPRISM_DATABASE_PASSWORD": "{{ mysql_password }}"
       "PHOTOPRISM_ORIGINALS_PATH": "/photoprism/originals"
       "PHOTOPRISM_STORAGE_PATH": "/photoprism/storage"
+      "PHOTOPRISM_IMPORT_PATH": "/photoprism/storage/import"
       "PHOTOPRISM_SIDECAR_PATH": "/photoprism/storage/sidecar"
       "PHOTOPRISM_CACHE_PATH": "/photoprism/storage/cache"
       "PHOTOPRISM_BACKUP_PATH": "/photoprism/storage/backup"
+      "PHOTOPRISM_TEMP_PATH": "/photoprism/storage/temp"
+      "PHOTOPRISM_WORKERS": "2"
       "PHOTOPRISM_DISABLE_CHOWN": "false"
       "PHOTOPRISM_DISABLE_BACKUPS": "true"
       "PHOTOPRISM_DISABLE_WEBDAV": "true"
-      "PHOTOPRISM_DETECT_NSFW": "true"
+      "PHOTOPRISM_DETECT_NSFW": "false"
       "PHOTOPRISM_UPLOAD_NSFW": "false"
       "PHOTOPRISM_THUMB_FILTER": "lanczos"
       "PHOTOPRISM_THUMB_UNCACHED": "true"
@@ -78,33 +91,28 @@
       "PHOTOPRISM_JPEG_SIZE": "7680"
       "PHOTOPRISM_JPEG_QUALITY": "92"
       "PHOTOPRISM_FFMPEG_ENCODER": "h264_qsv"
-      "PHOTOPRISM_INIT": "intel-graphics tensorflow-amd64-avx"
+      "PHOTOPRISM_INIT": "intel-graphics tensorflow-amd64-avx2"
       "TF_CPP_MIN_LOG_LEVEL": "0"
     devices:
       - "/dev/dri/renderD128:/dev/dri/renderD128" # Intel GPU
+      - "/dev/dri/card0:/dev/dri/card0" # Intel GPU
     working_dir: "/photoprism"
     volumes:
-      - "{{ mergerfs_root }}/Media/Photos:/photoprism/originals:ro"
+      - "{{ mergerfs_root }}/Pictures/sara:/photoprism/originals:ro"
+      - "{{ mergerfs_root }}_cache/docker-volumes-cache/{{ container_name }}/storage/cache:/photoprism/storage/cache"
       - "{{ docker_dir }}/{{ container_name }}/storage:/photoprism/storage"
     restart_policy: unless-stopped
 
 - name: Schedule a library scan at 1 AM every day
   cron:
     name: Scan the PhotoPrism library
-    hour: "1"
+    minute: "5"
+    hour: "0"
     job: "/usr/bin/docker exec photoprism /photoprism/bin/photoprism index"
 
 - name: Schedule a database backup at 3 AM every day
   cron:
     name: Backup PhotoPrism database
-    hour: "3"
+    minute: "0"
+    hour: "0"
     job: "/usr/bin/docker exec --user {{ username }}:{{ username }} photoprism /photoprism/bin/photoprism backup -i /photoprism/storage/backup/mysql/backup.sql"
-
-- name: Add {{ container_name }} to the SWAG network (reverse-proxy)
-  docker_network:
-    name: swag_internal_network
-    connected:
-      - "{{ container_name }}"
-      - photoprism-mariadb
-    appends: yes
-  when: enable_swag

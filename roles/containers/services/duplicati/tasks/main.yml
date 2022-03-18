@@ -5,6 +5,8 @@
     name: "{{ container_name }}"
     image: "ghcr.io/linuxserver/duplicati"
     pull: yes
+    networks:
+      - name: swag_internal_network
     state: 'started'
     env:
       "PUID": "{{ guid }}"
@@ -12,17 +14,6 @@
       "TZ": "{{ timezone }}"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/config:/config"
-      - "{{ docker_dir }}/config:/config"
-      - "{{ mergerfs_root }}/docker-volumes-backup:/backups"
       - "{{ mergerfs_root }}/Documents:/source/Documents:ro"
-      - "{{ mergerfs_root }}/Media:/source/Media:ro"
-      - "{{ mergerfs_root }}/Music:/source/Music:ro"
+      - "{{ mergerfs_root }}/Pictures:/source/Pictures:ro"
     restart_policy: unless-stopped
-
-- name: Add {{ container_name }} to the SWAG network (reverse-proxy)
-  docker_network:
-    name: swag_internal_network
-    connected:
-      - "{{ container_name }}"
-    appends: yes
-  when: enable_swag

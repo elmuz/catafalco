@@ -2,7 +2,7 @@
 - name: Make sure the {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "ghcr.io/linuxserver/radarr"
+    image: "lscr.io/linuxserver/prowlarr:develop"
     pull: yes
     networks:
       - name: swag_internal_network
@@ -14,5 +14,4 @@
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
       - "{{ docker_dir }}/{{ container_name }}:/config"
-      - "{{ mergerfs_root }}:/storage"
     restart_policy: unless-stopped

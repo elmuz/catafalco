@@ -92,7 +92,7 @@
 
 - name: Add {{ container_name }} to the SWAG network (reverse-proxy)
   docker_network:
-    name: swag_network
+    name: swag_public_network
     connected:
       - "{{ container_name }}"
       - nextcloud-mariadb
@@ -104,5 +104,6 @@
 - name: Schedule a Nextcloud library scan at midnight every day
   cron:
     name: Scan the Nextcloud library
+    minute: "0"
     hour: "0"
     job: "docker exec nextcloud sudo -u abc php8 /config/www/nextcloud/occ files:scan --all"

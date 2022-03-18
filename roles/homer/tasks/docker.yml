@@ -4,6 +4,8 @@
     name: 'homer'
     image: "b4bz/homer"
     pull: true
+    networks:
+      - name: swag_internal_network
     state: 'started'
     env:
       "UID": "{{ guid }}"
@@ -18,14 +20,16 @@
     name: 'cors-container'
     image: "imjacobclark/cors-container"
     pull: yes
+    networks:
+      - name: swag_internal_network
     state: 'started'
     restart_policy: unless-stopped
 
-- name: Add {{ container_name }} to the SWAG network (reverse-proxy)
-  docker_network:
-    name: swag_internal_network
-    connected:
-      - homer
-      - cors-container
-    appends: yes
-  when: enable_swag
+#- name: Add {{ container_name }} to the SWAG network (reverse-proxy)
+#  docker_network:
+#    name: swag_internal_network
+#    connected:
+#      - homer
+#      - cors-container
+#    appends: yes
+#  when: enable_swag

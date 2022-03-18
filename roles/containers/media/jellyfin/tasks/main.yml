@@ -1,47 +1,45 @@
+# See here for hardware capabilities https://en.wikipedia.org/wiki/Intel_Quick_Sync_Video
+# 1. Verify which pkg is required (intel-media or i965), see Arch Wiki: https://wiki.archlinux.org/title/Hardware_video_acceleration
+# 2. Bind `/dev/dri/card0` and `/dev/dri/renderD128`
+# 3. Add the hw render group. `cat /etc/group | grep render`
+# 4. If relying on old i965, purge `intel-media-*` in the container via `docker exec`.
 ---
 - name: Make sure that QuickSync packages are installed
   become: yes
-  apt:
+  package:
     name:
       - vainfo
       - intel-media-va-driver-non-free
-    state: latest
-    update_cache: yes
+      - intel-gpu-tools
+    state: present
 
 - name: Make sure the {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "ghcr.io/linuxserver/jellyfin"
+    image: "ghcr.io/hotio/jellyfin"
     pull: yes
+    networks:
+      - name: swag_internal_network
     privileged: yes
-    labels:
-      "flame.type": "application"
-      "flame.name": "{{ dashboard_name }}"
-      "flame.url": "{{ dashboard_url }}"
-      "flame.icon": "custom"
     devices:
+      - "/dev/dri/card0:/dev/dri/card0"
       - "/dev/dri/renderD128:/dev/dri/renderD128"
-    state: 'started'
+    state: "started"
     env:
       "DOCKER_MODS": "linuxserver/mods:jellyfin-opencl-intel"
       "PUID": "{{ guid }}"
       "PGID": "{{ guid }}"
+      "UMASK": "002"
       "TZ": "{{ timezone }}"
       "VERSION": "latest"
+    groups:
+      - 109
     volumes:
       - "{{ docker_dir }}/{{ container_name }}:/config"
-      - "{{ mergerfs_root }}/Media/TV:/data/TV"
+      - "{{ mergerfs_root }}/Media/TV:/data/tv"
       - "{{ mergerfs_root }}_slow/Media/Transcodes:/config/data/transcodes"
       - "{{ mergerfs_root }}/Media/Metadata:/metadata"
-      - "{{ mergerfs_root }}/Media/Cache:/data/Cache"
-      - "{{ mergerfs_root }}/Media/Movies:/data/Movies"
+      - "{{ mergerfs_root }}/Media/Cache:/data/cache"
+      - "{{ mergerfs_root }}/Media/Movies:/data/movies"
       - "/etc/localtime:/etc/localtime:ro"
     restart_policy: unless-stopped
-
-- name: Add {{ container_name }} to the SWAG network (reverse-proxy)
-  docker_network:
-    name: swag_internal_network
-    connected:
-      - "{{ container_name }}"
-    appends: yes
-  when: enable_swag

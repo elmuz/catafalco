@@ -1,7 +1,7 @@
 ---
 container_name: jellyfin
 
-dashboard_url: "http://jellyfin.{{ host_local }}"
+dashboard_url: "https://jellyfin.{{ host_local }}"
 
 homer_category: media
 

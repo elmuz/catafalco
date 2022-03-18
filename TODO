@@ -1,3 +1,7 @@
+- SSH port juggle not working as imagined. Need to configure manually port and key
+- cloudflare tries to edit nginx conf file which does not exist yet. Added a `when` clause
+- Add {{ host_local }} to `/etc/hosts` for `127.0.1.1`
+------------
 - handle influxdb token as system var
 - dns
 - verify networks and open ports

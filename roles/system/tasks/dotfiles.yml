@@ -16,13 +16,13 @@
 #  changed_when: stow_result.stdout != ""
 
 - name: Installing Zsh and git
-  apt:
-    pkg:
-      - zsh,
+  package:
+    name:
+      - zsh
       - git
     state: latest
   register: installation
-  become: true
+  become: yes
 
 - name: Check if .zshrc exists
   stat:
@@ -35,13 +35,16 @@
   register: stat_oh_my_zsh_result
 
 - name: Cloning  oh-my-zsh
+  become: no
   git:
     repo: https://github.com/robbyrussell/oh-my-zsh
     dest: "/home/{{ username }}/.oh-my-zsh"
   when: not stat_oh_my_zsh_result.stat.exists
 
 - name: Creating new ~/.zshrc
+  become: no
   copy:
+    remote_src: true
     src: "/home/{{ username }}/.oh-my-zsh/templates/zshrc.zsh-template"
     dest: "/home/{{ username }}/.zshrc"
   when: not stat_rc_result.stat.exists

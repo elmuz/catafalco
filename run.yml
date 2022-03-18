@@ -9,6 +9,7 @@
 #    - import_tasks: tasks/ssh_juggle_port.yml
 #      tags:
 #        - port
+
 - hosts: catafalco
   gather_facts: no
 
@@ -28,10 +29,6 @@
       tags: 
         - system
 
-    - role: docker
-      tags: 
-        - docker
-
     - role: chriswayg.msmtp-mailer
       tags: 
         - msmtp
@@ -43,7 +40,6 @@
     - role: geerlingguy.ntp
       tags: 
         - ntp
-
 
     #
     # Security
@@ -61,6 +57,50 @@
       tags: 
         - security
 
+    #
+    # Filesystems
+    #
+    - role: filesystems/mergerfs
+      become: yes
+      tags:
+        - mergerfs
+      when: enable_nas_stuff | default(False)
+
+    - role: filesystems/mounts
+      become: yes
+      tags:
+        - mounts
+      when: enable_nas_stuff | default(False)
+
+    - role: filesystems/hd-idle
+      become: yes
+      tags:
+        - hd-idle
+      when: enable_nas_stuff | default(False)
+
+    - role: stuvusit.smartd
+      become: yes
+      tags:
+        - smartd
+      when: enable_nas_stuff | default(False)
+
+    - role: ironicbadger.ansible_role_snapraid
+      become: yes
+      tags:
+        - snapraid
+      when: enable_nas_stuff | default(False)
+
+
+    #
+    # Docker
+    #
+    - role: docker
+      tags:
+        - docker
+
+    ########################################
+    ############## Containers ##############
+    ########################################
     #
     # Network
     #
@@ -125,40 +165,6 @@
         - containers
         - ikev2 
 
-
-    #
-    # Filesystems
-    #
-    - role: filesystems/mergerfs
-      become: yes
-      tags:
-        - mergerfs
-      when: enable_nas_stuff | default(False)
-      
-    - role: filesystems/mounts
-      become: yes
-      tags:
-        - mounts
-      when: enable_nas_stuff | default(False)
-
-    - role: filesystems/hd-idle
-      become: yes
-      tags:
-        - hd-idle
-      when: enable_nas_stuff | default(False)
-
-    - role: stuvusit.smartd
-      become: yes
-      tags:
-        - smartd
-      when: enable_nas_stuff | default(False)
-
-#    - role: ironicbadger.ansible_role_snapraid
-#      become: yes
-#      tags:
-#        - snapraid
-#      when: enable_nas_stuff | default(False)
-
     #
     # Homer
     #
@@ -199,8 +205,9 @@
         - containers
       when: enable_unifi | default(False)
 
+    #
     # Monitoring
-
+    #
     - role: containers/system/influxdb
       tags:
         - influxdb
@@ -237,6 +244,13 @@
         - radarr
         - containers
       when: enable_radarr | default(False)
+
+    - role: containers/media/prowlarr
+      become: no
+      tags:
+        - prowlarr
+        - containers
+      when: enable_prowlarr | default(False)
 
     - role: containers/media/booksonic
       become: no

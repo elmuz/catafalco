@@ -18,13 +18,13 @@
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: 0644
-  when: lookup('vars', 'enable_' + (item | basename).split('.')[0]) | default(False)
+  when: (item | basename).split('.')[0] in swag_urls or lookup('vars', 'enable_' + (item | basename).split('.')[0]) | default(False)
   with_fileglob:
     - templates/internal/*.j2
     - templates/public/*.j2
   notify:
     - restart swag
-    - test nginx
+#    - test nginx
   register: swag_config
 
 - name: Create a list of variables files that were deployed
@@ -51,7 +51,7 @@
   with_items: "{{ found_files['files'] }}"
   notify:
     - restart swag
-    - test nginx
+#    - test nginx
 
 - name: Create the DNS conf folder
   file:

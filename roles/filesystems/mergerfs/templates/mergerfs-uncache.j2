@@ -1,23 +1,132 @@
-#!/bin/bash
-# Moves files away from the cache drive after they haven't been accessed for 5 days
-# Or when the cache drive is 85% full
+#!/usr/bin/python3
+import argparse
+import logging
+import shutil
+import subprocess
+import time
+from pathlib import Path
 
-CACHE={{ cache_disks[0].path }}
-BACKING={{ mergerfs_root }}_slow
-PERCENTAGE=85
-N=5
+if __name__ == "__main__":
+    """
+    Uncaching utility. This scripts assumes that you have a cache-like
+    mount point, for which you want to preserve a certain amount of free
+    space by moving heavy/rarely-accessed files to a slower mount point.
+    
+    The script, in its simplest form, can be run as:
+    
+    ::
+    
+        $ ./mergerfs-uncache.py -s /mnt/cache -d /mnt/slow -t 75
+    
+    In this way least accessed files will be moved one after the other
+    until the percentage of used capacity will be less than the target.
+    Other options are also available. Please consider this is a work in
+    progress.
+    """
 
-set -o errexit
-find "${CACHE}" -type f -atime +${N} -printf '%P\n' | \
-  rsync --files-from=- -axqHAXWES --preallocate --remove-source-files "${CACHE}/" "${BACKING}/"
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-s",
+        "--source",
+        dest="source",
+        type=Path,
+        help="Source path (i.e. cache pool root path.",
+    )
+    parser.add_argument(
+        "-d",
+        "--destination",
+        dest="destination",
+        type=Path,
+        help="Destination path (i.e. slow pool root path.",
+    )
+    parser.add_argument(
+        "-n",
+        "--num-files",
+        dest="num_files",
+        default=-1,
+        type=int,
+        help="Maximum number of files moved away from cache.",
+    )
+    parser.add_argument(
+        "-t",
+        "--target",
+        dest="target",
+        type=float,
+        help="Desired max cache usage, in percentage (e.g. 70).",
+    )
+    parser.add_argument(
+        "-v", "--verbose", help="Increase output verbosity.", action="store_true"
+    )
+    args = parser.parse_args()
 
-while [ $(df --output=pcent "${CACHE}" | grep -v Use | cut -d'%' -f1) -gt ${PERCENTAGE} ]
-do
-    FILE=$(find "${CACHE}" -type f -printf '%A@ %P\n' | \
-                  sort | \
-                  head -n 1 | \
-                  cut -d' ' -f2-)
-    test -n "${FILE}"
-    rsync -axqHAXWESR --preallocate --remove-source-files "${CACHE}/./${FILE}" "${BACKING}/"
-done
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    ch = logging.StreamHandler()
+    ch.setLevel(level=logging.DEBUG if args.verbose else logging.INFO)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
+    # Some general checks
+    cache_path: Path = args.source
+    if not cache_path.is_dir():
+        raise NotADirectoryError(f"{cache_path} is not a valid directory.")
+    slow_path: Path = args.destination
+    if not slow_path.is_dir():
+        raise NotADirectoryError(f"{slow_path} is not a valid directory.")
+
+    last_id = args.num_files
+
+    target = float(args.target)
+    if target <= 1 or target >= 100:
+        raise ValueError(
+            f"Target value is in percentage, i.e. in the range of (0, 100). Found {target} instead."
+        )
+
+    cache_stats = shutil.disk_usage(cache_path)
+
+    usage_percentage = 100 * cache_stats.used / cache_stats.total
+    logger.info(
+        f"Uncaching from {cache_path} ({usage_percentage:.2f}% used) to {slow_path}."
+    )
+    if usage_percentage <= target:
+        logger.info(f"Target of {target}% of used capacity already reached. Exiting.")
+        exit(0)
+
+    logger.info("Computing candidates...")
+    candidates = sorted(
+        [(c, c.stat()) for c in cache_path.glob("**/*") if c.is_file()],
+        key=lambda p: p[1].st_atime,
+    )
+
+    t_start = time.monotonic()
+    logger.info("Processing candidates...")
+    cache_used = cache_stats.used
+    for c_id, (c_path, c_stat) in enumerate(candidates):
+        logger.debug(f"{c_path}")
+        # Since rsync moves also other hard links it might be that
+        # some files are not existing anymore.
+        if c_path.exists():
+            subprocess.call(
+                [
+                    "rsync",
+                    "-axqHAXWESR",
+                    "--preallocate",
+                    "--remove-source-files",
+                    f"{cache_path}/./{c_path.relative_to(cache_path)}",
+                    f"{slow_path}/",
+                ]
+            )
+        cache_used -= c_stat.st_size
+        if last_id >= 0 and c_id >= last_id - 1:
+            logger.info(f"Maximum number of moved files reached ({last_id}).")
+            break
+        if (100 * cache_used / cache_stats.total) <= target:
+            logger.info(f"Target of maximum used capacity reached ({target}).")
+            break
+
+    cache_stats = shutil.disk_usage(cache_path)
+    usage_percentage = 100 * cache_stats.used / cache_stats.total
+    logger.info(
+        f"Process completed in {round(time.monotonic() - t_start)} seconds. Current usage percentage is {usage_percentage:.2f}%."
+    )

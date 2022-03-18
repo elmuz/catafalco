@@ -27,12 +27,20 @@
     group: root
     mode: 644
 
+- name: Add telegraf user to the docker group
+  user:
+    name: "telegraf"
+    groups:
+      - docker
+      - sudo  # this is required for SMART
+    append: true
+
 - name: Update telegraf configuration file (1)
   replace:
     path: "/etc/telegraf/telegraf.conf"
     regexp: "\\$INFLUX_URL"
-#    replace: "https://influxdb.{{ host_local }}"
     replace: "http://127.0.0.1:8086"
+#    replace: "https://influxdb.{{ host_local }}"
 
 - name: Update telegraf configuration file (2)
   replace:

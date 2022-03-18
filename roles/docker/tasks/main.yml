@@ -143,7 +143,14 @@
     register: persistent_data_find
     when: "enable_nas_stuff | default(False)"
 
+  - name: Check if the docker backup exists
+    stat:
+      path: "{{ mergerfs_root }}/docker-volumes-backup"
+    register: docker_backup_find
+    when: "enable_nas_stuff | default(False)"
+
   - name: Create the persistent data folder on the remote machine
+    become: yes
     file:
       dest: "{{ docker_dir }}"
       state: directory
@@ -153,14 +160,14 @@
       recurse: yes
     when: not persistent_data.stat.exists
 
-  - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
-    synchronize:
-      src: "{{ mergerfs_root }}/docker-volumes-backup"
-      dest: "{{ docker_dir }}/"
-      delete: true
-      recurse: yes
-    delegate_to: "{{ inventory_hostname }}"
-    when: persistent_data_find.matched < 20 or not persistent_data.stat.exists
+#  - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
+#    synchronize:
+#      src: "{{ mergerfs_root }}/docker-volumes-backup"
+#      dest: "{{ docker_dir }}/"
+#      delete: true
+#      recursive: yes
+#    delegate_to: "{{ inventory_hostname }}"
+#    when: docker_backup_find.stat.exists and persistent_data_find.matched < 20 or not persistent_data.stat.exists
 
   - name: Chmod the data folder
     become: yes

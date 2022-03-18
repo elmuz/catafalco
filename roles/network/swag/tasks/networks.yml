@@ -1,13 +1,15 @@
-- name: Create an internal macvlan network
-  docker_network:
-    name: swag_macvlan
-    driver: macvlan
-    driver_options:
-      parent: enp2s0
-    ipam_config:
-      - subnet: "{{ lan_network }}"
-        gateway: "{{ lan_gateway }}"
-        iprange: "192.168.1.253/32"
+# Useful CIDR calculator https://www.ipaddressguide.com/cidr
+
+#- name: Create an internal macvlan network
+#  docker_network:
+#    name: swag_macvlan
+#    driver: macvlan
+#    driver_options:
+#      parent: enp2s0
+#    ipam_config:
+#      - subnet: "{{ lan_network }}"
+#        gateway: "{{ lan_gateway }}"
+#        iprange: "192.168.1.253/32"
 
 - name: Create an internal network
   docker_network:
@@ -17,6 +19,6 @@
 
 - name: Create a public network
   docker_network:
-    name: swag_network
+    name: swag_public_network
     ipam_config:
     - subnet: "172.19.0.0/16"

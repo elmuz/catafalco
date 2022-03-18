@@ -5,7 +5,6 @@
     image: "ghcr.io/linuxserver/swag"
     pull: yes
     networks:
-      - name: swag_macvlan
       - name: swag_internal_network
     capabilities:
       - net_admin
@@ -18,8 +17,10 @@
       "SUBDOMAINS": "wildcard"
       "VALIDATION": "dns"
       "DNSPLUGIN": "cloudflare"
-      "EMAIL": "{{ email }}"
+      "EMAIL": "{{ cloudflare_email }}"
       "DOCKER_MODS": "linuxserver/mods:swag-dashboard"
+    ports:
+      - "192.168.1.3:443:443"
     volumes:
       - "{{ docker_dir }}/swag/internal/nginx:/config/nginx"
       - "{{ docker_dir }}/swag/dns-conf:/config/dns-conf"
@@ -32,7 +33,7 @@
     image: "ghcr.io/linuxserver/swag"
     pull: yes
     networks:
-      - name: swag_network
+      - name: swag_public_network
     capabilities: 
       - net_admin
     state: 'started'
@@ -44,9 +45,9 @@
       "SUBDOMAINS": "wildcard"
       "VALIDATION": "dns"
       "DNSPLUGIN": "cloudflare"
-      "EMAIL": "{{ email }}"
+      "EMAIL": "{{ cloudflare_email }}"
     ports:
-      - "443:443"
+      - "192.168.1.4:443:443"
     volumes:
       - "{{ docker_dir }}/swag/public/nginx:/config/nginx"
       - "{{ docker_dir }}/swag/dns-conf:/config/dns-conf"
