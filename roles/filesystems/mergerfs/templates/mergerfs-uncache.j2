@@ -6,18 +6,19 @@ import subprocess
 import time
 from pathlib import Path
 
+
 if __name__ == "__main__":
     """
     Uncaching utility. This scripts assumes that you have a cache-like
     mount point, for which you want to preserve a certain amount of free
     space by moving heavy/rarely-accessed files to a slower mount point.
-    
+
     The script, in its simplest form, can be run as:
-    
+
     ::
-    
+
         $ ./mergerfs-uncache.py -s /mnt/cache -d /mnt/slow -t 75
-    
+
     In this way least accessed files will be moved one after the other
     until the percentage of used capacity will be less than the target.
     Other options are also available. Please consider this is a work in
@@ -40,12 +41,18 @@ if __name__ == "__main__":
         help="Destination path (i.e. slow pool root path.",
     )
     parser.add_argument(
-        "-n",
         "--num-files",
         dest="num_files",
         default=-1,
         type=int,
         help="Maximum number of files moved away from cache.",
+    )
+    parser.add_argument(
+        "--time-limit",
+        dest="time_limit",
+        default=-1,
+        type=int,
+        help="Time limit for the whole process (in seconds). Once reached program exits.",
     )
     parser.add_argument(
         "-t",
@@ -76,6 +83,7 @@ if __name__ == "__main__":
         raise NotADirectoryError(f"{slow_path} is not a valid directory.")
 
     last_id = args.num_files
+    time_limit = args.time_limit
 
     target = float(args.target)
     if target <= 1 or target >= 100:
@@ -104,22 +112,46 @@ if __name__ == "__main__":
     cache_used = cache_stats.used
     for c_id, (c_path, c_stat) in enumerate(candidates):
         logger.debug(f"{c_path}")
-        # Since rsync moves also other hard links it might be that
-        # some files are not existing anymore.
-        if c_path.exists():
-            subprocess.call(
-                [
-                    "rsync",
-                    "-axqHAXWESR",
-                    "--preallocate",
-                    "--remove-source-files",
-                    f"{cache_path}/./{c_path.relative_to(cache_path)}",
-                    f"{slow_path}/",
-                ]
-            )
+
+        if not c_path.exists():
+            # Since rsync moves also other hard links it might be that
+            # some files are not existing anymore. However, invoking rsync
+            # for each file (instead of directories) does not preserve
+            # hard links.
+            logger.warning(f"{c_path} does not exist.")
+            continue
+
+        # Rsync options
+        # -a, --archive               archive mode; equals -rlptgoD (no -H,-A,-X)
+        # -x, --one-file-system       don't cross filesystem boundaries
+        # -q, --quiet                 suppress non-error messages
+        # -H, --hard-links            preserve hard links
+        # -A, --acls                  preserve ACLs (implies --perms)
+        # -X, --xattrs                preserve extended attributes
+        # -W, --whole-file            copy files whole (without delta-xfer algorithm)
+        # -E, --executability         preserve the file's executability
+        # -S, --sparse                turn sequences of nulls into sparse blocks
+        # -R, --relative              use relative path names
+        # --preallocate               allocate dest files before writing them
+        # --remove-source-files       sender removes synchronized files (non-dirs)
+        subprocess.call(
+            [
+                "rsync",
+                "-axqHAXWESR",
+                "--preallocate",
+                "--remove-source-files",
+                f"{cache_path}/./{c_path.relative_to(cache_path)}",
+                f"{slow_path}/",
+            ]
+        )
         cache_used -= c_stat.st_size
+
+        # Evaluate early breaking conditions
         if last_id >= 0 and c_id >= last_id - 1:
             logger.info(f"Maximum number of moved files reached ({last_id}).")
+            break
+        if time_limit >= 0 and time.monotonic() - t_start > time_limit:
+            logger.info(f"Time limit reached ({time_limit} seconds).")
             break
         if (100 * cache_used / cache_stats.total) <= target:
             logger.info(f"Target of maximum used capacity reached ({target}).")

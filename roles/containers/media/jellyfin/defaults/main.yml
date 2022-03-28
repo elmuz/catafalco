@@ -5,4 +5,6 @@ dashboard_url: "https://jellyfin.{{ host_local }}"
 
 homer_category: media
 
+dashboard_name: "Jellyfin"
+
 health_url: "http://{{ ansible_default_ipv4.address }}:3000/http://jellyfin:8096"

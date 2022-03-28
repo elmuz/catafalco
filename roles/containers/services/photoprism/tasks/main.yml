@@ -91,7 +91,7 @@
       "PHOTOPRISM_JPEG_SIZE": "7680"
       "PHOTOPRISM_JPEG_QUALITY": "92"
       "PHOTOPRISM_FFMPEG_ENCODER": "h264_qsv"
-      "PHOTOPRISM_INIT": "intel-graphics tensorflow-amd64-avx2"
+      "PHOTOPRISM_INIT": "update gpu tensorflow clean"
       "TF_CPP_MIN_LOG_LEVEL": "0"
     devices:
       - "/dev/dri/renderD128:/dev/dri/renderD128" # Intel GPU
@@ -103,16 +103,16 @@
       - "{{ docker_dir }}/{{ container_name }}/storage:/photoprism/storage"
     restart_policy: unless-stopped
 
-- name: Schedule a library scan at 1 AM every day
+- name: Schedule a library scan at 12 AM every day
   cron:
     name: Scan the PhotoPrism library
     minute: "5"
     hour: "0"
     job: "/usr/bin/docker exec photoprism /photoprism/bin/photoprism index"
 
-- name: Schedule a database backup at 3 AM every day
+- name: Schedule a database backup at 12 AM every day
   cron:
     name: Backup PhotoPrism database
     minute: "0"
     hour: "0"
-    job: "/usr/bin/docker exec --user {{ username }}:{{ username }} photoprism /photoprism/bin/photoprism backup -i /photoprism/storage/backup/mysql/backup.sql"
+    job: "mv {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql.old && /usr/bin/docker exec --user {{ guid }}:{{ guid }} {{ container_name }} photoprism backup -i /photoprism/storage/backup/mysql/backup.sql"
