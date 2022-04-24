@@ -9,3 +9,4 @@ roles:
   - name: notthebee.ubuntu_autoinstall
   - name: ironicbadger.ansible_role_snapraid
   - name: veselahouba.crowdsec
+  - name: linux-system-roles.cockpit

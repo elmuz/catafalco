@@ -25,6 +25,7 @@
     group: "{{ username }}"
     mode: 0644
   with_items:
+    - cockpit.png
     - pihole.png
     - pikvm.png
     - linuxserver.png

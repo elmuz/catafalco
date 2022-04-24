@@ -1,0 +1,6 @@
+---
+container_name: lidarr
+
+dashboard_url: "https://lidarr.{{ host_local }}"
+
+homer_category: media

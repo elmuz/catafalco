@@ -46,16 +46,21 @@
     #
     - role: security/fail2ban
       tags:
-      - fail2ban
+        - fail2ban
 
     - role: security/endlessh
       tags:
-      - endlessh
+        - endlessh
       when: enable_endlessh | default(False)
 
     - role: geerlingguy.security
       tags: 
         - security
+
+    - role: linux-system-roles.cockpit
+      tags:
+        - cockpit
+      when: enable_cockpit | default(False)
 
     #
     # Filesystems
@@ -176,15 +181,8 @@
       when: enable_homer | default(False)
 
     #
-    # Services
+    # System containers
     #
-    - role: containers/system/jackett
-      become: no
-      tags:
-        - jackett
-        - containers
-      when: enable_jackett | default(False)
-
     - role: containers/system/authelia
       become: no
       tags:
@@ -231,6 +229,13 @@
         - containers
       when: enable_deluge | default(False)
 
+    - role: containers/system/jackett
+      become: no
+      tags:
+        - jackett
+        - containers
+      when: enable_jackett | default(False)
+
     - role: containers/media/sonarr
       become: no
       tags:
@@ -244,6 +249,13 @@
         - radarr
         - containers
       when: enable_radarr | default(False)
+
+    - role: containers/media/lidarr
+      become: no
+      tags:
+        - lidarr
+        - containers
+      when: enable_lidarr | default(False)
 
     - role: containers/media/prowlarr
       become: no
@@ -303,6 +315,13 @@
         - duplicati
         - containers
       when: enable_duplicati | default(False)
+
+    - role: containers/services/paperless
+      become: no
+      tags:
+        - paperless
+        - containers
+      when: enable_paperless | default(False)
 
     - role: containers/services/vaultwarden
       become: no

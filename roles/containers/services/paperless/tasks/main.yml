@@ -1,0 +1,25 @@
+---
+- name: Create the necessary {{ container_name }} folder
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}/config"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: 0755
+
+- name: Make sure the Paperless-ngx container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "lscr.io/linuxserver/paperless-ngx"
+    pull: yes
+    networks:
+      - name: swag_internal_network
+    state: 'started'
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+      - "{{ mergerfs_root }}/Documents/paperless:/data"
+    restart_policy: unless-stopped

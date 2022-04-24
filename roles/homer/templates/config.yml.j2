@@ -69,6 +69,10 @@ services:
         url: "{{ item.url }}"
         target: "_blank"
 {% endfor %}
+      - name: "Cockpit"
+        logo: /assets/tools/homer-icons/cockpit.png
+        url: "https://cockpit.{{ host_local }}"
+        target: "_blank"
       - name: "SWAG Dashboard"
         logo: /assets/tools/homer-icons/linuxserver.png
         url: "https://dashboard.{{ host_local }}"
