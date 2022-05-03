@@ -25,6 +25,8 @@
       - "/dev/dri/card0:/dev/dri/card0"
       - "/dev/dri/renderD128:/dev/dri/renderD128"
     state: "started"
+    healthcheck:
+      "test": ["CMD", "curl", "-f", "https://jellyfin.{{ host_local }}/health"]
     env:
       "DOCKER_MODS": "linuxserver/mods:jellyfin-opencl-intel"
       "PUID": "{{ guid }}"
@@ -36,10 +38,10 @@
       - 109
     volumes:
       - "{{ docker_dir }}/{{ container_name }}:/config"
-      - "{{ mergerfs_root }}/Media/TV:/data/tv"
       - "{{ mergerfs_root }}_slow/Media/Transcodes:/config/data/transcodes"
-      - "{{ mergerfs_root }}/Media/Metadata:/metadata"
-      - "{{ mergerfs_root }}/Media/Cache:/data/cache"
       - "{{ mergerfs_root }}/Media/Movies:/data/movies"
+      - "{{ mergerfs_root }}/Media/TV:/data/tv"
+      - "{{ mergerfs_root }}/Media/Books:/data/books:ro"
+      - "{{ mergerfs_root }}/Media/Music:/data/music:ro"
       - "/etc/localtime:/etc/localtime:ro"
     restart_policy: unless-stopped

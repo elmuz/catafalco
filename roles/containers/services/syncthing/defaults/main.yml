@@ -1,0 +1,7 @@
+container_name: syncthing
+
+dashboard_url: "https://syncthing.{{ host_local }}"
+
+dashboard_name: "Syncthing"
+
+homer_category: services

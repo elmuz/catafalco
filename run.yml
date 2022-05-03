@@ -220,70 +220,80 @@
       when: enable_telegraf | default(False)
 
     #
-    # Media
+    # ServArr
     #
-    - role: containers/media/deluge
+    - role: containers/servarr/deluge
       become: no
       tags:
         - deluge
         - containers
       when: enable_deluge | default(False)
 
-    - role: containers/system/jackett
-      become: no
-      tags:
-        - jackett
-        - containers
-      when: enable_jackett | default(False)
-
-    - role: containers/media/sonarr
+    - role: containers/servarr/sonarr
       become: no
       tags:
         - sonarr
         - containers
       when: enable_sonarr | default(False)
 
-    - role: containers/media/radarr
+    - role: containers/servarr/radarr
       become: no
       tags:
         - radarr
         - containers
       when: enable_radarr | default(False)
 
-    - role: containers/media/lidarr
+    - role: containers/servarr/lidarr
       become: no
       tags:
         - lidarr
         - containers
       when: enable_lidarr | default(False)
 
-    - role: containers/media/prowlarr
+    - role: containers/servarr/prowlarr
       become: no
       tags:
         - prowlarr
         - containers
       when: enable_prowlarr | default(False)
 
-    - role: containers/media/booksonic
-      become: no
-      tags:
-        - booksonic
-        - containers
-      when: enable_booksonic | default(False)
-
-    - role: containers/media/plex
-      become: no
-      tags:
-        - plex
-        - containers
-      when: enable_plex | default(False)
-
+    #
+    # Media
+    #
     - role: containers/media/jellyfin
       become: no
       tags:
         - jellyfin
         - containers
       when: enable_jellyfin | default(False)
+
+    - role: containers/media/paperless
+      become: no
+      tags:
+        - paperless
+        - containers
+      when: enable_paperless | default(False)
+
+    - role: containers/media/photoprism
+      become: no
+      tags:
+        - photoprism
+        - containers
+      when: enable_photoprism | default(False)
+
+    - role: containers/media/koel
+      become: no
+      tags:
+        - koel
+        - containers
+      when: enable_koel | default(False)
+
+    - role: containers/media/navidrome
+      become: no
+      tags:
+        - navidrome
+        - containers
+      when: enable_navidrome | default(False)
 
     - role: containers/media/openbooks
       become: no
@@ -295,13 +305,6 @@
     #
     # Services
     #
-    - role: containers/services/photoprism
-      become: no
-      tags:
-        - photoprism
-        - containers
-      when: enable_photoprism | default(False)
-
     - role: containers/services/nextcloud
       become: no
       tags:
@@ -316,12 +319,12 @@
         - containers
       when: enable_duplicati | default(False)
 
-    - role: containers/services/paperless
+    - role: containers/services/syncthing
       become: no
       tags:
-        - paperless
+        - syncthing
         - containers
-      when: enable_paperless | default(False)
+      when: enable_syncthing | default(False)
 
     - role: containers/services/vaultwarden
       become: no
@@ -329,25 +332,6 @@
         - vaultwarden
         - containers
       when: enable_vaultwarden | default(False)
-
-    #
-    # Home automation
-    #
-    - role: containers/homeautomation/deconz
-      become: no
-      tags:
-        - deconz
-        - smarthome
-        - containers
-      when: enable_deconz | default(False)
-
-    - role: containers/homeautomation/homeassistant
-      become: no
-      tags:
-        - homeassistant
-        - smarthome
-        - containers
-      when: enable_homeassistant | default(False)
 
     #
     # Samba

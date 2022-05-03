@@ -1,7 +1,0 @@
-container_name: paperless
-
-dashboard_url: "https://paperless.{{ host_local }}"
-
-dashboard_name: "Paperless-ngx"
-
-homer_category: services

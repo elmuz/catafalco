@@ -82,10 +82,10 @@ services:
         url: "http://192.168.1.2/admin"
         target: "_blank"
 
-  - name: "Home Automation"
-    icon: "fas fa-home"
+  - name: "ServArr"
+    icon: "fas fa-search-dollar"
     items:
-{% for item in web_applications if "smarthome" in item.category and item.url != "" %}
+{% for item in web_applications if "servarr" in item.category and item.url != "" %}
       - name: "{{ item.name }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"

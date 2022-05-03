@@ -1,0 +1,7 @@
+container_name: koel
+
+dashboard_url: "https://koel.{{ host_local }}"
+
+homer_category: media
+
+dashboard_name: "Koel"

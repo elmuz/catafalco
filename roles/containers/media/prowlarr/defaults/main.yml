@@ -1,8 +1,0 @@
----
-container_name: prowlarr
-
-dashboard_url: "https://prowlarr.{{ host_local }}"
-
-homer_category: media
-
-health_url: "http://{{ ansible_default_ipv4.address }}:3000/http://prowlarr:9696"

@@ -1,8 +1,0 @@
----
-container_name: deconz
-
-dashboard_url: "http://deconz.{{ host_local }}/"
-
-homer_category: smarthome
-
-dashboard_name: "Phoscon-GW"

@@ -1,0 +1,45 @@
+# After first run you need to set 777 permissions for
+#   - "{{ docker_dir }}/{{ container_name }}/covers"
+#   - "{{ docker_dir }}/{{ container_name }}/search_index"
+# Default user for `koel` is `www-data`, id=33 and cannot be changed.
+---
+- name: Make sure the koel MariaDB container is created and running
+  docker_container:
+    name: "koel-mariadb"
+    image: "mariadb:latest"
+    pull: yes
+    networks:
+      - name: swag_internal_network
+    state: 'started'
+    user: "{{ guid }}:{{ guid }}"
+    env:
+      "TZ": "{{ timezone }}"
+      "MYSQL_ROOT_PASSWORD": "{{ mysql_root_password }}"
+      "MYSQL_DATABASE": "koel_db"
+      "MYSQL_USER": "{{ mysql_user }}"
+      "MYSQL_PASSWORD": "{{ mysql_password }}"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/mariadb:/var/lib/mysql"
+    restart_policy: unless-stopped
+
+- name: Make sure the koel container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: phanan/koel:latest
+    pull: yes
+    networks:
+      - name: swag_internal_network
+    state: "started"
+    env:
+#      "APP_URL": "https://koel.{{ host_local }}"
+      "FORCE_HTTPS": "true"
+      "DB_CONNECTION": "mysql"
+      "DB_HOST": "koel-mariadb"
+      "DB_USERNAME": "{{ mysql_user }}"
+      "DB_PASSWORD": "{{ mysql_password }}"
+      "DB_DATABASE": "koel_db"
+    volumes:
+      - "{{ mergerfs_root }}/Media/Music:/music:ro"
+      - "{{ docker_dir }}/{{ container_name }}/covers:/var/www/html/public/img/covers"
+      - "{{ docker_dir }}/{{ container_name }}/search_index:/var/www/html/storage/search-indexes"
+    restart_policy: unless-stopped

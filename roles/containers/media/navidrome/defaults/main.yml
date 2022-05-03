@@ -1,0 +1,7 @@
+container_name: navidrome
+
+dashboard_url: "https://navidrome.{{ host_local }}"
+
+dashboard_name: "Navidrome"
+
+homer_category: media
