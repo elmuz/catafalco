@@ -1,11 +1,9 @@
-/files/docker_persistent_data/*
-!/files/docker_persistent_data/.gitkeep
-/hosts
-/files/fonts/*
+hosts
+files/fonts/*
 .DS_Store
 secret.yml
-/group_vars/
-/host_vars/
+group_vars/
+host_vars/
 !/host_vars/.gitkeep
 !/group_vars/all/vars.yml
 mountsraspi
