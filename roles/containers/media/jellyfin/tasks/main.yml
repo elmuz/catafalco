@@ -3,6 +3,7 @@
 # 2. Bind `/dev/dri/card0` and `/dev/dri/renderD128`
 # 3. Add the hw render group. `cat /etc/group | grep render`
 # 4. If relying on old i965, purge `intel-media-*` in the container via `docker exec`.
+# Bonus. Enable GuC and HuC: https://gist.github.com/Brainiarc7/aa43570f512906e882ad6cdd835efe57
 ---
 - name: Make sure that QuickSync packages are installed
   become: yes
@@ -16,7 +17,7 @@
 - name: Make sure the {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "ghcr.io/hotio/jellyfin"
+    image: "ghcr.io/linuxserver/jellyfin:latest"
     pull: yes
     networks:
       - name: swag_internal_network
@@ -26,7 +27,7 @@
       - "/dev/dri/renderD128:/dev/dri/renderD128"
     state: "started"
     healthcheck:
-      "test": ["CMD", "curl", "-f", "https://jellyfin.{{ host_local }}/health"]
+      "test": ["CMD", "curl", "-i", "https://jellyfin.{{ host_local }}/health"]
     env:
       "DOCKER_MODS": "linuxserver/mods:jellyfin-opencl-intel"
       "PUID": "{{ guid }}"
@@ -34,6 +35,7 @@
       "UMASK": "002"
       "TZ": "{{ timezone }}"
       "VERSION": "latest"
+      "JELLYFIN_PublishedServerUrl": "https://jellyfin.{{ host_local }}"
     groups:
       - 109
     volumes:

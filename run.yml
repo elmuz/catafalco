@@ -295,6 +295,13 @@
         - containers
       when: enable_navidrome | default(False)
 
+    - role: containers/media/beets
+      become: no
+      tags:
+        - beets
+        - containers
+      when: enable_beets | default(False)
+
     - role: containers/media/openbooks
       become: no
       tags:

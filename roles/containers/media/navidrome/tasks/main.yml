@@ -20,6 +20,7 @@
       "ND_SCANSCHEDULE": "1h"
       "ND_LOGLEVEL": "info"
       "ND_SESSIONTIMEOUT": "24h"
+      "ND_DEFAULTTHEME": "Spotify-ish"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/data:/data"
       - "{{ mergerfs_root }}/Media/Music:/music:ro"

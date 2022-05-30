@@ -29,6 +29,7 @@
     - pihole.png
     - pikvm.png
     - linuxserver.png
+    - ispanico.png
 
 - name: Copy the logo
   copy:

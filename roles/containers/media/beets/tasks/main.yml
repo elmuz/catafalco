@@ -7,10 +7,18 @@
     group: "{{ username }}"
     mode: 0755
 
-- name: Make sure the Paperless-ngx container is created and running
+- name: Install {{ container_name }} configuration template
+  template:
+    src: config.yaml.j2
+    dest: "{{ docker_dir }}/{{ container_name }}/config/config.yaml"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+  register: configuration
+
+- name: Make sure the Beets container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "lscr.io/linuxserver/paperless-ngx"
+    image: lscr.io/linuxserver/beets:latest
     pull: yes
     networks:
       - name: swag_internal_network
@@ -19,8 +27,7 @@
       "PUID": "{{ guid }}"
       "PGID": "{{ guid }}"
       "TZ": "{{ timezone }}"
-      "PAPERLESS_URL": "https://paperless.{{ host_local }}"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/config:/config"
-      - "{{ mergerfs_root }}/Documents/paperless:/data"
+      - "{{ mergerfs_root }}:/storage"
     restart_policy: unless-stopped

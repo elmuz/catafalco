@@ -1,0 +1,7 @@
+container_name: beets
+
+dashboard_url: "https://beets.{{ host_local }}"
+
+dashboard_name: "Beets"
+
+homer_category: media
