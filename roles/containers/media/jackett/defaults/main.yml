@@ -1,0 +1,10 @@
+---
+container_name: jackett
+
+url: "jackett.{{ host_local }}"
+
+homer_category: media
+
+dashboard_name: Jackett
+
+ip_address: "{{ swag_base }}.8"
