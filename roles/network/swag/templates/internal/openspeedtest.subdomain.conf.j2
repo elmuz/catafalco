@@ -1,0 +1,28 @@
+## Version 2022/09/08
+# make sure that your dns has a cname set for <container_name> and that your <container_name> container is not using a base url
+# make sure your Healthchecks ALLOWED_HOSTS and SITE_ROOT align with the server_name used in this conf.
+
+server {
+    {% include "nginx/internal.j2" %}
+    {% include "nginx/params.j2" %}
+    server_name {{ swag_urls['openspeedtest'] }};
+
+    location / {
+        # enable the next two lines for http auth
+        #auth_basic "Restricted";
+        #auth_basic_user_file /config/nginx/.htpasswd;
+
+        # enable for ldap auth (requires ldap-server.conf in the server block)
+        #include /config/nginx/ldap-location.conf;
+
+        # enable for Authelia (requires authelia-server.conf in the server block)
+        #include /config/nginx/authelia-location.conf;
+
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app openspeedtest;
+        set $upstream_port 3000;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+}

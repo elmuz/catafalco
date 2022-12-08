@@ -30,7 +30,7 @@
 - name: Make sure the Deluge container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "binhex/arch-delugevpn:latest"
+    image: "binhex/arch-delugevpn:2.0.5-1-04"
     pull: yes
     networks:
       - name: swag_internal_network

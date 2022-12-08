@@ -11,7 +11,12 @@ footer: false
 columns: 4
 connectivityCheck: true
 
+defaults:
+  layout: columns # Either 'columns', or 'list'
+  colorTheme: dark # One of 'auto', 'light', or 'dark'
+
 theme: default
+
 colors:
   light:
     highlight-primary: "{{ colors.color0 }}"
@@ -39,11 +44,19 @@ colors:
     status-offline: "{{ colors.color9 }}"
     status-online: "{{ colors.color10 }}"
 
+# Switch to explicit media items because they're too much customized.
 services:
   - name: "Media"
     icon: "fas fa-photo-video"
     items:
-{% for item in web_applications if "media" in item.category and item.url != "" %}
+      - name: "Jellyfin"
+        logo: /assets/tools/homer-icons/jellyfin.png
+        url: "https://jellyfin.{{ host_local }}"
+        type: "Emby"
+        apikey: "{{homer_api_keys['Jellyfin']}}"
+        libraryType: "series"
+        target: "_blank"
+{% for item in web_applications if "media" in item.category and item.name != "Jellyfin" and item.url != "" %}
       - name: "{{ item.name }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
@@ -63,7 +76,13 @@ services:
   - name: "System"
     icon: "fas fa-cog"
     items:
-{% for item in web_applications if "system" in item.category and item.url != "" %}
+      - name: "Healthchecks"
+        logo: /assets/tools/homer-icons/healthchecks.png
+        url: "https://healthchecks.{{ host_local }}"
+        type: "Healthchecks"
+        apikey: "{{ healthchecks_api_ro_key }}"
+        target: "_blank"
+{% for item in web_applications if "system" in item.category and item.name != "Healthchecks" and item.url != "" %}
       - name: "{{ item.name }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
@@ -80,19 +99,29 @@ services:
       - name: "PiHole"
         logo: /assets/tools/homer-icons/pihole.png
         url: "http://192.168.1.2/admin"
+        type: "PiHole"
         target: "_blank"
       - name: "ispani.co"
         logo: /assets/tools/homer-icons/ispanico.png
         url: "https://ispani.co"
         target: "_blank"
 
+# Switch to explicit media items because they're too much customized.
   - name: "ServArr"
     icon: "fas fa-search-dollar"
     items:
-{% for item in web_applications if "servarr" in item.category and item.url != "" %}
+{% for item in web_applications if "servarr" in item.category and item.name == "Deluge" and item.url != "" %}
       - name: "{{ item.name }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
+        target: "_blank"
+{% endfor %}
+{% for item in web_applications if "servarr" in item.category and item.name != "Deluge" and item.url != "" %}
+      - name: "{{ item.name }}"
+        logo: "{{ item.logo }}"
+        url: "{{ item.url }}"
+        type: "{{ item.name }}"
+        apikey: "{{ homer_api_keys[item.name] }}"
         target: "_blank"
 {% endfor %}
 

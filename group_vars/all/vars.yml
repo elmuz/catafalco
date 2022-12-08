@@ -27,7 +27,7 @@ lan_gateway: "192.168.1.1"
 
 #dmz_gateway: "192.168.44.1"
 
-dns_nameservers: ["9.9.9.9", "149.112.112.112"]
+dns_nameservers: ["192.168.1.2", "9.9.9.9", "149.112.112.112"]
 
 fish_prompt_color: blue
 
@@ -63,6 +63,7 @@ extra_packages:
   - iperf3
   - speedtest-cli
   - htop
+  - powertop
   - stow
   - git
   - neofetch
@@ -87,7 +88,6 @@ apt_mirror: https://ubuntu.mirror.garr.it/ubuntu/
 #
 # Email credentials (for SMART and Snapraid error reporting)
 #
-
 email: funkysloth@disroot.org
 
 email_login: "{{ email }}"
@@ -156,8 +156,23 @@ enable_paperless: true
 
 enable_duplicati: true
 
-enable_syncthing: true
+enable_syncthing: false
 
+enable_rclone: true
+
+rclone_version: "0.0.0"
+rclone_release: "stable"
+rclone_config_location: "{{ docker_dir }}/rclone/rclone.conf"
+rclone_config_owner:
+  OWNER: "{{ username }}"
+  GROUP: "{{ username }}"
+rclone_configs:
+  - name: "julia"
+    properties:
+      type: smb
+      host: "{{ julia }}"
+      user: catafalco
+      pass: ""
 
 # Yo-ho-ho
 
@@ -194,7 +209,7 @@ enable_ddclient: false
 
 # VPN
 
-enable_wireguard: true
+enable_wireguard: false
 
 enable_ikev2: false
 
@@ -214,6 +229,8 @@ enable_pihole: false
 
 enable_watchtower: true
 
+enable_healthchecks: true
+
 enable_endlessh: false
 
 #
@@ -229,6 +246,8 @@ cockpit_config:
 enable_telegraf: true
 
 enable_influxdb: true
+
+enable_openspeedtest: false
 
 #
 # Time Machine
@@ -391,7 +410,7 @@ snapraid_runner_command: "python3 {{ snapraid_runner_bin }} -c {{ snapraid_runne
 # Stop all the docker containers, backup the {{ docker_dir }} to the MergerFS pool, execute the snapraid runner and start the containers back up
 # Stopping the containers is necessary – backing up the data folder with the containers running will result in corrupted database files and no files can be changed during the Snapraid sync
 snapraid_runner_cron_jobs:
-  - { job: 'docker stop $(docker ps -q); rsync -avz --delete --exclude cache {{ docker_dir }}/* {{ mergerfs_root }}/docker-volumes-backup; docker start $(docker ps -a -q) && {{ snapraid_runner_command }} ', name: 'snapraid_runner', weekday: '0', hour: '3', minute: '0' }
+  - { job: 'docker stop $(docker ps -q); rsync -avz --delete --exclude cache {{ docker_dir }}/* {{ mergerfs_root }}/docker-volumes-backup; docker start $(docker ps -a -q) && {{ snapraid_runner_command }} ', name: 'snapraid_runner', weekday: '0', hour: '6', minute: '0' }
 
 snapraid_runner_delete_threshold: 999999
 

@@ -196,12 +196,18 @@
         - watchtower
         - containers
 
-    - role: containers/system/unifi
+    - role: containers/system/healthchecks
       become: no
       tags:
-        - unifi
+        - healthchecks
         - containers
-      when: enable_unifi | default(False)
+
+    - role: containers/system/openspeedtest
+      become: no
+      tags:
+        - openspeedtest
+        - containers
+      when: enable_openspeedtest | default(False)
 
     #
     # Monitoring
@@ -323,6 +329,7 @@
       become: no
       tags:
         - duplicati
+        - backup-sync
         - containers
       when: enable_duplicati | default(False)
 
@@ -332,6 +339,12 @@
         - syncthing
         - containers
       when: enable_syncthing | default(False)
+
+    - role: backup-sync/rclone
+      tags:
+        - rclone
+        - backup-sync
+      when: enable_rclone | default(False)
 
     - role: containers/services/vaultwarden
       become: no

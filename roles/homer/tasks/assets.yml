@@ -30,6 +30,7 @@
     - pikvm.png
     - linuxserver.png
     - ispanico.png
+    - rclone.png
 
 - name: Copy the logo
   copy:

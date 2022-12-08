@@ -7,12 +7,11 @@
   become: no
   find:
     paths: 
-      - "roles/containers/services"
       - "roles/containers/media"
       - "roles/containers/servarr"
+      - "roles/containers/services"
       - "roles/containers/system"
     file_type: directory
-    excludes: "homer"
     recurse: no
   register: containers
 

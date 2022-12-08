@@ -27,29 +27,29 @@
       - "{{ docker_dir }}/swag/letsencrypt:/config/etc/letsencrypt"
     restart_policy: unless-stopped
 
-- name: Make sure the swag_public container is created and running
-  docker_container:
-    name: "swag_public"
-    image: "ghcr.io/linuxserver/swag"
-    pull: yes
-    networks:
-      - name: swag_public_network
-    capabilities: 
-      - net_admin
-    state: 'started'
-    env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
-      "URL": "{{ host }}"
-      "SUBDOMAINS": "wildcard"
-      "VALIDATION": "dns"
-      "DNSPLUGIN": "cloudflare"
-      "EMAIL": "{{ cloudflare_email }}"
-    ports:
-      - "192.168.1.4:443:443"
-    volumes:
-      - "{{ docker_dir }}/swag/public/nginx:/config/nginx"
-      - "{{ docker_dir }}/swag/dns-conf:/config/dns-conf"
-      - "{{ docker_dir }}/swag/letsencrypt:/config/etc/letsencrypt"
-    restart_policy: unless-stopped
+#- name: Make sure the swag_public container is created and running
+#  docker_container:
+#    name: "swag_public"
+#    image: "ghcr.io/linuxserver/swag"
+#    pull: yes
+#    networks:
+#      - name: swag_public_network
+#    capabilities:
+#      - net_admin
+#    state: 'started'
+#    env:
+#      "PUID": "{{ guid }}"
+#      "PGID": "{{ guid }}"
+#      "TZ": "{{ timezone }}"
+#      "URL": "{{ host }}"
+#      "SUBDOMAINS": "wildcard"
+#      "VALIDATION": "dns"
+#      "DNSPLUGIN": "cloudflare"
+#      "EMAIL": "{{ cloudflare_email }}"
+#    ports:
+#      - "192.168.1.4:443:443"
+#    volumes:
+#      - "{{ docker_dir }}/swag/public/nginx:/config/nginx"
+#      - "{{ docker_dir }}/swag/dns-conf:/config/dns-conf"
+#      - "{{ docker_dir }}/swag/letsencrypt:/config/etc/letsencrypt"
+#    restart_policy: unless-stopped

@@ -79,6 +79,7 @@
       "PHOTOPRISM_BACKUP_PATH": "/photoprism/storage/backup"
       "PHOTOPRISM_TEMP_PATH": "/photoprism/storage/temp"
       "PHOTOPRISM_WORKERS": "2"
+      "PHOTOPRISM_READONLY": "true"
       "PHOTOPRISM_DISABLE_CHOWN": "false"
       "PHOTOPRISM_DISABLE_BACKUPS": "true"
       "PHOTOPRISM_DISABLE_WEBDAV": "true"
@@ -98,7 +99,7 @@
       - "/dev/dri/card0:/dev/dri/card0" # Intel GPU
     working_dir: "/photoprism"
     volumes:
-      - "{{ mergerfs_root }}/Pictures/sara:/photoprism/originals:ro"
+      - "{{ mergerfs_root }}/Pictures/sara/PC-pers-immagini/01.Fotografie:/photoprism/originals:ro"
       - "{{ mergerfs_root }}_cache/docker-volumes-cache/{{ container_name }}/storage/cache:/photoprism/storage/cache"
       - "{{ docker_dir }}/{{ container_name }}/storage:/photoprism/storage"
     restart_policy: unless-stopped
@@ -115,4 +116,4 @@
     name: Backup PhotoPrism database
     minute: "0"
     hour: "0"
-    job: "mv {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql.old && /usr/bin/docker exec --user {{ guid }}:{{ guid }} {{ container_name }} photoprism backup -i /photoprism/storage/backup/mysql/backup.sql"
+    job: "mv {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql.old || /usr/bin/docker exec --user {{ guid }}:{{ guid }} {{ container_name }} photoprism backup -i /photoprism/storage/backup/mysql/backup.sql"

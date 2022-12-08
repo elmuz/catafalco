@@ -1,4 +1,5 @@
 ---
+# https://github.com/bastienwirtz/homer
 - name: Make sure the Homer container is created and running
   docker_container:
     name: 'homer'
@@ -24,12 +25,3 @@
       - name: swag_internal_network
     state: 'started'
     restart_policy: unless-stopped
-
-#- name: Add {{ container_name }} to the SWAG network (reverse-proxy)
-#  docker_network:
-#    name: swag_internal_network
-#    connected:
-#      - homer
-#      - cors-container
-#    appends: yes
-#  when: enable_swag

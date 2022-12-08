@@ -23,11 +23,12 @@
       "PUID": "{{ guid }}"
       "PGID": "{{ guid }}"
       "TZ": "{{ timezone }}"
-      "SERVERURL": "wireguard.{{ host }}"
+      "SERVERURL": "{{ duckdns_domain }}"
       "INTERNAL_SUBNET": "{{ wireguard_subnet }}"
       "PEERS": "{{ ', '.join(wireguard_peers) }}"
       "PEERDNS": 192.168.1.2
-      "ALLOWEDIPS": "192.168.1.0/24,{{ '.'.join(wireguard_subnet.split('.')[0:3]) }}.1"
+#      "ALLOWEDIPS": "192.168.1.0/24,{{ '.'.join(wireguard_subnet.split('.')[0:3]) }}.1"
+      "ALLOWEDIPS": "0.0.0.0/0"
     ports:
       - "192.168.1.4:51820/udp:51820/udp"
     volumes:

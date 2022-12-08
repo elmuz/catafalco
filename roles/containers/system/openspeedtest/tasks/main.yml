@@ -1,0 +1,10 @@
+---
+- name: Make sure the OpenSpeedTest container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "openspeedtest/latest"
+    pull: yes
+    networks:
+      - name: swag_internal_network
+    state: "started"
+    restart_policy: unless-stopped

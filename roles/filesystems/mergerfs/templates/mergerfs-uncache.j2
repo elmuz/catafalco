@@ -2,10 +2,12 @@
 import argparse
 import shutil
 import subprocess
+import socket
 import syslog
 import time
+import urllib.request
 from pathlib import Path
-
+from typing import Optional
 
 if __name__ == "__main__":
     """
@@ -62,6 +64,14 @@ if __name__ == "__main__":
         help="Desired max cache usage, in percentage (e.g. 70).",
     )
     parser.add_argument(
+        "--healthchecks-url",
+        dest="hc_url",
+        type=str,
+        help="Optional URL of the HealthChecks job. If provided, both start and stop ping will be sent.",
+        required=False,
+        default="",
+    )
+    parser.add_argument(
         "-v", "--verbose", help="Increase output verbosity.", action="store_true"
     )
     args = parser.parse_args()
@@ -83,6 +93,16 @@ if __name__ == "__main__":
             f"Target value is in percentage, i.e. in the range of (0, 100). Found {target} instead."
         )
 
+    ###################
+    # Start the process
+    ###################
+
+    if args.hc_url != "":
+        try:
+            urllib.request.urlopen(args.hc_url + "/start", timeout=3)
+        except socket.error as e:
+            syslog.syslog(syslog.LOG_ERR, f"Failed to open {args.hc_url}.")
+
     cache_stats = shutil.disk_usage(cache_path)
 
     usage_percentage = 100 * cache_stats.used / cache_stats.total
@@ -95,6 +115,11 @@ if __name__ == "__main__":
             syslog.LOG_INFO,
             f"Target of {target}% of used capacity already reached. Exiting.",
         )
+        if args.hc_url != "":
+            try:
+                urllib.request.urlopen(args.hc_url, timeout=3)
+            except socket.error as e:
+                syslog.syslog(syslog.LOG_ERR, f"Failed to open {args.hc_url}.")
         exit(0)
 
     syslog.syslog(syslog.LOG_INFO, "Computing candidates...")
@@ -165,3 +190,9 @@ if __name__ == "__main__":
         syslog.LOG_INFO,
         f"Process completed in {round(time.monotonic() - t_start)} seconds. Current usage percentage is {usage_percentage:.2f}%.",
     )
+
+    if args.hc_url != "":
+        try:
+            urllib.request.urlopen(args.hc_url, timeout=3)
+        except socket.error as e:
+            syslog.syslog(syslog.LOG_ERR, f"Failed to open {args.hc_url}.")

@@ -10,3 +10,4 @@ roles:
   - name: ironicbadger.ansible_role_snapraid
   - name: veselahouba.crowdsec
   - name: linux-system-roles.cockpit
+  - name: stefangweichinger.ansible_rclone

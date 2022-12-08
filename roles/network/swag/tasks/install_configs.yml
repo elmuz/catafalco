@@ -9,7 +9,7 @@
     mode: 0755
   with_items:
     - internal
-    - public
+#    - public
 
 - name: Install the SWAG config files
   template:

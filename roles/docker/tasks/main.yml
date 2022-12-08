@@ -111,6 +111,7 @@
     paths:
       - "roles/containers/media"
       - "roles/containers/homeautomation"
+      - "roles/containers/servarr"
       - "roles/containers/services"
       - "roles/containers/system"
     file_type: directory
