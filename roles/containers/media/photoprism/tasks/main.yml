@@ -90,7 +90,7 @@
       "PHOTOPRISM_THUMB_SIZE": "2048"
       "PHOTOPRISM_THUMB_SIZE_UNCACHED": "7680"
       "PHOTOPRISM_JPEG_SIZE": "7680"
-      "PHOTOPRISM_JPEG_QUALITY": "92"
+      "PHOTOPRISM_JPEG_QUALITY": "88"
       "PHOTOPRISM_FFMPEG_ENCODER": "h264_qsv"
       "PHOTOPRISM_INIT": "update gpu tensorflow clean"
       "TF_CPP_MIN_LOG_LEVEL": "0"
@@ -100,7 +100,7 @@
     working_dir: "/photoprism"
     volumes:
       - "{{ mergerfs_root }}/Pictures/sara/PC-pers-immagini/01.Fotografie:/photoprism/originals:ro"
-      - "{{ mergerfs_root }}_cache/docker-volumes-cache/{{ container_name }}/storage/cache:/photoprism/storage/cache"
+      - "{{ mergerfs_root }}/docker-volumes-cache/{{ container_name }}/storage/cache:/photoprism/storage/cache"
       - "{{ docker_dir }}/{{ container_name }}/storage:/photoprism/storage"
     restart_policy: unless-stopped
 
@@ -109,7 +109,7 @@
     name: Scan the PhotoPrism library
     minute: "5"
     hour: "0"
-    job: "/usr/bin/docker exec photoprism /photoprism/bin/photoprism index"
+    job: "/usr/bin/docker exec photoprism photoprism index"
 
 - name: Schedule a database backup at 12 AM every day
   cron:

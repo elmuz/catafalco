@@ -191,7 +191,7 @@ enable_openbooks: false
 
 # Public-facing services
 
-enable_nextcloud: true
+enable_nextcloud: false
 
 enable_vaultwarden: false
 
@@ -390,29 +390,26 @@ parity_disks:
 
 # SnapRAID
 snapraid_data_disks: "{{ disks }}"
-
 snapraid_parity_disks: "{{ parity_disks }}"
 
-snapraid_runner_gmail_pass: "{{ email_password }}"
-
+snapraid_runner_email_pass: "{{ email_password }}"
 snapraid_runner_email_address: "{{ email }}"
-
 snapraid_runner_email_address_from: "{{ snapraid_runner_email_address }}"
-
 snapraid_runner_email_address_to: "{{ snapraid_runner_email_address }}"
-
 snapraid_runner_smtp_host: "{{ email_smtp_host }}"
-
 snapraid_runner_smtp_port: "{{ email_smtp_port }}"
 
-snapraid_runner_command: "python3 {{ snapraid_runner_bin }} -c {{ snapraid_runner_conf }}"
+snapraid_runner_healthcheck_io_uuid: "92955207-2df3-4978-a1c6-4dcde12190e1"
+snapraid_healthcheck_io_host: "https://healthchecks.{{ host_local }}"
 
-# Stop all the docker containers, backup the {{ docker_dir }} to the MergerFS pool, execute the snapraid runner and start the containers back up
-# Stopping the containers is necessary – backing up the data folder with the containers running will result in corrupted database files and no files can be changed during the Snapraid sync
+snapraid_runner_command: "python3 {{ snapraid_runner_bin }} -c {{ snapraid_runner_conf }} {% if snapraid_runner_healthcheck_io_uuid %}&& curl -fsS -m 10 --retry 5 -o /dev/null {{ snapraid_healthcheck_io_host }}/ping/{{ snapraid_runner_healthcheck_io_uuid }}{% endif %}"
+
+# Stop all the docker containers, backup the {{ docker_dir }} to the MergerFS pool, execute the SnapRAID runner and start the containers back up
+# Stopping the containers is necessary – backing up the data folder with the containers running will result in corrupted database files and no files can be changed during the SnapRAID sync
 snapraid_runner_cron_jobs:
   - { job: 'docker stop $(docker ps -q); rsync -avz --delete --exclude cache {{ docker_dir }}/* {{ mergerfs_root }}/docker-volumes-backup; docker start $(docker ps -a -q) && {{ snapraid_runner_command }} ', name: 'snapraid_runner', weekday: '0', hour: '6', minute: '0' }
 
-snapraid_runner_delete_threshold: 999999
+snapraid_runner_delete_threshold: -1
 
 snapraid_runner_email_sendon: "error"
 

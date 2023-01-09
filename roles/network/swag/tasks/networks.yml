@@ -17,8 +17,8 @@
     ipam_config:
       - subnet: "172.18.0.0/16"
 
-- name: Create a public network
-  docker_network:
-    name: swag_public_network
-    ipam_config:
-    - subnet: "172.19.0.0/16"
+#- name: Create a public network
+#  docker_network:
+#    name: swag_public_network
+#    ipam_config:
+#    - subnet: "172.19.0.0/16"

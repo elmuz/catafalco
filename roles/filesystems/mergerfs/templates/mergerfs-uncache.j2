@@ -7,7 +7,7 @@ import syslog
 import time
 import urllib.request
 from pathlib import Path
-from typing import Optional
+from typing import List
 
 if __name__ == "__main__":
     """
@@ -64,6 +64,14 @@ if __name__ == "__main__":
         help="Desired max cache usage, in percentage (e.g. 70).",
     )
     parser.add_argument(
+        "--exclude",
+        dest="exclude",
+        nargs="*",
+        help="Optional list of absolute paths to be excluded from uncaching operations.",
+        required=False,
+        default=list(),
+    )
+    parser.add_argument(
         "--healthchecks-url",
         dest="hc_url",
         type=str,
@@ -83,6 +91,8 @@ if __name__ == "__main__":
     slow_path: Path = args.destination
     if not slow_path.is_dir():
         raise NotADirectoryError(f"{slow_path} is not a valid directory.")
+
+    excluded_paths: List[str] = args.exclude
 
     last_id = args.num_files
     time_limit = args.time_limit
@@ -132,6 +142,14 @@ if __name__ == "__main__":
     syslog.syslog(syslog.LOG_INFO, "Processing candidates...")
     cache_used = cache_stats.used
     for c_id, (c_path, c_stat) in enumerate(candidates):
+        for excluded_path in excluded_paths:
+            if f"{c_path}".startswith(excluded_path):
+                syslog.syslog(
+                    syslog.LOG_DEBUG,
+                    f"Skipping {c_path} since it is excluded by {excluded_path}.",
+                )
+                continue
+
         syslog.syslog(syslog.LOG_DEBUG, f"{c_path}")
 
         if not c_path.exists():

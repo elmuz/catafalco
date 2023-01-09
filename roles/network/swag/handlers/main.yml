@@ -6,7 +6,7 @@
   failed_when: swag_nginx_test is not search("test is successful")
   with_items:
     - swag_internal
-    - swag_public
+#    - swag_public
 
 - name: restart swag
   docker_container:
@@ -15,5 +15,5 @@
     restart: yes
   with_items:
     - swag_internal
-    - swag_public
+#    - swag_public
   when: existing is defined and running is defined

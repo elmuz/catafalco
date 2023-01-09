@@ -37,7 +37,7 @@
   find:
     paths:
       - "{{ docker_dir }}/swag/internal/nginx/proxy-confs/"
-      - "{{ docker_dir }}/swag/public/nginx/proxy-confs/"
+#      - "{{ docker_dir }}/swag/public/nginx/proxy-confs/"
     patterns:
       - ".*\\.conf(?!\\.sample)"
     use_regex: yes
