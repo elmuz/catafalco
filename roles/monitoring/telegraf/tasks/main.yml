@@ -5,7 +5,7 @@
 
 - name: Add InfluxDB repository key
   ansible.builtin.apt_key:
-    url: https://repos.influxdata.com/influxdb.key
+    url: https://repos.influxdata.com/influxdata-archive_compat.key
     state: present
 
 - name: Add specified repository into sources list

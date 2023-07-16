@@ -145,12 +145,15 @@ enable_koel: false
 
 enable_navidrome: true
 
-enable_beets: true
+enable_beets: false
 
 enable_photoprism: true
 
-enable_paperless: true
+enable_paperless: false
 
+# Personal
+
+enable_firefly: false
 
 # Internal services
 
@@ -407,7 +410,7 @@ snapraid_runner_command: "python3 {{ snapraid_runner_bin }} -c {{ snapraid_runne
 # Stop all the docker containers, backup the {{ docker_dir }} to the MergerFS pool, execute the SnapRAID runner and start the containers back up
 # Stopping the containers is necessary – backing up the data folder with the containers running will result in corrupted database files and no files can be changed during the SnapRAID sync
 snapraid_runner_cron_jobs:
-  - { job: 'docker stop $(docker ps -q); rsync -avz --delete --exclude cache {{ docker_dir }}/* {{ mergerfs_root }}/docker-volumes-backup; docker start $(docker ps -a -q) && {{ snapraid_runner_command }} ', name: 'snapraid_runner', weekday: '0', hour: '6', minute: '0' }
+  - { job: 'docker stop $(docker ps -q); rsync -avz --delete --exclude cache {{ docker_dir }}/* {{ mergerfs_root }}/docker-volumes-backup; docker start $(docker ps -a -q) && {{ snapraid_runner_command }} ', name: 'snapraid_runner', weekday: '0', hour: '7', minute: '0' }
 
 snapraid_runner_delete_threshold: -1
 

@@ -15,6 +15,6 @@
   cron:
     name: "uncache the mergerfs pool"
     minute: "0"
-    hour: "6"
+    hour: "7"
     weekday: "1-6"
     job: "/usr/local/bin/mergerfs-uncache -s {{ mergerfs_root }}_cache -d {{ mergerfs_root }}_slow -t 75 --exclude {{ mergerfs_root }}_cache/docker-volumes-cache --healthchecks-url https://healthchecks.{{ host_local }}/ping/a7a66ee2-eed8-4dfa-bfa1-b6217d472c02"

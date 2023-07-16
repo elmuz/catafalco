@@ -316,6 +316,16 @@
       when: enable_openbooks | default(False)
 
     #
+    # Personal
+    #
+    - role: containers/personal/firefly
+      become: no
+      tags:
+        - firefly
+        - containers
+      when: enable_firefly | default(False)
+
+    #
     # Services
     #
     - role: containers/services/nextcloud

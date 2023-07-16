@@ -8,6 +8,7 @@
   find:
     paths: 
       - "roles/containers/media"
+      - "roles/containers/personal"
       - "roles/containers/servarr"
       - "roles/containers/services"
       - "roles/containers/system"
