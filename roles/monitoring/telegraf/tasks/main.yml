@@ -17,6 +17,7 @@
 - name: Update repositories cache and install telegraf package
   apt:
     name: telegraf
+    upgrade: yes
     update_cache: yes
 
 - name: Copy the main telegraf config

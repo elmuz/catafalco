@@ -1,7 +1,7 @@
 ---
 #
 # Tasks and roles for all hosts
-#
+
 #- hosts: catafalco
 #  gather_facts: no
 #
@@ -224,6 +224,13 @@
         - telegraf
         - monitoring
       when: enable_telegraf | default(False)
+
+    - role: monitoring/ups
+      tags:
+        - ups
+        - nut
+        - monitoring
+      when: enable_ups | default(False)
 
     #
     # ServArr

@@ -1,0 +1,7 @@
+---
+# 1. Add `simoncaron.nut` to requirements.yml and install it (or run "ansible-galaxy install simoncaron.nut")
+# 2. Specify few variables in vars.yml, like UPS details, user credentials, ...
+
+- name: Install NUT
+  ansible.builtin.include_role:
+    name: simoncaron.nut
