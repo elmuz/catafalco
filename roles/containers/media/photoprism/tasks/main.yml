@@ -23,7 +23,7 @@
     group: "100"  # users
     mode: 0755
 
-- name: Make sure the PhotoPrism MariaDB container is created and running
+- name: Make sure that PhotoPrism MariaDB container is created and running
   docker_container:
     name: "photoprism-mariadb"
     image: "mariadb:latest"
@@ -43,7 +43,7 @@
       - "{{ docker_dir }}/{{ container_name }}/mariadb:/var/lib/mysql"
     restart_policy: unless-stopped
 
-- name: Make sure the Photoprism container is created and running
+- name: Make sure that Photoprism container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: photoprism/photoprism:latest

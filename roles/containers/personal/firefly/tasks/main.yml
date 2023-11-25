@@ -1,7 +1,7 @@
 # https://docs.firefly-iii.org/firefly-iii/installation/docker/
 # https://raw.githubusercontent.com/firefly-iii/firefly-iii/main/.env.example
 ---
-- name: Make sure the MariaDB container is created and running
+- name: Make sure that MariaDB container is created and running
   docker_container:
     name: "firefly-mariadb"
     image: "lscr.io/linuxserver/mariadb:latest"
@@ -21,7 +21,7 @@
       - "{{ docker_dir }}/{{ container_name }}:/config"
     restart_policy: unless-stopped
 
-- name: Make sure the Firefly III container is created and running
+- name: Make sure that Firefly III container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: "fireflyiii/core"
@@ -46,7 +46,7 @@
 #      - firefly_iii_upload:/var/www/html/storage/upload
     restart_policy: unless-stopped
 
-- name: Make sure the Firefly III Data importer container is created and running
+- name: Make sure that Firefly III Data importer container is created and running
   docker_container:
     name: "{{ container_name }}-dataimporter"
     image: "fireflyiii/data-importer"

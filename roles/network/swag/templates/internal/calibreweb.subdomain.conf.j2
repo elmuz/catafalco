@@ -1,0 +1,31 @@
+## Version 2023/05/31
+
+server {
+    {% include "nginx/internal.j2" %}
+    {% include "nginx/params.j2" %}
+
+    server_name {{ swag_urls['calibreweb'] }};
+
+    location / {
+        {% include "nginx/cors.j2" %}
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app calibreweb;
+        set $upstream_port 8083;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+
+    # OPDS feed for eBook reader apps
+    # Even if you use Authelia, the OPDS feed requires a password to be set for
+    # the user directly in Calibre-Web, as eBook reader apps don't support
+    # form-based logins, only HTTP Basic auth.
+    location /opds/ {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app calibreweb;
+        set $upstream_port 8083;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+}

@@ -1,0 +1,14 @@
+#!/bin/sh
+if [ ! -f /books/metadata.db ]; then
+    echo "Cannot find 'metadata.db' in /books directory. Initializing..."
+    echo "Downloading 'A Christmas Carol' as a first book."
+    s6-setuidgid abc wget -O /calibre/christmascarol.mobi http://www.gutenberg.org/ebooks/46.kindle.noimages
+    echo "Importing a first book..."
+    s6-setuidgid abc calibredb add /calibre/christmascarol.mobi --with-library /books
+fi
+
+if [ ! -f /calibre/users.sqlite ]; then
+    echo "WARN: Cannot find 'users.sqlite'. The server will not work as expected."
+fi
+
+s6-setuidgid abc calibre-server --enable-auth --userdb /calibre/users.sqlite /books

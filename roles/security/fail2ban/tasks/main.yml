@@ -73,7 +73,7 @@
   notify:
     - Restart fail2ban
 
-- name: Make sure the fail2ban systemd service is enabled and started
+- name: Make sure that fail2ban systemd service is enabled and started
   service:
     name: fail2ban
     state: started

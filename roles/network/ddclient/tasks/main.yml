@@ -15,7 +15,7 @@
   notify:
     - Restart ddclient service
 
-- name: Make sure the ddclient service is started & enabled
+- name: Make sure that ddclient service is started & enabled
   service:
     name: ddclient
     state: started

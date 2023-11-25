@@ -1,6 +1,6 @@
-# https://www.arsouyes.org/en/blog/2020/30_duplicati
+# https://duplicati.readthedocs.io/en/latest/08-disaster-recovery/
 ---
-- name: Make sure the Duplicati container is created and running
+- name: Make sure that Duplicati container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: "ghcr.io/linuxserver/duplicati"

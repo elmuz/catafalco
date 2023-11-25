@@ -3,7 +3,7 @@
 #   - "{{ docker_dir }}/{{ container_name }}/search_index"
 # Default user for `koel` is `www-data`, id=33 and cannot be changed.
 ---
-- name: Make sure the koel MariaDB container is created and running
+- name: Make sure that koel MariaDB container is created and running
   docker_container:
     name: "koel-mariadb"
     image: "mariadb:latest"
@@ -22,7 +22,7 @@
       - "{{ docker_dir }}/{{ container_name }}/mariadb:/var/lib/mysql"
     restart_policy: unless-stopped
 
-- name: Make sure the koel container is created and running
+- name: Make sure that koel container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: phanan/koel:latest

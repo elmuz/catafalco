@@ -14,7 +14,7 @@
       - intel-gpu-tools
     state: present
 
-- name: Make sure the {{ container_name }} container is created and running
+- name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: "ghcr.io/linuxserver/jellyfin:latest"

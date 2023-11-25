@@ -36,7 +36,7 @@
     group: "{{ username }}"
     mode: 0755
 
-- name: Make sure the MariaDB container is created and running
+- name: Make sure that MariaDB container is created and running
   docker_container:
     name: "nextcloud-mariadb"
     image: "mariadb"
@@ -59,7 +59,7 @@
       - "{{ docker_dir }}/{{ container_name }}/mariadb:/var/lib/mysql"
     restart_policy: unless-stopped
     
-- name: Make sure the Redis container is created and running
+- name: Make sure that Redis container is created and running
   docker_container:
     name: "nextcloud-redis"
     image: "redis:alpine"
@@ -67,7 +67,7 @@
     state: 'started'
     restart_policy: unless-stopped
  
-- name: Make sure the Nextcloud container is created and running
+- name: Make sure that Nextcloud container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: "ghcr.io/linuxserver/nextcloud:php8"

@@ -19,18 +19,10 @@
     path: "{{ docker_dir }}/{{ container_name }}"
     state: directory
 
-#- name: Install the iptables.sh config
-#  copy:
-#    src: "files/iptable.sh"
-#    dest: "{{ docker_dir }}/{{ container_name }}/iptable.sh"
-#    owner: "{{ username }}"
-#    group: "{{ username }}"
-#    mode: 0644
-
-- name: Make sure the Deluge container is created and running
+- name: Make sure that Deluge container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "binhex/arch-delugevpn:2.1.1-4-04"  # In case of issues with MergerFS stick to :2.0.5-1-04
+    image: "binhex/arch-delugevpn:2.1.1-4-05"  # In case of issues with MergerFS stick to :2.0.5-1-04
     pull: yes
     networks:
       - name: swag_internal_network

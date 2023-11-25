@@ -7,7 +7,7 @@
     group: "{{ username }}"
     mode: 0755
 
-- name: Make sure the Navidrome container is created and running
+- name: Make sure that Navidrome container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: deluan/navidrome:latest

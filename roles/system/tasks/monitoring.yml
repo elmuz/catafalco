@@ -64,7 +64,7 @@
     owner: root
     group: root
 
-- name: Make sure the text output directory exists
+- name: Make sure that text output directory exists
   file:
     path: /etc/node_exporter
     state: directory

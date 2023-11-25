@@ -89,11 +89,11 @@
         - smartd
       when: enable_nas_stuff | default(False)
 
-    - role: ironicbadger.ansible_role_snapraid
-      become: yes
-      tags:
-        - snapraid
-      when: enable_nas_stuff | default(False)
+#    - role: ironicbadger.ansible_role_snapraid  # use to be ironicbadger.ansible_role_snapraid
+#      become: yes
+#      tags:
+#        - snapraid
+#      when: enable_nas_stuff | default(False)
 
 
     #
@@ -263,6 +263,13 @@
         - containers
       when: enable_lidarr | default(False)
 
+    - role: containers/servarr/readarr
+      become: no
+      tags:
+        - readarr
+        - containers
+      when: enable_readarr | default(False)
+
     - role: containers/servarr/prowlarr
       become: no
       tags:
@@ -322,6 +329,13 @@
         - containers
       when: enable_openbooks | default(False)
 
+    - role: containers/media/calibreweb
+      become: no
+      tags:
+        - calibreweb
+        - containers
+      when: enable_calibreweb | default(False)
+
     #
     # Personal
     #
@@ -349,6 +363,13 @@
         - backup-sync
         - containers
       when: enable_duplicati | default(False)
+
+    - role: containers/services/firefox
+      become: no
+      tags:
+        - firefox
+        - containers
+      when: enable_firefox | default(False)
 
     - role: containers/services/syncthing
       become: no

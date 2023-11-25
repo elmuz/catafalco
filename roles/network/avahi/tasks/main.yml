@@ -20,7 +20,7 @@
     group: root
     mode: 0775
 
-- name: Make sure the Avahi service is running and enabled
+- name: Make sure that Avahi service is running and enabled
   service:
     name: avahi-daemon
     state: started

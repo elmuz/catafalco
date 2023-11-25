@@ -1,6 +1,6 @@
 ---
     
-- name: Make sure the Vaultwarden container is created and running
+- name: Make sure that Vaultwarden container is created and running
   docker_container:
     name: 'vaultwarden'
     image: "vaultwarden/server"

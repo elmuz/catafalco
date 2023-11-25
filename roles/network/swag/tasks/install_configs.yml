@@ -1,5 +1,6 @@
 ---
 - name: Create the proxy-conf folders
+  become: yes  # Needed since `dashboard.subdomain.conf` is own by root
   file:
     path: "{{ docker_dir }}/swag/{{ item }}/nginx/proxy-confs/"
     state: directory
@@ -44,6 +45,7 @@
   register: found_files
 
 - name: Remove config files for disabled services
+  become: yes  # Needed since `dashboard.subdomain.conf` is own by root
   file:
     path: "{{ item.path }}"
     state: absent

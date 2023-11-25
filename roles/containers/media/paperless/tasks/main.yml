@@ -7,7 +7,7 @@
     group: "{{ username }}"
     mode: 0755
 
-- name: Make sure the Paperless-ngx container is created and running
+- name: Make sure that Paperless-ngx container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: "lscr.io/linuxserver/paperless-ngx"

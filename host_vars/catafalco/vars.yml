@@ -132,9 +132,9 @@ enable_deconz: false
 
 enable_homeassistant: false
 
-
+#
 # Media
-
+#
 enable_jellyfin: true
 
 enable_koel: false
@@ -147,13 +147,19 @@ enable_photoprism: true
 
 enable_paperless: false
 
-# Personal
+enable_calibreweb: true
 
+#
+# Personal
+#
 enable_firefly: false
 
+#
 # Internal services
-
+#
 enable_duplicati: true
+
+enable_firefox: true
 
 enable_syncthing: false
 
@@ -173,8 +179,9 @@ rclone_configs:
       user: catafalco
       pass: ""
 
+#
 # Yo-ho-ho
-
+#
 enable_deluge: true
 
 enable_sonarr: true
@@ -182,6 +189,8 @@ enable_sonarr: true
 enable_radarr: true
 
 enable_lidarr: true
+
+enable_readarr: true
 
 enable_prowlarr: true
 
