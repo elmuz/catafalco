@@ -1,4 +1,12 @@
 ---
+- name: Create the necessary {{ container_name }} folder
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: 0755
+
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
@@ -18,5 +26,6 @@
     devices:
       - "/dev/dri/renderD128:/dev/dri/renderD128"
     volumes:
-      - "{{ mergerfs_root }}/Downloads:/source/downloads"
+      - "{{ mergerfs_root }}/Downloads:/config/Downloads"
+      - "{{ docker_dir }}/{{ container_name }}:/config/.mozilla/firefox"
     restart_policy: unless-stopped

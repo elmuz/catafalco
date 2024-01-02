@@ -56,7 +56,7 @@
     state: "started"
     shm_size: 3G
     env:
-      "PHOTOPRISM_GID": "{{ guid }}"
+      "PHOTOPRISM_GID": "109"  # set this to `getent group render | cut -d: -f3`
       "PHOTOPRISM_UID": "{{ guid }}"
       "PHOTOPRISM_UMASK": "0002"
       "TZ": "{{ timezone }}"
@@ -80,7 +80,7 @@
       "PHOTOPRISM_TEMP_PATH": "/photoprism/storage/temp"
       "PHOTOPRISM_WORKERS": "2"
       "PHOTOPRISM_READONLY": "true"
-      "PHOTOPRISM_DISABLE_CHOWN": "false"
+      "PHOTOPRISM_DISABLE_CHOWN": "true"
       "PHOTOPRISM_DISABLE_BACKUPS": "true"
       "PHOTOPRISM_DISABLE_WEBDAV": "true"
       "PHOTOPRISM_DETECT_NSFW": "false"
@@ -90,6 +90,7 @@
       "PHOTOPRISM_THUMB_SIZE": "2048"
       "PHOTOPRISM_THUMB_SIZE_UNCACHED": "7680"
       "PHOTOPRISM_JPEG_SIZE": "7680"
+      "PHOTOPRISM_ORIGINALS_LIMIT": "2000"
       "PHOTOPRISM_JPEG_QUALITY": "88"
       "PHOTOPRISM_FFMPEG_ENCODER": "h264_qsv"
       "PHOTOPRISM_INIT": "update gpu tensorflow clean"
