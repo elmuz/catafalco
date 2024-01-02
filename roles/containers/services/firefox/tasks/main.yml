@@ -22,7 +22,7 @@
       "TITLE": "FirefoxVNC"
       "DRINODE": "/dev/dri/renderD128"
       "DOCKER_MODS": linuxserver/mods:firefox-fonts
-    shm_size: "1G"
+    shm_size: "2G"
     devices:
       - "/dev/dri/renderD128:/dev/dri/renderD128"
     volumes:

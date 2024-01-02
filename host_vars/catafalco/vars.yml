@@ -149,6 +149,8 @@ enable_paperless: false
 
 enable_calibreweb: true
 
+enable_arm: true
+
 #
 # Personal
 #

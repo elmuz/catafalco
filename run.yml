@@ -336,6 +336,13 @@
         - containers
       when: enable_calibreweb | default(False)
 
+    - role: containers/media/arm
+      become: no
+      tags:
+        - arm
+        - containers
+      when: enable_arm | default(False)
+
     #
     # Personal
     #
