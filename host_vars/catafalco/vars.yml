@@ -151,6 +151,9 @@ enable_calibreweb: true
 
 enable_arm: true
 
+enable_handbrake: true
+
+
 #
 # Personal
 #

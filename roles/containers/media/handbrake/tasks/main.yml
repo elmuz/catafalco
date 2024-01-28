@@ -1,0 +1,28 @@
+---
+- name: Create the necessary {{ container_name }} folder
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: 0755
+
+- name: Make sure that {{ container_name }} container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "jlesage/handbrake:latest"
+    pull: yes
+    networks:
+      - name: swag_internal_network
+    state: "started"
+    env:
+      "USER_ID": "{{ guid }}"
+      "GROUP_ID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/docker/appdata/handbrake:/config:rw"
+      - "{{ mergerfs_root }}/Downloads:/storage:ro"
+      - "{{ mergerfs_root }}/Downloads/hb_watch:/watch"
+      - "{{ mergerfs_root }}/Downloads/hb_completed:/output"
+    restart_policy: unless-stopped

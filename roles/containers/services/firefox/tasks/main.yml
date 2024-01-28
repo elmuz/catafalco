@@ -10,8 +10,12 @@
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "lscr.io/linuxserver/firefox:latest"
+    image: "lscr.io/linuxserver/mullvad-browser:latest"
     pull: yes
+    capabilities:
+      - net_admin
+    security_opts:
+      - seccomp:unconfined
     networks:
       - name: "swag_internal_network"
     state: "started"

@@ -101,7 +101,7 @@
     working_dir: "/photoprism"
     volumes:
       - "{{ mergerfs_root }}/Pictures/sara/PC-pers-immagini/01.Fotografie:/photoprism/originals:ro"
-      - "{{ mergerfs_root }}/docker-volumes-cache/{{ container_name }}/storage/cache:/photoprism/storage/cache"
+      - "{{ cache_root }}/docker-volumes-cache/{{ container_name }}/storage/cache:/photoprism/storage/cache"
       - "{{ docker_dir }}/{{ container_name }}/storage:/photoprism/storage"
     restart_policy: unless-stopped
 

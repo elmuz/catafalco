@@ -343,6 +343,13 @@
         - containers
       when: enable_arm | default(False)
 
+    - role: containers/media/handbrake
+      become: no
+      tags:
+        - handbrake
+        - containers
+      when: enable_handbrake | default(False)
+
     #
     # Personal
     #

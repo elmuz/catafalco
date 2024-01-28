@@ -33,7 +33,7 @@
   mount:
     name: "{{ mergerfs_root }}"
     src: /mnt/cache*:/mnt/data*
-    opts: category.create=lfs,dropcacheonclose=1,defaults,allow_other,use_ino,moveonenospc=1,minfreespace=50G,fsname=mergerfs
+    opts: defaults,category.create=lfs,dropcacheonclose=1,allow_other,use_ino,moveonenospc=1,minfreespace=50G,fsname=mergerfs
     fstype: fuse.mergerfs
     state: mounted
   when: disks[0] is defined
@@ -42,16 +42,16 @@
   mount:
     name: "{{ mergerfs_root }}_slow"
     src: /mnt/data*
-    opts: dropcacheonclose=1,defaults,allow_other,use_ino,moveonenospc=1,minfreespace=500G,fsname=mergerfs_slow
+    opts: defaults,category.create=mfs,dropcacheonclose=1,allow_other,use_ino,moveonenospc=1,minfreespace=500G,fsname=mergerfs_slow
     fstype: fuse.mergerfs
     state: mounted
   when: disks[0] is defined
 
-- name: Mount the mergerfs cache only array
+- name: Mount the mergerfs cache-only array
   mount:
     name: "{{ cache_root }}"
     src: /mnt/cache*
-    opts: dropcacheonclose=1,defaults,allow_other,use_ino,fsname=mergerfs_cache,category.create=mfs
+    opts: defaults,category.create=mfs,dropcacheonclose=1,allow_other,use_ino,fsname=mergerfs_cache
     fstype: fuse.mergerfs
     state: mounted
   when: cache_disks[0] is defined
