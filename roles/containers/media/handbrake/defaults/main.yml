@@ -3,6 +3,6 @@ container_name: handbrake
 
 dashboard_url: "https://handbrake.{{ host_local }}"
 
-dashboard_name: "Handbrake"
+dashboard_name: "HandBrake"
 
 homer_category: media

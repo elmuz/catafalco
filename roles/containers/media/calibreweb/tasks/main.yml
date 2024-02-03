@@ -32,7 +32,7 @@
 
 - name: Copy the users database
   copy:
-    src: roles/containers/media/calibreweb/template/users.sqlite
+    src: roles/containers/media/calibreweb/templates/users.sqlite
     dest: "{{ docker_dir }}/{{ container_name }}/calibre/users.sqlite"
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -41,7 +41,7 @@
 - name: Copy the launcher for Calibre server
   become: yes
   copy:
-    src: roles/containers/media/calibreweb/template/start-calibre.sh.j2
+    src: roles/containers/media/calibreweb/templates/start-calibre.sh.j2
     dest: "{{ docker_dir }}/{{ container_name }}/custom-services.d/start-calibre.sh"
     owner: root
     group: root
