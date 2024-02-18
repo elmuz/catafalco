@@ -184,6 +184,8 @@ rclone_configs:
       user: catafalco
       pass: ""
 
+enable_invidious: true
+
 #
 # Yo-ho-ho
 #
@@ -421,9 +423,12 @@ parity_disks:
   - { path: /mnt/parity1, src: /dev/disk/by-label/Parity1, content: true }
 
 # SnapRAID
+snapraid_force_install: true
+
 snapraid_data_disks: "{{ disks }}"
 snapraid_parity_disks: "{{ parity_disks }}"
 
+snapraid_runner_email_sendon: "error"
 snapraid_runner_email_pass: "{{ email_password }}"
 snapraid_runner_email_address: "{{ email }}"
 snapraid_runner_email_address_from: "{{ snapraid_runner_email_address }}"
@@ -442,8 +447,6 @@ snapraid_runner_cron_jobs:
   - { job: 'docker stop $(docker ps -q); rsync -avz --delete --exclude cache {{ docker_dir }}/* {{ mergerfs_root }}/docker-volumes-backup; docker start $(docker ps -a -q) && {{ snapraid_runner_command }} ', name: 'snapraid_runner', weekday: '0', hour: '7', minute: '0' }
 
 snapraid_runner_delete_threshold: -1
-
-snapraid_runner_email_sendon: "error"
 
 snapraid_runner_use_ssl: true
 
