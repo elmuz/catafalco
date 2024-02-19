@@ -1,0 +1,69 @@
+---
+- name: Copy the necessary {{ container_name }}-db files (1)
+  copy:
+    src: sql
+    dest: "{{ docker_dir }}/{{ container_name }}/db/sql"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: 0755
+
+- name: Copy the necessary {{ container_name }}-db files (2)
+  copy:
+    src: init-invidious-db.sh
+    dest: "{{ docker_dir }}/{{ container_name }}/db/init-invidious-db.sh"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: 0755
+
+- name: Make sure that {{ container_name }}-db container is created and running
+  docker_container:
+    name: "{{ container_name }}-db"
+    image: "docker.io/library/postgres:14"
+    pull: yes
+    env:
+      "POSTGRES_DB": invidious
+      "POSTGRES_USER": funkysloth
+      "POSTGRES_PASSWORD": "{{ invidious_postgres_password }}"
+    networks:
+      - name: "swag_internal_network"
+    state: "started"
+    restart_policy: unless-stopped
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/db/sql:/config/sql"
+      - "{{ docker_dir }}/{{ container_name }}/db/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+
+- name: Make sure that {{ container_name }} container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "quay.io/invidious/invidious:latest"
+    pull: yes
+    env:
+      INVIDIOUS_CONFIG: |
+        db:
+          dbname: invidious
+          user: funkysloth
+          password: "{{ invidious_postgres_password }}"
+          host: invidious-db
+          port: 5432
+        check_tables: true
+        https_only: true
+        domain: "invidious.{{ host_local }}"
+        external_port: 443
+        use_pubsub_feeds: true
+        statistics_enabled: false
+        hmac_key: "{{ invidious_hmac }}"
+    networks:
+      - name: "swag_internal_network"
+    state: "started"
+    restart_policy: unless-stopped
+    healthcheck:
+      test: "wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/comments/jNQXAC9IVRw || exit 1"
+      interval: 30s
+      timeout: 5s
+      retries: 2
+    log_driver: "json-file"
+    log_options:
+      max-size: "1G"
+      max-file: "4"

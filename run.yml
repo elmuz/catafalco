@@ -392,6 +392,13 @@
         - containers
       when: enable_invidious | default(False)
 
+    - role: containers/services/speedtest_tracker
+      become: no
+      tags:
+        - speedtest
+        - containers
+      when: enable_speedtest_tracker | default(False)
+
     - role: containers/services/syncthing
       become: no
       tags:

@@ -1,0 +1,47 @@
+---
+- name: Craete the necessary {{ container_name }} database
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: 0755
+
+- name: Make sure that {{ container_name }}-mariadb container is created and running
+  docker_container:
+    name: "{{ container_name }}-db"
+    image: "linuxserver/mariadb"
+    pull: yes
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "MYSQL_ROOT_PASSWORD": "{{ mysql_root_password }}"
+      "MYSQL_DATABASE": "speedtest"
+      "MYSQL_USER": "{{ mysql_user }}"
+      "MYSQL_PASSWORD": "{{ mysql_password }}"
+    networks:
+      - name: "swag_internal_network"
+    state: "started"
+    restart_policy: unless-stopped
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/data:/config"
+
+- name: Make sure that {{ container_name }} container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: "lscr.io/linuxserver/speedtest-tracker:latest"
+    pull: yes
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "DB_CONNECTION": mysql
+      "DB_HOST": "{{ container_name }}-db"
+      "DB_DATABASE": "speedtest"
+      "DB_USERNAME": "{{ mysql_user }}"
+      "DB_PASSWORD": "{{ mysql_password }}"
+    networks:
+      - name: "swag_internal_network"
+    state: "started"
+    restart_policy: unless-stopped

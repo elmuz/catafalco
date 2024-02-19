@@ -1,0 +1,7 @@
+container_name: speedtest_tracker
+
+dashboard_url: "https://speedtest.{{ host_local }}"
+
+dashboard_name: "Speedtest Tracker"
+
+homer_category: services

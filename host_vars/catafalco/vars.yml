@@ -186,6 +186,8 @@ rclone_configs:
 
 enable_invidious: true
 
+enable_speedtest_tracker: true
+
 #
 # Yo-ho-ho
 #
