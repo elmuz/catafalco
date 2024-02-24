@@ -135,6 +135,7 @@
   collect_cpu_time = false
   ## If true, compute and report the sum of all non-idle CPU states
   report_active = false
+
 [[inputs.disk]]
   ## By default stats will be gathered for all mount points.
   ## Set mount_points will restrict the stats to only the specified mount points.
@@ -167,6 +168,7 @@
   ## The typical use case is for LVM volumes, to get the VG/LV name instead of
   ## the near-meaningless DM-0 name.
   # name_templates = ["$ID_FS_LABEL","$DM_VG_NAME/$DM_LV_NAME"]
+
 [[inputs.docker]]
   ## Docker Endpoint
   ##   To use TCP, set endpoint = "tcp://[ip]:[port]"
@@ -175,9 +177,6 @@
   #
   ## Set to true to collect Swarm metrics(desired_replicas, running_replicas)
   gather_services = false
-  #
-  ## Only collect metrics for these containers, collect all if empty
-  container_names = []
   #
   ## Set the source tag for the metrics to the container ID hostname, eg first 12 chars
   source_tag = false
@@ -196,18 +195,11 @@
   #
   ## Timeout for docker list, info, and stats commands
   timeout = "5s"
-  #
-  ## Whether to report for each container per-device blkio (8:0, 8:1...),
-  ## network (eth0, eth1, ...) and cpu (cpu0, cpu1, ...) stats or not.
-  ## Usage of this setting is discouraged since it will be deprecated in favor of 'perdevice_include'.
-  ## Default value is 'true' for backwards compatibility, please set it to 'false' so that 'perdevice_include' setting
-  ## is honored.
-  perdevice = true
+
   #
   ## Specifies for which classes a per-device metric should be issued
   ## Possible values are 'cpu' (cpu0, cpu1, ...), 'blkio' (8:0, 8:1, ...) and 'network' (eth0, eth1, ...)
-  ## Please note that this setting has no effect if 'perdevice' is set to 'true'
-  # perdevice_include = ["cpu"]
+  perdevice_include = []
   #
   ## Whether to report for each container total blkio and network stats or not.
   ## Usage of this setting is discouraged since it will be deprecated in favor of 'total_include'.
@@ -235,22 +227,26 @@
   # tls_key = "/etc/telegraf/key.pem"
   ## Use TLS but skip chain & host verification
   # insecure_skip_verify = false
+
 [[inputs.mem]]
   # no configuration
+
 [[inputs.net]]
   ## By default, telegraf gathers stats from any up interface (excluding loopback)
   ## Setting interfaces will tell it to gather these explicit interfaces,
   ## regardless of status.
   ##
-  # interfaces = ["eth0"]
+  interfaces = ["eth*", "enp0s[0-1]", "lo"]
   ##
   ## On linux systems telegraf also collects protocol stats.
   ## Setting ignore_protocol_stats to true will skip reporting of protocol metrics.
   ##
-  # ignore_protocol_stats = false
+  ignore_protocol_stats = true
   ##
+
 [[inputs.processes]]
   # no configuration
+
 [[inputs.smart]]
     ## Optionally specify the path to the smartctl executable
     # path_smartctl = "/usr/bin/smartctl"
@@ -299,16 +295,46 @@
     ## to "sequential" to get readings for all drives.
     ## valid options: concurrent, sequential
     # read_method = "concurrent"
+
 [[inputs.swap]]
   # no configuration
+
 [[inputs.system]]
   ## Uncomment to remove deprecated metrics.
   # fielddrop = ["uptime_format"]
+
 [[inputs.temp]]
   # no configuration
+
 [[inputs.upsd]]
   ## A running NUT server to connect to.
   # server = "127.0.0.1"
   # port = 3493
   username = "monitor"
   password = "1q2w3e4r"
+
+# Intel PowerStat plugin enables monitoring of platform metrics (power, TDP)
+# and per-CPU metrics like temperature, power and utilization.
+[[inputs.intel_powerstat]]
+  ## The user can choose which package metrics are monitored by the plugin with
+  ## the package_metrics setting:
+  ## - The default, will collect "current_power_consumption",
+  ##   "current_dram_power_consumption" and "thermal_design_power"
+  ## - Leaving this setting empty means no package metrics will be collected
+  ## - Finally, a user can specify individual metrics to capture from the
+  ##   supported options list
+  ## Supported options:
+  ##   "current_power_consumption", "current_dram_power_consumption",
+  ##   "thermal_design_power", "max_turbo_frequency", "uncore_frequency"
+  package_metrics = ["current_power_consumption", "current_dram_power_consumption", "thermal_design_power"]
+
+  ## The user can choose which per-CPU metrics are monitored by the plugin in
+  ## cpu_metrics array.
+  ## Empty or missing array means no per-CPU specific metrics will be collected
+  ## by the plugin.
+  ## Supported options:
+  ##   "cpu_frequency", "cpu_c0_state_residency", "cpu_c1_state_residency",
+  ##   "cpu_c6_state_residency", "cpu_busy_cycles", "cpu_temperature",
+  ##   "cpu_busy_frequency"
+  ## ATTENTION: cpu_busy_cycles is DEPRECATED - use cpu_c0_state_residency
+  cpu_metrics = ["cpu_c0_state_residency", "cpu_c1_state_residency", "cpu_c3_state_residency", "cpu_c6_state_residency", "cpu_c7_state_residency"]

@@ -17,8 +17,18 @@
 - name: Update repositories cache and install telegraf package
   apt:
     name: telegraf
-    upgrade: yes
+    state: latest
     update_cache: yes
+
+- name: Save telegraf path
+  command: which telegraf
+  register: telegraf_path
+
+- name: Set cap_sys_rawio,cap_dac_read_search,cap_sys_admin+ep on {{ telegraf_path.stdout }}
+  community.general.capabilities:
+    path: "{{ telegraf_path.stdout }}"
+    capability: cap_sys_rawio,cap_dac_read_search,cap_sys_admin+ep
+    state: present
 
 - name: Copy the main telegraf config
   template:
