@@ -36,7 +36,7 @@
       - github3.py
 
 - name: Check latest neovim release
-  github_release:
+  community.general.github_release:
     user: neovim
     repo: neovim
     action: latest_release

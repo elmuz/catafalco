@@ -53,23 +53,23 @@
       state: latest
 
   - name: Switch to iptables-legacy
-    alternatives:
+    community.general.alternatives:
       name: iptables
       path: /usr/sbin/iptables-legacy
 
   - name: Switch to ip6tables-legacy
-    alternatives:
+    community.general.alternatives:
       name: ip6tables
       path: /usr/sbin/ip6tables-legacy
 
   - name: Switch to pip3
-    alternatives:
+    community.general.alternatives:
       name: pip
       link: /usr/bin/pip
       path: /usr/bin/pip3
 
   - name: Switch to python3
-    alternatives:
+    community.general.alternatives:
       name: python
       link: /usr/bin/python
       path: /usr/bin/python3

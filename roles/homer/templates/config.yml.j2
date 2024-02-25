@@ -66,12 +66,17 @@ services:
   - name: "Services"
     icon: "fas fa-stream"
     items:
-{% for item in web_applications if "services" in item.category and item.url != "" %}
+{% for item in web_applications if "services" in item.category and item.name != "Speedtest Tracker" and item.url != "" %}
       - name: "{{ item.name }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
         target: "_blank"
 {% endfor %}
+      - name: "Speedtest Tracker"
+        logo: /assets/tools/homer-icons/speedtest_tracker.png
+        url: "https://speedtest.{{ host_local }}"
+        type: "SpeedtestTracker"
+        target: "_blank"
 
   - name: "System"
     icon: "fas fa-cog"

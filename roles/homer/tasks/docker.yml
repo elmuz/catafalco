@@ -8,10 +8,7 @@
     networks:
       - name: swag_internal_network
     state: 'started'
-    env:
-      "UID": "{{ guid }}"
-      "GID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
+    user: "{{ guid }}:{{ guid }}"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}:/www/assets"
     restart_policy: unless-stopped
@@ -20,7 +17,7 @@
   docker_container:
     name: 'cors-container'
     image: "imjacobclark/cors-container"
-    pull: yes
+    pull: true
     networks:
       - name: swag_internal_network
     state: 'started'

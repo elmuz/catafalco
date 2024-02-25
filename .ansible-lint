@@ -1,0 +1,4 @@
+---
+# .ansible-lint
+
+profile: basic # null, min, basic, moderate,safety, shared, production
