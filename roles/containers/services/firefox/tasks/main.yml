@@ -5,30 +5,30 @@
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "lscr.io/linuxserver/mullvad-browser:latest"
-    pull: yes
+    image: lscr.io/linuxserver/mullvad-browser:latest
+    pull: true
     capabilities:
       - net_admin
     security_opts:
       - seccomp:unconfined
     networks:
-      - name: "swag_internal_network"
-    state: "started"
+      - name: swag_internal_network
+    state: started
     env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
-      "TITLE": "FirefoxVNC"
-      "DRINODE": "/dev/dri/renderD128"
-      "DOCKER_MODS": linuxserver/mods:firefox-fonts
-    shm_size: "2G"
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
+      TITLE: FirefoxVNC
+      DRINODE: /dev/dri/renderD128
+      DOCKER_MODS: linuxserver/mods:firefox-fonts
+    shm_size: 2G
     devices:
-      - "/dev/dri/renderD128:/dev/dri/renderD128"
+      - /dev/dri/renderD128:/dev/dri/renderD128
     volumes:
       - "{{ mergerfs_root }}/Downloads:/config/Downloads"
       - "{{ docker_dir }}/{{ container_name }}:/config/.mozilla/firefox"

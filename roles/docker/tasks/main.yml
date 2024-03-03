@@ -10,75 +10,74 @@
 - name: Install Docker (Ubuntu)
   when: ansible_facts['distribution'] == 'Ubuntu'
   block:
-  - name: Add Docker GPG apt Key
-    apt_key:
-      url: https://download.docker.com/linux/ubuntu/gpg
-      state: present
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
 
-  - name: Add Docker Repository
-    apt_repository:
-      repo: deb https://download.docker.com/linux/ubuntu bionic stable
-      state: present
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
 
 - name: Install Docker (Raspbian)
   when: ansible_facts['distribution'] == 'Debian'
   block:
-  - name: Add Docker GPG apt Key
-    apt_key:
-      url: https://download.docker.com/linux/raspbian/gpg
-      state: present
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/raspbian/gpg
+        state: present
 
-  - name: Add Docker Repository
-    apt_repository:
-      repo: deb https://download.docker.com/linux/raspbian buster stable
-      state: present
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/raspbian buster stable
+        state: present
 
-  - name: Add buster-backports GPG key (for libseccomp2)
-    apt_key:
-      keyserver: keyserver.ubuntu.com
-      id: "{{ item }}"
-    loop:
-      - 04EE7237B7D453EC
-      - 648ACFD622F3D138
+    - name: Add buster-backports GPG key (for libseccomp2)
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: "{{ item }}"
+      loop:
+        - "04EE7237B7D453EC"
+        - 648ACFD622F3D138
 
-  - name: Add buster-backports repository
-    apt_repository:
-      repo: deb http://deb.debian.org/debian buster-backports main contrib non-free
+    - name: Add buster-backports repository
+      apt_repository:
+        repo: deb http://deb.debian.org/debian buster-backports main contrib non-free
 
-  - name: Update to the latest version of libseccomp2
-    apt:
-      update_cache: yes
-      name: libseccomp2
-      default_release: buster-backports
-      state: latest
+    - name: Update to the latest version of libseccomp2
+      apt:
+        update_cache: true
+        name: libseccomp2
+        default_release: buster-backports
+        state: latest
 
-  - name: Switch to iptables-legacy
-    community.general.alternatives:
-      name: iptables
-      path: /usr/sbin/iptables-legacy
+    - name: Switch to iptables-legacy
+      community.general.alternatives:
+        name: iptables
+        path: /usr/sbin/iptables-legacy
 
-  - name: Switch to ip6tables-legacy
-    community.general.alternatives:
-      name: ip6tables
-      path: /usr/sbin/ip6tables-legacy
+    - name: Switch to ip6tables-legacy
+      community.general.alternatives:
+        name: ip6tables
+        path: /usr/sbin/ip6tables-legacy
 
-  - name: Switch to pip3
-    community.general.alternatives:
-      name: pip
-      link: /usr/bin/pip
-      path: /usr/bin/pip3
+    - name: Switch to pip3
+      community.general.alternatives:
+        name: pip
+        link: /usr/bin/pip
+        path: /usr/bin/pip3
 
-  - name: Switch to python3
-    community.general.alternatives:
-      name: python
-      link: /usr/bin/python
-      path: /usr/bin/python3
-
+    - name: Switch to python3
+      community.general.alternatives:
+        name: python
+        link: /usr/bin/python
+        path: /usr/bin/python3
 
 - name: Update apt and install docker-ce
   when: ansible_facts['os_family'] == 'Debian'
   apt:
-    update_cache: yes
+    update_cache: true
     name: "{{ docker_packages }}"
     state: present
 
@@ -89,10 +88,10 @@
 
 - name: Add user "{{ username }}" to group docker
   user:
-    name: '{{ username }}'
+    name: "{{ username }}"
     groups:
       - docker
-    append: yes
+    append: true
 
 - name: Install Docker Module for Python
   pip:
@@ -102,24 +101,24 @@
   service:
     name: docker
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Get a list of containers
   delegate_to: localhost
-  become: no
+  become: false
   find:
     paths:
-      - "roles/containers/media"
-      - "roles/containers/homeautomation"
-      - "roles/containers/servarr"
-      - "roles/containers/services"
-      - "roles/containers/system"
+      - roles/containers/media
+      - roles/containers/homeautomation
+      - roles/containers/servarr
+      - roles/containers/services
+      - roles/containers/system
     file_type: directory
-    recurse: no
+    recurse: false
   register: containers
 
 - name: Stop and remove all the disabled containers
-  become: no
+  become: false
   docker_container:
     name: "{{ item.path.split('/')[-1] }}"
     state: absent
@@ -127,54 +126,54 @@
   with_items: "{{ containers.files }}"
 
 - name: Handle persistent data
-  become: no
-  when: "enable_nas_stuff | default(False)"
+  become: false
+  when: enable_nas_stuff | default(False)
   block:
-  - name: Check if the persistent data folder exists on the remote machine
-    stat:
-      path: "{{ docker_dir }}"
-    register: persistent_data
-    when: "enable_nas_stuff | default(False)"
+    - name: Check if the persistent data folder exists on the remote machine
+      stat:
+        path: "{{ docker_dir }}"
+      register: persistent_data
+      when: enable_nas_stuff | default(False)
 
-  - name: Check if the persistent data folder is empty
-    find:
-      paths:
-        - "{{ docker_dir }}/"
-      recurse: yes
-    register: persistent_data_find
-    when: "enable_nas_stuff | default(False)"
+    - name: Check if the persistent data folder is empty
+      find:
+        paths:
+          - "{{ docker_dir }}/"
+        recurse: true
+      register: persistent_data_find
+      when: enable_nas_stuff | default(False)
 
-  - name: Check if the docker backup exists
-    stat:
-      path: "{{ mergerfs_root }}/docker-volumes-backup"
-    register: docker_backup_find
-    when: "enable_nas_stuff | default(False)"
+    - name: Check if the docker backup exists
+      stat:
+        path: "{{ mergerfs_root }}/docker-volumes-backup"
+      register: docker_backup_find
+      when: enable_nas_stuff | default(False)
 
-  - name: Create the persistent data folder on the remote machine
-    become: yes
-    file:
-      dest: "{{ docker_dir }}"
-      state: directory
-      owner: "{{ username }}"
-      group: "{{ username }}"
-      mode: 0755
-      recurse: yes
-    when: not persistent_data.stat.exists
+    - name: Create the persistent data folder on the remote machine
+      become: true
+      file:
+        dest: "{{ docker_dir }}"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: "0755"
+        recurse: true
+      when: not persistent_data.stat.exists
 
-#  - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
-#    synchronize:
-#      src: "{{ mergerfs_root }}/docker-volumes-backup"
-#      dest: "{{ docker_dir }}/"
-#      delete: true
-#      recursive: yes
-#    delegate_to: "{{ inventory_hostname }}"
-#    when: docker_backup_find.stat.exists and persistent_data_find.matched < 20 or not persistent_data.stat.exists
+    #  - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
+    #    synchronize:
+    #      src: "{{ mergerfs_root }}/docker-volumes-backup"
+    #      dest: "{{ docker_dir }}/"
+    #      delete: true
+    #      recursive: yes
+    #    delegate_to: "{{ inventory_hostname }}"
+    #    when: docker_backup_find.stat.exists and persistent_data_find.matched < 20 or not persistent_data.stat.exists
 
-  - name: Chmod the data folder
-    become: yes
-    file:
-      dest: "{{ docker_dir }}"
-      state: directory
-      owner: "{{ username }}"
-      group: "{{ username }}"
-      recurse: yes
+    - name: Chmod the data folder
+      become: true
+      file:
+        dest: "{{ docker_dir }}"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        recurse: true

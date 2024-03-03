@@ -5,21 +5,21 @@
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Make sure that Paperless-ngx container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "lscr.io/linuxserver/paperless-ngx"
-    pull: yes
+    image: lscr.io/linuxserver/paperless-ngx
+    pull: true
     networks:
       - name: swag_internal_network
-    state: "started"
+    state: started
     env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
-      "PAPERLESS_URL": "https://paperless.{{ host_local }}"
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
+      PAPERLESS_URL: https://paperless.{{ host_local }}
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/config:/config"
       - "{{ mergerfs_root }}/Documents/paperless:/data"

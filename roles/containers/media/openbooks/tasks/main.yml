@@ -2,12 +2,12 @@
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "evanbuss/openbooks"
-    pull: yes
+    image: evanbuss/openbooks
+    pull: true
     networks:
       - name: swag_internal_macvlan
         ipv4_address: "{{ ip_address }}"
-    state: 'started'
+    state: started
     env:
-      "TZ": "{{ timezone }}"
+      TZ: "{{ timezone }}"
     restart_policy: unless-stopped

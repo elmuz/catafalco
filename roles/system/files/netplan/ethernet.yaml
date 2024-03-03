@@ -1,3 +1,4 @@
+---
 network:
   ethernets:
     enp2s0:

@@ -1,5 +1,4 @@
 ---
 container_name: adguard
 
-ip_address: '{{ lan_base }}.3'
-
+ip_address: "{{ lan_base }}.3"

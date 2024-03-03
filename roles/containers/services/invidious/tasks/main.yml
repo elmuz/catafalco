@@ -5,7 +5,7 @@
     dest: "{{ docker_dir }}/{{ container_name }}/db/sql"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Copy the necessary {{ container_name }}-db files (2)
   copy:
@@ -13,32 +13,32 @@
     dest: "{{ docker_dir }}/{{ container_name }}/db/init-invidious-db.sh"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Make sure that {{ container_name }}-db container is created and running
   docker_container:
     name: "{{ container_name }}-db"
-    image: "docker.io/library/postgres:14"
-    pull: yes
+    image: docker.io/library/postgres:14
+    pull: true
     env:
-      "POSTGRES_DB": invidious
-      "POSTGRES_USER": funkysloth
-      "POSTGRES_PASSWORD": "{{ invidious_postgres_password }}"
+      POSTGRES_DB: invidious
+      POSTGRES_USER: funkysloth
+      POSTGRES_PASSWORD: "{{ invidious_postgres_password }}"
     networks:
-      - name: "swag_internal_network"
-    state: "started"
+      - name: swag_internal_network
+    state: started
     restart_policy: unless-stopped
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/db/sql:/config/sql"
       - "{{ docker_dir }}/{{ container_name }}/db/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      test: [CMD-SHELL, pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB]
 
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "quay.io/invidious/invidious:latest"
-    pull: yes
+    image: quay.io/invidious/invidious:latest
+    pull: true
     env:
       INVIDIOUS_CONFIG: |
         db:
@@ -55,15 +55,15 @@
         statistics_enabled: false
         hmac_key: "{{ invidious_hmac }}"
     networks:
-      - name: "swag_internal_network"
-    state: "started"
+      - name: swag_internal_network
+    state: started
     restart_policy: unless-stopped
     healthcheck:
-      test: "wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/comments/jNQXAC9IVRw || exit 1"
+      test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/comments/jNQXAC9IVRw || exit 1
       interval: 30s
       timeout: 5s
       retries: 2
-    log_driver: "json-file"
+    log_driver: json-file
     log_options:
-      max-size: "1G"
+      max-size: 1G
       max-file: "4"

@@ -1,6 +1,5 @@
 ---
 roles:
-  - name: bertvv.samba
   - name: geerlingguy.security
   - name: geerlingguy.ntp
   - name: chriswayg.msmtp-mailer
@@ -8,7 +7,9 @@ roles:
   - name: oefenweb.dns
   - name: notthebee.ubuntu_autoinstall
   - name: IronicBadger.snapraid
-  - name: veselahouba.crowdsec
   - name: linux-system-roles.cockpit
   - name: stefangweichinger.ansible_rclone
   - name: simoncaron.nut
+
+collections:
+  - name: vladgh.samba

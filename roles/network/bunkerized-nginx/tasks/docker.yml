@@ -1,22 +1,23 @@
+---
 - name: Create the directories
-  become: yes
+  become: true
   file:
     state: directory
     path: "{{ item }}"
-    recurse: yes
+    recurse: true
     owner: root
     group: "101"
     mode: "0770"
   with_items:
-      - "{{ docker_dir }}/{{ container_name }}/letsencrypt"
-      - "{{ docker_dir }}/{{ container_name }}/nginx"
-      - "{{ docker_dir }}/{{ container_name }}/www"
+    - "{{ docker_dir }}/{{ container_name }}/letsencrypt"
+    - "{{ docker_dir }}/{{ container_name }}/nginx"
+    - "{{ docker_dir }}/{{ container_name }}/www"
 
 - name: Make sure that {{ container_name }} container is running
   docker_container:
     name: "{{ container_name }}"
     image: bunkerity/bunkerized-nginx
-    pull: yes
+    pull: true
     cap_drop:
       - ALL
     # disable setuid/setgid
@@ -35,10 +36,10 @@
       - "{{ docker_dir }}/{{ container_name }}/www:/www:ro"
       - "{{ docker_dir }}/{{ container_name }}/letsencrypt:/etc/letsencrypt"
     env:
-      "SERVER_NAME": "{{ blog_host }}"
-      "AUTO_LETS_ENCRYPT": "yes"
-      "REDIRECT_HTTP_TO_HTTPS": "yes"
-      "USE_REMOTE_API": "no"
-      "DISABLE_DEFAULT_SERVER": "yes"
-      "USE_CLIENT_CACHE": "yes"
-      "USE_GZIP": "yes"
+      SERVER_NAME: "{{ blog_host }}"
+      AUTO_LETS_ENCRYPT: "yes"
+      REDIRECT_HTTP_TO_HTTPS: "yes"
+      USE_REMOTE_API: "no"
+      DISABLE_DEFAULT_SERVER: "yes"
+      USE_CLIENT_CACHE: "yes"
+      USE_GZIP: "yes"

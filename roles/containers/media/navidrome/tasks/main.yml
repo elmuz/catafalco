@@ -5,22 +5,22 @@
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Make sure that Navidrome container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: deluan/navidrome:latest
-    pull: yes
+    pull: true
     networks:
       - name: swag_internal_network
-    state: "started"
+    state: started
     user: "{{ guid }}:{{ guid }}"
     env:
-      "ND_SCANSCHEDULE": "1h"
-      "ND_LOGLEVEL": "info"
-      "ND_SESSIONTIMEOUT": "24h"
-      "ND_DEFAULTTHEME": "Spotify-ish"
+      ND_SCANSCHEDULE: 1h
+      ND_LOGLEVEL: info
+      ND_SESSIONTIMEOUT: 24h
+      ND_DEFAULTTHEME: Spotify-ish
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/data:/data"
       - "{{ mergerfs_root }}/Media/Music:/music:ro"

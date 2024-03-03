@@ -1,36 +1,35 @@
 ---
-#
 # Tasks and roles for all hosts
 
-#- hosts: catafalco
-#  gather_facts: no
-#
-#  pre_tasks:
-#    - import_tasks: tasks/ssh_juggle_port.yml
-#      tags:
-#        - port
+# - hosts: catafalco
+#   gather_facts: no
+#   pre_tasks:
+#     - import_tasks: tasks/ssh_juggle_port.yml
+#       tags:
+#         - port
 
-- hosts: catafalco
-  gather_facts: no
-
+- name: Set SSH correctly before executing other roles
+  hosts: catafalco
+  gather_facts: false
   pre_tasks:
-    - import_tasks: tasks/ssh.yml
+    - name: Set SSH correctly before executing other roles
+      import_tasks: tasks/ssh.yml
       tags:
         - port
 
-- hosts: catafalco
-  become: yes
+- name: Full list of roles
+  hosts: catafalco
+  become: true
   roles:
-
     #
     # Basics
     #
     - role: system
-      tags: 
+      tags:
         - system
 
     - role: chriswayg.msmtp-mailer
-      tags: 
+      tags:
         - msmtp
 
     - role: oefenweb.dns
@@ -38,7 +37,7 @@
         - dns
 
     - role: geerlingguy.ntp
-      tags: 
+      tags:
         - ntp
 
     #
@@ -54,7 +53,7 @@
       when: enable_endlessh | default(False)
 
     - role: geerlingguy.security
-      tags: 
+      tags:
         - security
 
     - role: linux-system-roles.cockpit
@@ -66,35 +65,34 @@
     # Filesystems
     #
     - role: filesystems/mergerfs
-      become: yes
+      become: true
       tags:
         - mergerfs
       when: enable_nas_stuff | default(False)
 
     - role: filesystems/mounts
-      become: yes
+      become: true
       tags:
         - mounts
       when: enable_nas_stuff | default(False)
 
     - role: filesystems/hd-idle
-      become: yes
+      become: true
       tags:
         - hd-idle
       when: enable_nas_stuff | default(False)
 
     - role: stuvusit.smartd
-      become: yes
+      become: true
       tags:
         - smartd
       when: enable_nas_stuff | default(False)
 
     - role: IronicBadger.snapraid
-      become: yes
+      become: true
       tags:
         - snapraid
       when: enable_nas_stuff | default(False)
-
 
     #
     # Docker
@@ -110,71 +108,57 @@
     # Network
     #
     - role: network/swag
-      become: no
-      tags: 
+      become: false
+      tags:
         - swag
         - containers
       when: enable_swag | default(False)
 
     - role: network/bunkerized-nginx
-      become: no
-      tags: 
+      become: false
+      tags:
         - bunkerized-nginx
         - containers
       when: enable_bunkerized_nginx | default(False)
 
     - role: network/wireguard
-      become: no
-      tags: 
+      become: false
+      tags:
         - wireguard
         - containers
       when: enable_wireguard | default(False)
 
-    - role: network/ikev2
-      become: no
-      tags: 
-        - ikev2
-        - containers
-      when: enable_ikev2 | default(False)
-
     - role: network/ddclient
-      become: yes
+      become: true
       when: enable_ddclient | default(False)
       tags:
         - ddclient
 
     - role: network/duckdns
-      become: no
+      become: false
       when: enable_duckdns | default(False)
       tags:
-        - duckdns 
+        - duckdns
 
     - role: network/cloudflare-ddns
-      become: no
-      tags: 
+      become: false
+      tags:
         - cloudflare-ddns
         - containers
       when: enable_cloudflare | default(False)
 
     - role: network/pihole
-      become: no
+      become: false
       when: enable_pihole | default(False)
       tags:
-        - pihole 
+        - pihole
         - containers
-
-    - role: network/ikev2
-      become: no
-      when: enable_ikev2 | default(False)
-      tags:
-        - containers
-        - ikev2 
 
     #
     # Homer
     #
     - role: homer
-      become: no
+      become: false
       tags:
         - homer
         - containers
@@ -184,26 +168,26 @@
     # System containers
     #
     - role: containers/system/authelia
-      become: no
+      become: false
       tags:
         - authelia
         - containers
       when: enable_authelia | default(False)
 
     - role: containers/system/watchtower
-      become: no
+      become: false
       tags:
         - watchtower
         - containers
 
     - role: containers/system/healthchecks
-      become: no
+      become: false
       tags:
         - healthchecks
         - containers
 
     - role: containers/system/openspeedtest
-      become: no
+      become: false
       tags:
         - openspeedtest
         - containers
@@ -236,42 +220,42 @@
     # ServArr
     #
     - role: containers/servarr/deluge
-      become: no
+      become: false
       tags:
         - deluge
         - containers
       when: enable_deluge | default(False)
 
     - role: containers/servarr/sonarr
-      become: no
+      become: false
       tags:
         - sonarr
         - containers
       when: enable_sonarr | default(False)
 
     - role: containers/servarr/radarr
-      become: no
+      become: false
       tags:
         - radarr
         - containers
       when: enable_radarr | default(False)
 
     - role: containers/servarr/lidarr
-      become: no
+      become: false
       tags:
         - lidarr
         - containers
       when: enable_lidarr | default(False)
 
     - role: containers/servarr/readarr
-      become: no
+      become: false
       tags:
         - readarr
         - containers
       when: enable_readarr | default(False)
 
     - role: containers/servarr/prowlarr
-      become: no
+      become: false
       tags:
         - prowlarr
         - containers
@@ -281,70 +265,70 @@
     # Media
     #
     - role: containers/media/jellyfin
-      become: no
+      become: false
       tags:
         - jellyfin
         - containers
       when: enable_jellyfin | default(False)
 
     - role: containers/media/paperless
-      become: no
+      become: false
       tags:
         - paperless
         - containers
       when: enable_paperless | default(False)
 
     - role: containers/media/photoprism
-      become: no
+      become: false
       tags:
         - photoprism
         - containers
       when: enable_photoprism | default(False)
 
     - role: containers/media/koel
-      become: no
+      become: false
       tags:
         - koel
         - containers
       when: enable_koel | default(False)
 
     - role: containers/media/navidrome
-      become: no
+      become: false
       tags:
         - navidrome
         - containers
       when: enable_navidrome | default(False)
 
     - role: containers/media/beets
-      become: no
+      become: false
       tags:
         - beets
         - containers
       when: enable_beets | default(False)
 
     - role: containers/media/openbooks
-      become: no
+      become: false
       tags:
         - openbooks
         - containers
       when: enable_openbooks | default(False)
 
     - role: containers/media/calibreweb
-      become: no
+      become: false
       tags:
         - calibreweb
         - containers
       when: enable_calibreweb | default(False)
 
     - role: containers/media/arm
-      become: no
+      become: false
       tags:
         - arm
         - containers
       when: enable_arm | default(False)
 
     - role: containers/media/handbrake
-      become: no
+      become: false
       tags:
         - handbrake
         - containers
@@ -354,7 +338,7 @@
     # Personal
     #
     - role: containers/personal/firefly
-      become: no
+      become: false
       tags:
         - firefly
         - containers
@@ -364,14 +348,14 @@
     # Services
     #
     - role: containers/services/nextcloud
-      become: no
+      become: false
       tags:
         - nextcloud
         - containers
       when: enable_nextcloud | default(False)
 
     - role: containers/services/duplicati
-      become: no
+      become: false
       tags:
         - duplicati
         - backup-sync
@@ -379,28 +363,28 @@
       when: enable_duplicati | default(False)
 
     - role: containers/services/firefox
-      become: no
+      become: false
       tags:
         - firefox
         - containers
       when: enable_firefox | default(False)
 
     - role: containers/services/invidious
-      become: no
+      become: false
       tags:
         - invidious
         - containers
       when: enable_invidious | default(False)
 
     - role: containers/services/speedtest_tracker
-      become: no
+      become: false
       tags:
         - speedtest
         - containers
       when: enable_speedtest_tracker | default(False)
 
     - role: containers/services/syncthing
-      become: no
+      become: false
       tags:
         - syncthing
         - containers
@@ -413,7 +397,7 @@
       when: enable_rclone | default(False)
 
     - role: containers/services/vaultwarden
-      become: no
+      become: false
       tags:
         - vaultwarden
         - containers
@@ -422,8 +406,8 @@
     #
     # Samba
     #
-    - role: bertvv.samba
-      become: yes
+    - role: vladgh.samba.server
+      become: true
       tags:
         - samba
       when: enable_nas_stuff | default(False)

@@ -1,8 +1,8 @@
 ---
 container_name: handbrake
 
-dashboard_url: "https://handbrake.{{ host_local }}"
+dashboard_url: https://handbrake.{{ host_local }}
 
-dashboard_name: "HandBrake"
+dashboard_name: HandBrake
 
 homer_category: media

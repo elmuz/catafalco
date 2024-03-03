@@ -1,7 +1,8 @@
+---
 container_name: photoprism
 
-dashboard_url: "https://photoprism.{{ host_local }}"
+dashboard_url: https://photoprism.{{ host_local }}
 
 homer_category: media
 
-dashboard_name: "PhotoPrism"
+dashboard_name: PhotoPrism

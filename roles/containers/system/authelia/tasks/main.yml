@@ -5,7 +5,7 @@
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Install the configuration template
   template:
@@ -26,11 +26,11 @@
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "authelia/authelia:latest"
+    image: authelia/authelia:latest
     pull: true
     networks:
       - name: swag_public_network
-    state: "started"
+    state: started
     env:
       TZ: "{{ timezone }}"
     volumes:
@@ -41,5 +41,5 @@
 - name: Restart the docker container on change
   docker_container:
     name: "{{ container_name }}"
-    restart: yes
+    restart: true
   when: container.changed or configuration.changed or users.changed

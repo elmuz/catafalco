@@ -10,7 +10,7 @@
     dest: /etc/avahi/avahi-daemon.conf
     owner: root
     group: root
-    mode: 0775
+    mode: "0775"
 
 - name: Copy the Samba config
   template:
@@ -18,10 +18,10 @@
     dest: /etc/avahi/services/samba.service
     owner: root
     group: root
-    mode: 0775
+    mode: "0775"
 
 - name: Make sure that Avahi service is running and enabled
   service:
     name: avahi-daemon
     state: started
-    enabled: yes
+    enabled: true

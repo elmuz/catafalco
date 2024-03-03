@@ -2,12 +2,12 @@
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "eclipse-mosquitto"
-    pull: yes
+    image: eclipse-mosquitto
+    pull: true
     networks:
       - name: swag_internal_macvlan
         ipv4_address: "{{ ip_address }}"
-    state: 'started'
+    state: started
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/config:/mosquitto/config"
       - "{{ docker_dir }}/{{ container_name }}/data:/mosquitto/data"

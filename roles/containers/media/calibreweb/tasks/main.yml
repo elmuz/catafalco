@@ -1,17 +1,17 @@
 # FIXME: Not really sure how to handle this programmatically.
-# 1) Create a dedicated user to interact remotely with Calibre server
-#    docker exec -i -u abc:abc calibreweb calibre-server --userdb /calibre/users.sqlite --manage-users
-# 2) Start the server with proper arguments
-#    docker exec -u abc:abc calibreweb calibre-server --enable-auth --enable-local-write --userdb /calibre/users.sqlite /books
-# 3) Configure Readarr by specifying
+#   1) Create a dedicated user to interact remotely with Calibre server
+#      docker exec -i -u abc:abc calibreweb calibre-server --userdb /calibre/users.sqlite --manage-users
+#   2) Start the server with proper arguments
+#      docker exec -u abc:abc calibreweb calibre-server --enable-auth --enable-local-write --userdb /calibre/users.sqlite /books
+#   3) Configure Readarr by specifying
 ---
-- name: Create the necessary {{ container_name }} folder
+- name: Create the necessary folder for {{ container_name }}
   file:
     path: "{{ docker_dir }}/{{ container_name }}/config"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Create the Calibre folder
   file:
@@ -19,66 +19,60 @@
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Create the custom-services folder
-  become: yes
+  become: true
   file:
     path: "{{ docker_dir }}/{{ container_name }}/custom-services.d"
     state: directory
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
 
 - name: Copy the users database
   copy:
-    src: roles/containers/media/calibreweb/templates/users.sqlite
+    src: roles/containers/media/calibreweb/files/users.sqlite
     dest: "{{ docker_dir }}/{{ container_name }}/calibre/users.sqlite"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Copy the launcher for Calibre server
-  become: yes
+  become: true
   copy:
     src: roles/containers/media/calibreweb/templates/start-calibre.sh.j2
     dest: "{{ docker_dir }}/{{ container_name }}/custom-services.d/start-calibre.sh"
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
 
 - name: Add a crontab line to start Calibre webserver
   ansible.builtin.lineinfile:
     path: "{{ docker_dir }}/{{ container_name }}/config/crontabs/abc"
     line: "@reboot calibre-server /books"
-    create: yes
+    create: true
 
 - name: Make sure that Calibre-Web container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: lscr.io/linuxserver/calibre-web:latest
-    pull: yes
+    pull: true
     networks:
       - name: swag_internal_network
-    state: "started"
+    state: started
     env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
-      "DOCKER_MODS": "linuxserver/mods:universal-calibre|linuxserver/mods:universal-package-install"
-      "INSTALL_PACKAGES": "wget"
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
+      DOCKER_MODS: linuxserver/mods:universal-calibre|linuxserver/mods:universal-package-install
+      INSTALL_PACKAGES: wget
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/calibre:/calibre"
+      - "{{ docker_dir }}/{{ container_name }}/calibre/metadata.db:/books/metadata.db"
       - "{{ docker_dir }}/{{ container_name }}/config:/config"
       - "{{ docker_dir }}/{{ container_name }}/custom-services.d:/custom-services.d:ro"
       - "{{ mergerfs_root }}/Media/Books:/books"
     restart_policy: unless-stopped
 
-
 # TODO: create ad-hoc Docker exec commands for user creation and server start
-#- name: Run a simple command (command)
-#  community.docker.docker_container_exec:
-#    container: foo
-#    command: /bin/bash -c "ls -lah"
-#    chdir: /root
-#  register: result

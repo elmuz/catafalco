@@ -1,19 +1,18 @@
 ---
-    
 - name: Make sure that Vaultwarden container is created and running
   docker_container:
-    name: 'vaultwarden'
-    image: "vaultwarden/server"
+    name: vaultwarden
+    image: vaultwarden/server
     networks:
       - name: swag_public_network
     pull: true
-    state: 'started'
+    state: started
     env:
       WEBSOCKET_ENABLED: "true"
       INVITATIONS_ALLOWED: "false"
       SIGNUPS_ALLOWED: "false"
-      DOMAIN: "https://{{ subdomains['vaultwarden'] }}.{{ host }}"
-      LOG_FILE: "/data/vaultwarden.log"
+      DOMAIN: https://{{ subdomains['vaultwarden'] }}.{{ host }}
+      LOG_FILE: /data/vaultwarden.log
       TZ: "{{ timezone }}"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}:/data"

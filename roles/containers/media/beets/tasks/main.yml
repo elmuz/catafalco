@@ -5,7 +5,7 @@
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Install {{ container_name }} configuration template
   template:
@@ -19,14 +19,14 @@
   docker_container:
     name: "{{ container_name }}"
     image: lscr.io/linuxserver/beets:latest
-    pull: yes
+    pull: true
     networks:
       - name: swag_internal_network
-    state: "started"
+    state: started
     env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/config:/config"
       - "{{ mergerfs_root }}:/storage"

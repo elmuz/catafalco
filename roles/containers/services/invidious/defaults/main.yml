@@ -1,7 +1,8 @@
+---
 container_name: invidious
 
-dashboard_url: "https://invidious.{{ host_local }}"
+dashboard_url: https://invidious.{{ host_local }}
 
-dashboard_name: "Invidious"
+dashboard_name: Invidious
 
 homer_category: services

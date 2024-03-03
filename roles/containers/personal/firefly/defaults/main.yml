@@ -1,7 +1,8 @@
+---
 container_name: firefly
 
-dashboard_url: "https://firefly.{{ host_local }}"
+dashboard_url: https://firefly.{{ host_local }}
 
-dashboard_name: "Firefly III"
+dashboard_name: Firefly III
 
 homer_category: services

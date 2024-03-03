@@ -2,17 +2,17 @@
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "ghcr.io/linuxserver/sonarr"
-    pull: yes
+    image: ghcr.io/linuxserver/sonarr
+    pull: true
     networks:
       - name: swag_internal_network
-    state: 'started'
+    state: started
     env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
     volumes:
-      - "/etc/localtime:/etc/localtime:ro"
+      - /etc/localtime:/etc/localtime:ro
       - "{{ docker_dir }}/{{ container_name }}:/config"
       - "{{ mergerfs_root }}:/storage"
     restart_policy: unless-stopped

@@ -4,16 +4,16 @@
     paths: /etc/netplan
     file_type: file
     excludes:
-      - 00-ansible-managed.yaml
+      - "00-ansible-managed.yaml"
   register: previous_config
 
 - name: Install the netplan config
   copy:
-    content: '{{ netplan_config }}'
-    dest: '/etc/netplan/00-ansible-managed.yaml'
+    content: "{{ netplan_config }}"
+    dest: /etc/netplan/00-ansible-managed.yaml
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   notify: netplan apply
 
 - name: Delete the irrelevant configs

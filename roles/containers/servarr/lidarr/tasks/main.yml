@@ -4,41 +4,41 @@
 # or possibly:
 # for album in *.flac; do shnsplit -f "${album%.flac}".cue -o flac -t "%n - %t" "$album"; done
 
-#- name: Make sure that `shntool` and `cuetools` packages are installed
-#  become: yes
-#  package:
-#    name:
-#      - shntool
-#      - flac
-#      - cuetools
-#    state: present
+# - name: Make sure that `shntool` and `cuetools` packages are installed
+#   become: yes
+#   package:
+#     name:
+#       - shntool
+#       - flac
+#       - cuetools
+#     state: present
 
-- name: Install {{ container_name }} connection to beets template
-  template:
-    src: beets.sh.j2
-    dest: "{{ docker_dir }}/{{ container_name }}/beets.sh"
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0755"
-  register: beets_connect
+# - name: Install {{ container_name }} connection to beets template
+#   template:
+#     src: beets.sh.j2
+#     dest: "{{ docker_dir }}/{{ container_name }}/beets.sh"
+#     owner: "{{ username }}"
+#     group: "{{ username }}"
+#     mode: "0755"
+#   register: beets_connect
 
-- name: Make sure that {{ container_name }} container is created and running
+- name: Make sure that Lidarr container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "ghcr.io/linuxserver/lidarr"
-    pull: yes
+    image: ghcr.io/linuxserver/lidarr
+    pull: true
     networks:
       - name: swag_internal_network
-    state: 'started'
+    state: started
     env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
-      "DOCKER_MODS": "linuxserver/mods:universal-package-install|linuxserver/mods:universal-docker"
-      "INSTALL_PACKAGES": "shntool|cuetools|flac|vim"
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
+      DOCKER_MODS: linuxserver/mods:universal-package-install|linuxserver/mods:universal-docker
+      INSTALL_PACKAGES: shntool|cuetools|flac|vim
     volumes:
-      - "/etc/localtime:/etc/localtime:ro"
+      - /etc/localtime:/etc/localtime:ro
       - "{{ docker_dir }}/{{ container_name }}:/config"
       - "{{ mergerfs_root }}:/storage"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - /var/run/docker.sock:/var/run/docker.sock
     restart_policy: unless-stopped

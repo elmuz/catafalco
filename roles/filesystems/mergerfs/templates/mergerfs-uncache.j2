@@ -191,7 +191,7 @@ if __name__ == "__main__":
                 syslog.LOG_INFO, f"Maximum number of moved files reached ({last_id})."
             )
             break
-        if time_limit >= 0 and time.monotonic() - t_start > time_limit:
+        if 0 <= time_limit < time.monotonic() - t_start:
             syslog.syslog(
                 syslog.LOG_INFO, f"Time limit reached ({time_limit} seconds)."
             )
@@ -206,7 +206,8 @@ if __name__ == "__main__":
     usage_percentage = 100 * cache_stats.used / cache_stats.total
     syslog.syslog(
         syslog.LOG_INFO,
-        f"Process completed in {round(time.monotonic() - t_start)} seconds. Current usage percentage is {usage_percentage:.2f}%.",
+        f"Process completed in {round(time.monotonic() - t_start)} seconds. "
+        f"Current usage percentage is {usage_percentage:.2f}%.",
     )
 
     if args.hc_url != "":

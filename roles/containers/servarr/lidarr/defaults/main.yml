@@ -1,6 +1,6 @@
 ---
 container_name: lidarr
 
-dashboard_url: "https://lidarr.{{ host_local }}"
+dashboard_url: https://lidarr.{{ host_local }}
 
 homer_category: servarr

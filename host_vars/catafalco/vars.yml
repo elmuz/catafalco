@@ -1,3 +1,4 @@
+---
 #
 # Misc
 #
@@ -6,25 +7,19 @@ hostname: "{{ inventory_hostname }}"
 timezone: Europe/Rome
 
 dot_nameservers: [185.95.218.42@853#dns.digitale-gesellschaft.ch, 94.140.15.140@853#dns-unfiltered.adguard.com]
-
 ntp_timezone: "{{ timezone }}"
 
 locale: en_US.UTF-8
 
-lan_network: "192.168.1.0/24"
+lan_network: 192.168.1.0/24
 
-vpn_network: "10.1.1.0/24"
+vpn_network: 10.1.1.0/24
 
-lan_gateway: "192.168.1.1"
+lan_gateway: 192.168.1.1
 
-netplan_config: "files/netplan/ethernet.yaml"
+netplan_config: files/netplan/ethernet.yaml
 
-#dmz_network: "192.168.44.0/24"
-
-#dmz_gateway: "192.168.44.1"
-
-dns_nameservers: ["192.168.1.2", "9.9.9.9", "149.112.112.112"]
-
+dns_nameservers: [192.168.1.2, 9.9.9.9, 149.112.112.112]
 fish_prompt_color: blue
 
 keyboard_layout: us
@@ -37,20 +32,17 @@ shell: /usr/bin/zsh
 
 docker_dir: /opt/docker/data
 
-dotfiles_repo: https://github.com/notthebee/dotfiles
-
-boot_drive_serial: "PBEEEBB21101806811"  # Patriot Burst El
+boot_drive_serial: PBEEEBB21101806811 # Patriot Burst El
 
 enable_pikvm: true
 
 pikvm_address: pikvm.box
 
-spindown_time: 600  # in seconds
+spindown_time: 600 # in seconds
 
 colorscheme: nord
 
-subdomains: { nextcloud: 'nextcloud' }
-
+subdomains: { nextcloud: nextcloud }
 #
 # Packages
 #
@@ -96,25 +88,24 @@ email_smtp_port_startls: 587
 
 # MSMTP
 msmtp_accounts:
-- account:   disroot
-  host:      "{{ email_smtp_host }}"
-  port:      "{{ email_smtp_port_startls }}"
-  auth:      "on"
-  from:      "{{ email }}"
-  user:      "{{ email }}"
-  password:  "{{ email_password }}"
+  - account: disroot
+    host: "{{ email_smtp_host }}"
+    port: "{{ email_smtp_port_startls }}"
+    auth: "on"
+    from: "{{ email }}"
+    user: "{{ email }}"
+    password: "{{ email_password }}"
 
-msmtp_default_account: "disroot"
+msmtp_default_account: disroot
 
-msmtp_alias_default : "{{ email }}"
+msmtp_alias_default: "{{ email }}"
 
 #
 # SSH (geerlingguy.security)
 #
 security_ssh_port: 69
 
-security_sudoers_passwordless: [ "{{ username }}" ]
-
+security_sudoers_passwordless: ["{{ username }}"]
 security_autoupdate_reboot: "true"
 
 security_autoupdate_mail_to: "{{ email }}"
@@ -153,7 +144,6 @@ enable_arm: true
 
 enable_handbrake: true
 
-
 #
 # Personal
 #
@@ -171,13 +161,13 @@ enable_syncthing: false
 enable_rclone: true
 
 rclone_version: "0.0.0"
-rclone_release: "stable"
+rclone_release: stable
 rclone_config_location: "{{ docker_dir }}/rclone/rclone.conf"
 rclone_config_owner:
   OWNER: "{{ username }}"
   GROUP: "{{ username }}"
 rclone_configs:
-  - name: "julia"
+  - name: julia
     properties:
       type: smb
       host: "{{ julia }}"
@@ -205,7 +195,6 @@ enable_prowlarr: true
 
 enable_openbooks: false
 
-
 # Public-facing services
 
 enable_nextcloud: false
@@ -227,8 +216,6 @@ enable_ddclient: false
 # VPN
 
 enable_wireguard: false
-
-enable_ikev2: false
 
 # Homepages
 
@@ -257,8 +244,8 @@ enable_cockpit: true
 
 cockpit_config:
   WebService:
-    Origins: "https://cockpit.{{ host_local }} wss://cockpit.{{ host_local }}"
-    ProtocolHeader: "X-Forwarded-Proto"
+    Origins: https://cockpit.{{ host_local }} wss://cockpit.{{ host_local }}
+    ProtocolHeader: X-Forwarded-Proto
 
 enable_telegraf: true
 
@@ -268,7 +255,7 @@ enable_openspeedtest: false
 
 enable_ups: true
 nut_managed_config: true
-nut_host: 0.0.0.0
+nut_host: "0.0.0.0"
 nut_user: monitor
 nut_password: "{{ nut_monitor_password }}"
 nut_mode: netserver
@@ -283,7 +270,7 @@ nut_ups:
     driver: usbhid-ups
     device: /dev/bus/usb/001/003
     description: Epyc ION UPS
-nut_upsd_extra: "LISTEN 0.0.0.0 3493"
+nut_upsd_extra: LISTEN 0.0.0.0 3493
 
 #
 # Time Machine
@@ -295,31 +282,26 @@ timemachine_drive: /dev/disk/by-label/TimeMachine
 enable_timemachine: false
 
 #
-# IKEv2
-#
-ikev2_ondemand: true
-
-#
 # SMB
 #
 samba_server_string: "{{ hostname }}"
 
 # --> Moved to hidden vars
-#samba_users:
-#  - name: "{{ username }}"
-#    password: "{{ password }}"
-#  - name: "{{ username }}"
-#    password: "{{ password }}"
+# samba_users:
+#   - name: "{{ username }}"
+#     password: "{{ password }}"
+#   - name: "{{ username }}"
+#     password: "{{ password }}"
 
 samba_global_include: global-include.conf
 
-samba_apple_extensions: yes 
+samba_apple_extensions: false
 
 samba_mitigate_cve_2017_7494: false
 
-samba_server_max_protocol: "SMB3"
+samba_server_max_protocol: SMB3
 
-samba_server_min_protocol: "SMB3"
+samba_server_min_protocol: SMB3
 
 # Write permissions may conflict with UNIX permission. `{{ mergerfs_root }}/XXX`
 # folders have `{{ username }}:users` ownership, so a valid approach might be
@@ -327,77 +309,77 @@ samba_server_min_protocol: "SMB3"
 # plugin does not allow this.
 samba_shares:
   - name: Downloads
-    guest_ok: no
-    public: no
-    read_only: no
-    writable: yes
-    browseable: yes
+    guest_ok: false
+    public: false
+    read_only: false
+    writable: true
+    browsable: true
     owner: "{{ username }}"
     path: "{{ mergerfs_root }}/Downloads"
     valid_users: "@sambashare"
     write_list: "{{ username }}"
 
   - name: Media Alessio
-    guest_ok: no
-    public: no
-    read_only: no
-    writable: yes
-    browseable: yes
+    guest_ok: false
+    public: false
+    read_only: false
+    writable: true
+    browsable: true
     owner: "{{ username }}"
     path: "{{ mergerfs_root }}/Pictures/alessio"
     valid_users: "@sambashare"
     write_list: "{{ username }} alessio"
 
   - name: Media Sara
-    guest_ok: no
-    public: no
-    read_only: no
-    writable: yes
-    browseable: yes
+    guest_ok: false
+    public: false
+    read_only: false
+    writable: true
+    browsable: true
     owner: "{{ username }}"
     path: "{{ mergerfs_root }}/Pictures/sara"
     valid_users: "@sambashare"
     write_list: "{{ username }} sara"
 
   - name: Documents Alessio
-    guest_ok: no
-    public: no
-    read_only: no
-    writable: yes
-    browseable: yes
+    guest_ok: false
+    public: false
+    read_only: false
+    writable: true
+    browsable: true
     owner: "{{ username }}"
     path: "{{ mergerfs_root }}/Documents/alessio"
     valid_users: "@sambashare"
     write_list: "{{ username }} alessio"
 
   - name: Documents Sara
-    guest_ok: no
-    public: no
-    read_only: no
-    writable: yes
-    browseable: yes
+    guest_ok: false
+    public: false
+    read_only: false
+    writable: true
+    browsable: true
     owner: "{{ username }}"
     path: "{{ mergerfs_root }}/Documents/sara"
     valid_users: "@sambashare"
     write_list: "{{ username }} sara"
 
   - name: Music
-    guest_ok: no
-    public: no
-    read_only: no
-    writable: yes
-    browseable: yes
+    guest_ok: false
+    public: false
+    read_only: false
+    writable: true
+    browsable: true
     owner: "{{ username }}"
     path: "{{ mergerfs_root }}/Music"
     valid_users: "@sambashare"
     write_list: "{{ username }} sara"
 
   - name: Media
-    guest_ok: no
-    public: no
-    read_only: no
-    writable: yes
-    browseable: yes
+    guest_ok: false
+    public: false
+    read_only: false
+    writable: true
+    browsable: true
     owner: "{{ username }}"
     path: "{{ mergerfs_root }}/Media"
     valid_users: "@sambashare"
@@ -406,11 +388,10 @@ samba_shares:
 #
 # Snapraid and MergerFS
 #
-enable_mergerfs: yes
+enable_mergerfs: true
 
 mergerfs_root: /mnt/storage
 cache_root: "{{ mergerfs_root }}_cache"
-
 
 disks:
   - { path: /mnt/data1, src: /dev/disk/by-label/Data1, content: true }
@@ -430,7 +411,7 @@ snapraid_force_install: true
 snapraid_data_disks: "{{ disks }}"
 snapraid_parity_disks: "{{ parity_disks }}"
 
-snapraid_runner_email_sendon: "error"
+snapraid_runner_email_sendon: error
 snapraid_runner_email_pass: "{{ email_password }}"
 snapraid_runner_email_address: "{{ email }}"
 snapraid_runner_email_address_from: "{{ snapraid_runner_email_address }}"
@@ -438,15 +419,21 @@ snapraid_runner_email_address_to: "{{ snapraid_runner_email_address }}"
 snapraid_runner_smtp_host: "{{ email_smtp_host }}"
 snapraid_runner_smtp_port: "{{ email_smtp_port }}"
 
-snapraid_runner_healthcheck_io_uuid: "92955207-2df3-4978-a1c6-4dcde12190e1"
-snapraid_healthcheck_io_host: "https://healthchecks.{{ host_local }}"
+snapraid_runner_healthcheck_io_uuid: 92955207-2df3-4978-a1c6-4dcde12190e1
+snapraid_healthcheck_io_host: https://healthchecks.{{ host_local }}
 
-snapraid_runner_command: "python3 {{ snapraid_runner_bin }} -c {{ snapraid_runner_conf }} {% if snapraid_runner_healthcheck_io_uuid %}&& curl -fsS -m 10 --retry 5 -o /dev/null {{ snapraid_healthcheck_io_host }}/ping/{{ snapraid_runner_healthcheck_io_uuid }}{% endif %}"
+snapraid_runner_command: python3 {{ snapraid_runner_bin }} -c {{ snapraid_runner_conf }} {% if snapraid_runner_healthcheck_io_uuid %}&& curl -fsS -m 10 --retry 5
+  -o /dev/null {{ snapraid_healthcheck_io_host }}/ping/{{ snapraid_runner_healthcheck_io_uuid }}{% endif %}
 
 # Stop all the docker containers, backup the {{ docker_dir }} to the MergerFS pool, execute the SnapRAID runner and start the containers back up
 # Stopping the containers is necessary – backing up the data folder with the containers running will result in corrupted database files and no files can be changed during the SnapRAID sync
 snapraid_runner_cron_jobs:
-  - { job: 'docker stop $(docker ps -q); rsync -avz --delete --exclude cache {{ docker_dir }}/* {{ mergerfs_root }}/docker-volumes-backup; docker start $(docker ps -a -q) && {{ snapraid_runner_command }} ', name: 'snapraid_runner', weekday: '0', hour: '7', minute: '0' }
+  - job: "docker stop $(docker ps -q); rsync -avz --delete {{ docker_dir }}/* {{ mergerfs_root }}/docker-volumes-backup; docker start $(docker ps -a -q) && {{ snapraid_runner_command
+      }} "
+    name: snapraid_runner
+    weekday: "0"
+    hour: "7"
+    minute: "0"
 
 snapraid_runner_delete_threshold: -1
 
@@ -460,42 +447,18 @@ snapraid_config_excludes:
   - /lost+found/
   - "*.!sync"
   - /tmp/
-  - "/Downloads/*"
+  - /Downloads/*
 
 #
 # SMART error reporting
 #
-smartd_default_mail_recipients: [ "{{ email }}" ]
-
+smartd_default_mail_recipients: ["{{ email }}"]
 #
 # Security
 #
-enable_crowdsec: false
-
 enable_iptables: true
 
 enable_fail2ban: true
 
 # We have our own f2b rules
 security_fail2ban_enabled: false
-
-### BEGIN Secret variables (encrypt and put into vault.yml)
-#cloudflare_dns_token: ''
-cloudflare_firewall_token: ''
-#email_password: ''
-#host: ''
-#host_local: ''
-ikev2_excludedssids: ''
-namecheap_host: ''
-namecheap_token: ''
-#password: ''
-#photoprism_password: ''
-pihole_password: ''
-pikvm_password: ''
-piped_postgresql_password: ''
-#ssh_public_key: ''
-swag_htpasswd_password: ''
-swag_htpasswd_user: ''
-vpn_host: ''
-vpn_password: ''
-### END Secret variables (encrypt and put into vault.yml)

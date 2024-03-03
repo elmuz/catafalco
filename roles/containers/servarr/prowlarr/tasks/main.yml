@@ -1,30 +1,30 @@
 ---
 - name: Make sure that FlareSolverr container is created and running
   docker_container:
-    name: "flaresolverr"
-    image: "ghcr.io/flaresolverr/flaresolverr:latest"
-    pull: yes
+    name: flaresolverr
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    pull: true
     networks:
       - name: swag_internal_network
-    state: "started"
+    state: started
     env:
-      "LOG_LEVEL": info
-      "TZ": "{{ timezone }}"
+      LOG_LEVEL: info
+      TZ: "{{ timezone }}"
     restart_policy: unless-stopped
 
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "lscr.io/linuxserver/prowlarr:develop"
-    pull: yes
+    image: lscr.io/linuxserver/prowlarr:develop
+    pull: true
     networks:
       - name: swag_internal_network
-    state: "started"
+    state: started
     env:
-      "PUID": "{{ guid }}"
-      "PGID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
     volumes:
-      - "/etc/localtime:/etc/localtime:ro"
+      - /etc/localtime:/etc/localtime:ro
       - "{{ docker_dir }}/{{ container_name }}:/config"
     restart_policy: unless-stopped

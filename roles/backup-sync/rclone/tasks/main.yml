@@ -9,20 +9,25 @@
     name: stefangweichinger.ansible_rclone
 
 - name: Update rclone remote password for `julia`
-  become: no
-  shell:
-    cmd: "rclone --config  {{ rclone_config_location }} config password julia pass {{ rclone_password }}"
+  become: false
+  ansible.builtin.command:
+    cmd: rclone --config  {{ rclone_config_location }} config password julia pass {{ rclone_password }}
 
 - name: Add jobs in crontab
-  become: no
+  become: false
   cron:
     name: "Synch task: {{ item.src }} => {{ item.dst }}"
     minute: "{{ item.mm }}"
     hour: "{{ item.HH }}"
-    job: "/usr/local/bin/rclone --config {{rclone_config_location }} sync {{ item.src }} {{ item.dst }} --exclude '@Recently-Snapshot/**' --exclude '@Recycle/**' --syslog --log-level NOTICE --syslog-facility SYSLOG && curl -fsS -m 10 --retry 5 -o /dev/null https://healthchecks.{{ host_local }}/ping/{{ item.hc_uuid }}"
+    job: /usr/local/bin/rclone --config {{ rclone_config_location }} sync {{ item.src }} {{ item.dst }} --exclude '@Recently-Snapshot/**' --exclude '@Recycle/**'
+      --syslog --log-level NOTICE --syslog-facility SYSLOG && curl -fsS -m 10 --retry 5 -o /dev/null https://healthchecks.{{ host_local }}/ping/{{ item.hc_uuid }}
   with_items:
-    - { src: "julia:doc-alessio", dst: "{{ mergerfs_root }}/Documents/alessio", HH: 8, mm: 0, hc_uuid: "23383efc-3976-4e21-a63a-1c722e3956e0" }
-    - { src: "julia:doc-sara", dst: "{{ mergerfs_root }}/Documents/sara", HH: 8, mm: 10, hc_uuid: "bee92dc9-0a1d-4402-b555-ed8818d0c823"}
-    - { src: "julia:media-alessio", dst: "{{ mergerfs_root }}/Pictures/alessio", HH: 8, mm: 20, hc_uuid: "436d641c-d5cf-4136-a4d4-bc2bbded1c47" }
-    - { src: "julia:media-sara", dst: "{{ mergerfs_root }}/Pictures/sara", HH: 8, mm: 30, hc_uuid: "506bc5d6-01e5-49e3-a9da-be6e4df59771" }
-    - { src: "{{ mergerfs_root }}/docker-volumes-backup", dst: "julia:catafalco/containers", HH: 8, mm: 50, hc_uuid: "c29346a7-d917-485d-aece-7921b2310c2b" }
+    - { src: julia:doc-alessio, dst: "{{ mergerfs_root }}/Documents/alessio", HH: 8, mm: 0, hc_uuid: 23383efc-3976-4e21-a63a-1c722e3956e0 }
+    - { src: julia:doc-sara, dst: "{{ mergerfs_root }}/Documents/sara", HH: 8, mm: 10, hc_uuid: bee92dc9-0a1d-4402-b555-ed8818d0c823 }
+    - { src: julia:media-alessio, dst: "{{ mergerfs_root }}/Pictures/alessio", HH: 8, mm: 20, hc_uuid: 436d641c-d5cf-4136-a4d4-bc2bbded1c47 }
+    - { src: julia:media-sara, dst: "{{ mergerfs_root }}/Pictures/sara", HH: 8, mm: 30, hc_uuid: 506bc5d6-01e5-49e3-a9da-be6e4df59771 }
+    - src: "{{ mergerfs_root }}/docker-volumes-backup"
+      dst: julia:catafalco/containers
+      HH: 8
+      mm: 50
+      hc_uuid: c29346a7-d917-485d-aece-7921b2310c2b

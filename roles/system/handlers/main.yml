@@ -1,17 +1,18 @@
-- name: netplan apply
+---
+- name: Netplan apply
   command:
     cmd: netplan apply
 
-- name: remove default user
+- name: Remove default user
   user:
     name: ubuntu
     state: absent
 
-- name: install and update nvim plugins
+- name: Install and update nvim plugins
   command:
-    cmd: "nvim +PlugInstall! +qall"
+    cmd: nvim +PlugInstall! +qall
 
-- name: powersaving systemd reload
+- name: Powersaving systemd reload
   systemd:
     daemon_reload: true
     state: restarted
@@ -23,7 +24,7 @@
     - cpupower-min
     - cpupower-min.timer
 
-- name: monitoring systemd reload
+- name: Monitoring systemd reload
   systemd:
     daemon_reload: true
     state: restarted

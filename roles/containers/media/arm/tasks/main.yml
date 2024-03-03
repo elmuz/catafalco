@@ -11,7 +11,7 @@
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Copy the main ARM config
   copy:
@@ -19,7 +19,7 @@
     dest: "{{ docker_dir }}/{{ container_name }}/config/arm.yaml"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0644
+    mode: "0644"
 
 - name: Copy HandBrake custom presets
   copy:
@@ -27,24 +27,24 @@
     dest: "{{ docker_dir }}/{{ container_name }}/config/HQ-576p-x264-crf20.json"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: 0644
+    mode: "0644"
 
 - name: Make sure that {{ container_name }} container is created and running
   docker_container:
     name: "{{ container_name }}"
-    image: "automaticrippingmachine/automatic-ripping-machine:latest"
-    pull: yes
+    image: automaticrippingmachine/automatic-ripping-machine:latest
+    pull: true
     networks:
       - name: swag_internal_network
-    privileged: yes
+    privileged: true
     devices:
-      - "/dev/sr0:/dev/sr0"
-      - "/dev/sg0:/dev/sg0"
-    state: "started"
+      - /dev/sr0:/dev/sr0
+      - /dev/sg0:/dev/sg0
+    state: started
     env:
-      "ARM_UID": "{{ guid }}"
-      "ARM_GID": "{{ guid }}"
-      "TZ": "{{ timezone }}"
+      ARM_UID: "{{ guid }}"
+      ARM_GID: "{{ guid }}"
+      TZ: "{{ timezone }}"
     volumes:
       - "{{ docker_dir }}/{{ container_name }}/config:/etc/arm/config"
       - "{{ docker_dir }}/{{ container_name }}/db:/home/arm/db"
@@ -52,5 +52,5 @@
       - "{{ cache_root }}/Downloads/arm_transcode:/home/arm/media/transcode"
       - "{{ mergerfs_root }}/Downloads/arm_completed:/home/arm/media/completed"
       - "{{ mergerfs_root }}/Downloads/arm_music:/home/arm/Music"
-      - "/etc/localtime:/etc/localtime:ro"
+      - /etc/localtime:/etc/localtime:ro
     restart_policy: unless-stopped

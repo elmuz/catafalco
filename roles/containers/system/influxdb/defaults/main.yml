@@ -1,7 +1,8 @@
+---
 container_name: influxdb
 
-dashboard_url: "https://influxdb.{{ host_local }}/"
+dashboard_url: https://influxdb.{{ host_local }}/
 
 homer_category: system
 
-dashboard_name: "InfluxDB"
+dashboard_name: InfluxDB

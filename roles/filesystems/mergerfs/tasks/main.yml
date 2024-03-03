@@ -3,18 +3,19 @@
   apt:
     name: mergerfs
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Install the uncaching script
   template:
-      src: mergerfs-uncache.j2
-      dest: /usr/local/bin/mergerfs-uncache
-      mode: 0775
+    src: mergerfs-uncache.j2
+    dest: /usr/local/bin/mergerfs-uncache
+    mode: "0775"
 
 - name: Move data from cache drive to slow pool as it gets full
   cron:
-    name: "uncache the mergerfs pool"
+    name: uncache the mergerfs pool
     minute: "0"
     hour: "7"
-    weekday: "1-6"
-    job: "/usr/local/bin/mergerfs-uncache -s {{ cache_root }} -d {{ mergerfs_root }}_slow -t 75 --exclude {{ cache_root }}/docker-volumes-cache --healthchecks-url https://healthchecks.{{ host_local }}/ping/a7a66ee2-eed8-4dfa-bfa1-b6217d472c02"
+    weekday: 1-6
+    job: /usr/local/bin/mergerfs-uncache -s {{ cache_root }} -d {{ mergerfs_root }}_slow -t 75 --exclude {{ cache_root }}/docker-volumes-cache --healthchecks-url
+      https://healthchecks.{{ host_local }}/ping/a7a66ee2-eed8-4dfa-bfa1-b6217d472c02

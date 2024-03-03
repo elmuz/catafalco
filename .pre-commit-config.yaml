@@ -1,10 +1,10 @@
 ---
 repos:
-- repo: https://github.com/ansible/ansible-lint.git
-  rev: v6.22.1
-  hooks:
-    - id: ansible-lint
-      args: [--offline, --fix]
-      files: \.(yaml|yml)$
-      additional_dependencies:
-       - ansible
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v24.2.0
+    hooks:
+      - id: ansible-lint
+        args: [--offline, --fix]
+        files: \.(yaml|yml)$
+        additional_dependencies:
+          - ansible

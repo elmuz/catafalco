@@ -1,30 +1,30 @@
 ---
 - name: Ubuntu specific tasks
-  become: yes
+  become: true
   when: ansible_facts['distribution'] == 'Ubuntu'
   block:
-  - name: Remove cloud-config to avoid boot delay
-    apt:
-      name: cloud-config
-      state: absent
+    - name: Remove cloud-config to avoid boot delay
+      apt:
+        name: cloud-config
+        state: absent
 
-  - name: Make sure iSCSId and Open-iSCSId services are disabled
-    service:
-      name: "{{ item }}"
-      state: stopped
-      enabled: no
-    with_items:
-      - iscsid
-      - open-iscsi
+    - name: Make sure iSCSId and Open-iSCSId services are disabled
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      with_items:
+        - iscsid
+        - open-iscsi
 
-  - name: Install the apt mirror list
-    template:
-      src: sources.list.j2
-      dest: /etc/apt/sources.list
-      owner: root
-      group: root
-      mode: 0644
-    tags: mirrors
+    - name: Install the apt mirror list
+      template:
+        src: sources.list.j2
+        dest: /etc/apt/sources.list
+        owner: root
+        group: root
+        mode: "0644"
+      tags: mirrors
 
 - name: Generate the locale (Debian and Ubuntu)
   when: ansible_os_family == 'Debian'
@@ -35,9 +35,9 @@
 - name: Update and upgrade apt packages (Debian and Ubuntu)
   when: ansible_os_family == 'Debian'
   apt:
-    upgrade: yes
-    autoremove: yes
-    update_cache: yes
+    upgrade: true
+    autoremove: true
+    update_cache: true
 
 - name: Check if reboot required
   stat:
@@ -62,16 +62,16 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: ^127\.0\.0\.1 *localhost
-    line: "127.0.0.1 {{ inventory_hostname }}"
+    line: 127.0.0.1 {{ inventory_hostname }}
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Disable cron e-mail notifications
   cron:
     name: MAILTO
     user: "{{ item }}"
-    env: yes
+    env: true
     job: ""
   with_items:
     - root

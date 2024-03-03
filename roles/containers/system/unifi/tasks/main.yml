@@ -1,13 +1,13 @@
 ---
 - name: Make sure that Unifi container is created and running
   docker_container:
-    name: '{{ container_name }}'
-    image: "ghcr.io/linuxserver/unifi-controller"
+    name: "{{ container_name }}"
+    image: ghcr.io/linuxserver/unifi-controller
     networks:
       - name: swag_internal_macvlan
         ipv4_address: "{{ ip_address }}"
     pull: true
-    state: 'started'
+    state: started
     env:
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"

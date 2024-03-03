@@ -19,12 +19,11 @@
   when:
     - _ssh_port_result is failed
 
-
 - name: SSH Port Juggle | Set the ansible_port to the fallback default port and credentials
   set_fact:
     ansible_ssh_port: "22"
-    ansible_ssh_user: "pi"
-    ansible_ssh_password: "raspberry"
+    ansible_ssh_user: pi
+    ansible_ssh_password: raspberry
   when:
     - _ssh_port_result is failed
     - _ssh_port_default_result is failed
@@ -41,12 +40,11 @@
 - name: SSH Port Juggle | Try root
   set_fact:
     ansible_ssh_port: "22"
-    ansible_ssh_user: "root"
+    ansible_ssh_user: root
   when:
     - _ssh_port_result is failed
     - _ssh_port_default_result is failed
     - _ssh_port_default_cred_result is failed
-
 
 - name: Try root
   wait_for_connection:

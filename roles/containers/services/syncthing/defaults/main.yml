@@ -1,7 +1,8 @@
+---
 container_name: syncthing
 
-dashboard_url: "http://syncthing.{{ host_local }}"
+dashboard_url: http://syncthing.{{ host_local }}
 
-dashboard_name: "Syncthing"
+dashboard_name: Syncthing
 
 homer_category: services

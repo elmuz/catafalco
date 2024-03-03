@@ -1,3 +1,4 @@
+---
 #
 # Process-exporter
 #
@@ -11,22 +12,22 @@
 
 - name: Install github3 module
   pip:
-    name: 
+    name:
       - github3.py
 
 - name: Check if process-exporter is installed
   command:
     cmd: which process-exporter
   register: process_exporter
-  changed_when: False
-  failed_when: False
-  
+  changed_when: false
+  failed_when: false
+
 - name: Check the process-exporter version if installed
   shell:
-    cmd: "process-exporter --version | grep -o '[0-9]\\.[0-9]*\\.[0-9]*'"
+    cmd: process-exporter --version | grep -o '[0-9]\.[0-9]*\.[0-9]*'
   register: process_exporter_version
   when: process_exporter.rc == 0
-  changed_when: False
+  changed_when: false
 
 - name: Set current process-exporter version to 0 if not installed
   set_fact:
@@ -44,8 +45,9 @@
   changed_when: process_exporter_release.tag != ("v" + process_exporter_version.stdout)
 
 - name: Install latest process-exporter
-  apt: 
-    deb: "https://github.com/ncabatoff/process-exporter/releases/download/{{ process_exporter_release.tag }}/process-exporter_{{ process_exporter_release.tag | regex_replace('^v','') }}_linux_{{ arch }}.deb"
+  apt:
+    deb: https://github.com/ncabatoff/process-exporter/releases/download/{{ process_exporter_release.tag }}/process-exporter_{{ process_exporter_release.tag | regex_replace('^v',
+      '') }}_linux_{{ arch }}.deb
   when: process_exporter_release.tag != ("v" + process_exporter_version.stdout)
 
 #
@@ -60,7 +62,7 @@
   get_url:
     url: https://raw.githubusercontent.com/prometheus-community/node-exporter-textfile-collector-scripts/master/smartmon.py
     dest: /usr/local/bin
-    mode: 0755
+    mode: "0755"
     owner: root
     group: root
 
@@ -71,21 +73,21 @@
     recurse: true
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
 
 - name: Install the systemd service
   copy:
     src: "{{ item }}"
-    dest: "/etc/systemd/system/{{ item | basename }}"
+    dest: /etc/systemd/system/{{ item | basename }}
     owner: root
     group: root
-    mode: 0755
-  notify: 
+    mode: "0755"
+  notify:
     - monitoring systemd reload
   with_fileglob:
     - files/monitoring/*.service
     - files/monitoring/*.timer
- 
+
 - name: Start and enable the systemd services
   systemd:
     state: started
@@ -97,4 +99,4 @@
 
 - name: Modify the `node_exporter_options` variable
   set_fact:
-    node_exporter_options: '--no-collector.diskstats --collector.textfile.directory=/etc/node_exporter'
+    node_exporter_options: --no-collector.diskstats --collector.textfile.directory=/etc/node_exporter

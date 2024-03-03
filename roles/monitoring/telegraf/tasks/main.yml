@@ -18,7 +18,7 @@
   apt:
     name: telegraf
     state: latest
-    update_cache: yes
+    update_cache: true
 
 - name: Save telegraf path
   command: which telegraf
@@ -40,39 +40,39 @@
 
 - name: Add telegraf user to the docker group
   user:
-    name: "telegraf"
+    name: telegraf
     groups:
       - docker
-      - sudo  # this is required for SMART
+      - sudo # this is required for SMART
     append: true
 
 - name: Update telegraf configuration file (1)
   replace:
-    path: "/etc/telegraf/telegraf.conf"
-    regexp: "\\$INFLUX_URL"
-    replace: "http://127.0.0.1:8086"
+    path: /etc/telegraf/telegraf.conf
+    regexp: \$INFLUX_URL
+    replace: http://127.0.0.1:8086
 #    replace: "https://influxdb.{{ host_local }}"
 
 - name: Update telegraf configuration file (2)
   replace:
-    path: "/etc/telegraf/telegraf.conf"
-    regexp: "\\$INFLUX_TOKEN"
+    path: /etc/telegraf/telegraf.conf
+    regexp: \$INFLUX_TOKEN
     replace: "{{ influxdb_token }}"
 
 - name: Update telegraf configuration file (3)
   replace:
-    path: "/etc/telegraf/telegraf.conf"
-    regexp: "\\$INFLUX_ORG"
+    path: /etc/telegraf/telegraf.conf
+    regexp: \$INFLUX_ORG
     replace: "{{ influxdb_org }}"
 
 - name: Update telegraf configuration file (3)
   replace:
-    path: "/etc/telegraf/telegraf.conf"
-    regexp: "\\$INFLUX_BUCKET"
+    path: /etc/telegraf/telegraf.conf
+    regexp: \$INFLUX_BUCKET
     replace: "{{ influxdb_bucket }}"
 
 - name: Restart telegraf unit
   systemd:
     state: restarted
-    daemon_reload: yes
+    daemon_reload: true
     name: telegraf

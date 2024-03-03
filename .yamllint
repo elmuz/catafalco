@@ -4,12 +4,12 @@ extends: default
 rules:
   line-length: disable
   truthy:
-    allowed-values: ['true', 'false', 'yes', 'no']
+    allowed-values: ["true", "false"]
   comments:
     min-spaces-from-content: 1
   braces:
     min-spaces-inside: 0
     max-spaces-inside: 1
 
-ignore: |
+ignore: |-
   .cache
