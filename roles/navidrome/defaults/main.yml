@@ -1,0 +1,5 @@
+---
+navidrome_container_name: navidrome
+navidrome_dashboard_url: https://navidrome.{{ host_local }}
+navidrome_dashboard_name: Navidrome
+navidrome_homer_category: media

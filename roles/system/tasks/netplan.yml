@@ -14,7 +14,7 @@
     owner: root
     group: root
     mode: "0644"
-  notify: netplan apply
+  notify: Netplan apply
 
 - name: Delete the irrelevant configs
   file:

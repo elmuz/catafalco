@@ -1,0 +1,34 @@
+---
+- name: Create the necessary Healthchecks folder
+  file:
+    path: "{{ docker_dir }}/{{ container_name }}/config"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0700"
+
+- name: Make sure that Healthchecks container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: lscr.io/linuxserver/healthchecks:latest
+    pull: true
+    networks:
+      - name: swag_internal_network
+    state: started
+    env:
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      SITE_ROOT: https://healthchecks.{{ host_local }}
+      SITE_NAME: CataFalco
+      SUPERUSER_EMAIL: "{{ email }}"
+      SUPERUSER_PASSWORD: "{{ healthchecks_password }}"
+      DEFAULT_FROM_EMAIL: "{{ email_login }}"
+      EMAIL_HOST: "{{ email_smtp_host }}"
+      EMAIL_HOST_USER: "{{ email_login }}"
+      EMAIL_HOST_PASSWORD: "{{ email_password }}"
+      EMAIL_USE_TLS: "True"
+      REGENERATE_SETTINGS: "True"
+      DEBUG: "False"
+    volumes:
+      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+    restart_policy: unless-stopped

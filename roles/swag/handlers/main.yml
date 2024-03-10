@@ -1,0 +1,18 @@
+---
+- name: Test nginx
+  command:
+    cmd: docker exec -it {{ item }} /usr/sbin/nginx -c /config/nginx/nginx.conf -t
+  register: swag_nginx_test
+  changed_when: swag_nginx_test is not search("test is successful")
+  failed_when: swag_nginx_test is not search("test is successful")
+  with_items:
+    - swag_internal
+
+- name: Restart swag
+  docker_container:
+    name: "{{ item }}"
+    state: started
+    restart: true
+  with_items:
+    - swag_internal
+  when: existing is defined and running is defined

@@ -1,0 +1,6 @@
+---
+readarr:
+  container_name: readarr
+  dashboard_url: https://readarr.{{ host_local }}
+  dashboard_name: Readarr
+  homer_category: servarr

@@ -1,8 +1,0 @@
----
-container_name: healthchecks
-
-dashboard_url: https://healthchecks.{{ host_local }}/
-
-homer_category: system
-
-dashboard_name: Healthchecks

@@ -1,0 +1,15 @@
+---
+- name: Check status
+  include_tasks: check_status.yml
+
+- name: List services
+  include_tasks: tasks/list_services.yml
+
+- name: Install configs
+  include_tasks: install_configs.yml
+
+- name: Create docker network
+  include_tasks: networks.yml
+
+- name: Create and run Swag docker container
+  include_tasks: docker.yml

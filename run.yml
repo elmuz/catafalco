@@ -43,15 +43,6 @@
     #
     # Security
     #
-    - role: security/fail2ban
-      tags:
-        - fail2ban
-
-    - role: security/endlessh
-      tags:
-        - endlessh
-      when: enable_endlessh | default(False)
-
     - role: geerlingguy.security
       tags:
         - security
@@ -64,19 +55,19 @@
     #
     # Filesystems
     #
-    - role: filesystems/mergerfs
+    - role: mergerfs
       become: true
       tags:
         - mergerfs
       when: enable_nas_stuff | default(False)
 
-    - role: filesystems/mounts
+    - role: mounts
       become: true
       tags:
         - mounts
       when: enable_nas_stuff | default(False)
 
-    - role: filesystems/hd-idle
+    - role: hd-idle
       become: true
       tags:
         - hd-idle
@@ -107,52 +98,12 @@
     #
     # Network
     #
-    - role: network/swag
+    - role: swag
       become: false
       tags:
         - swag
         - containers
       when: enable_swag | default(False)
-
-    - role: network/bunkerized-nginx
-      become: false
-      tags:
-        - bunkerized-nginx
-        - containers
-      when: enable_bunkerized_nginx | default(False)
-
-    - role: network/wireguard
-      become: false
-      tags:
-        - wireguard
-        - containers
-      when: enable_wireguard | default(False)
-
-    - role: network/ddclient
-      become: true
-      when: enable_ddclient | default(False)
-      tags:
-        - ddclient
-
-    - role: network/duckdns
-      become: false
-      when: enable_duckdns | default(False)
-      tags:
-        - duckdns
-
-    - role: network/cloudflare-ddns
-      become: false
-      tags:
-        - cloudflare-ddns
-        - containers
-      when: enable_cloudflare | default(False)
-
-    - role: network/pihole
-      become: false
-      when: enable_pihole | default(False)
-      tags:
-        - pihole
-        - containers
 
     #
     # Homer
@@ -167,94 +118,80 @@
     #
     # System containers
     #
-    - role: containers/system/authelia
-      become: false
-      tags:
-        - authelia
-        - containers
-      when: enable_authelia | default(False)
-
-    - role: containers/system/watchtower
+    - role: watchtower
       become: false
       tags:
         - watchtower
         - containers
 
-    - role: containers/system/healthchecks
+    - role: healthchecks
       become: false
       tags:
         - healthchecks
         - containers
 
-    - role: containers/system/openspeedtest
-      become: false
-      tags:
-        - openspeedtest
-        - containers
-      when: enable_openspeedtest | default(False)
-
     #
     # Monitoring
     #
-    - role: containers/system/influxdb
+    - role: influxdb
       tags:
         - influxdb
         - containers
         - monitoring
       when: enable_influxdb | default(False)
 
-    - role: monitoring/telegraf
+    - role: telegraf
       tags:
         - telegraf
         - monitoring
       when: enable_telegraf | default(False)
 
-    - role: monitoring/ups
+    - role: nut
       tags:
         - ups
         - nut
         - monitoring
-      when: enable_ups | default(False)
+      when: enable_nut | default(False)
 
     #
     # ServArr
     #
-    - role: containers/servarr/deluge
+    - role: deluge
       become: false
       tags:
         - deluge
         - containers
       when: enable_deluge | default(False)
 
-    - role: containers/servarr/sonarr
+    - role: sonarr
       become: false
       tags:
         - sonarr
         - containers
       when: enable_sonarr | default(False)
 
-    - role: containers/servarr/radarr
+    - role: radarr
       become: false
       tags:
         - radarr
         - containers
       when: enable_radarr | default(False)
 
-    - role: containers/servarr/lidarr
+    - role: lidarr
       become: false
       tags:
         - lidarr
         - containers
       when: enable_lidarr | default(False)
 
-    - role: containers/servarr/readarr
+    - role: readarr
       become: false
       tags:
         - readarr
         - containers
       when: enable_readarr | default(False)
 
-    - role: containers/servarr/prowlarr
+    - role: prowlarr
       become: false
       tags:
         - prowlarr
@@ -264,70 +201,42 @@
     #
     # Media
     #
-    - role: containers/media/jellyfin
+    - role: jellyfin
       become: false
       tags:
         - jellyfin
         - containers
       when: enable_jellyfin | default(False)
 
-    - role: containers/media/paperless
-      become: false
-      tags:
-        - paperless
-        - containers
-      when: enable_paperless | default(False)
-
-    - role: containers/media/photoprism
+    - role: photoprism
       become: false
       tags:
         - photoprism
         - containers
       when: enable_photoprism | default(False)
 
-    - role: containers/media/koel
-      become: false
-      tags:
-        - koel
-        - containers
-      when: enable_koel | default(False)
-
-    - role: containers/media/navidrome
+    - role: navidrome
       become: false
       tags:
         - navidrome
         - containers
       when: enable_navidrome | default(False)
 
-    - role: containers/media/beets
-      become: false
-      tags:
-        - beets
-        - containers
-      when: enable_beets | default(False)
-
-    - role: containers/media/openbooks
-      become: false
-      tags:
-        - openbooks
-        - containers
-      when: enable_openbooks | default(False)
-
-    - role: containers/media/calibreweb
+    - role: calibreweb
       become: false
       tags:
         - calibreweb
         - containers
       when: enable_calibreweb | default(False)
 
-    - role: containers/media/arm
+    - role: arm
       become: false
       tags:
         - arm
         - containers
       when: enable_arm | default(False)
 
-    - role: containers/media/handbrake
+    - role: handbrake
       become: false
       tags:
         - handbrake
@@ -335,26 +244,9 @@
       when: enable_handbrake | default(False)
 
     #
-    # Personal
-    #
-    - role: containers/personal/firefly
-      become: false
-      tags:
-        - firefly
-        - containers
-      when: enable_firefly | default(False)
-
-    #
     # Services
     #
-    - role: containers/services/nextcloud
-      become: false
-      tags:
-        - nextcloud
-        - containers
-      when: enable_nextcloud | default(False)
-
-    - role: containers/services/duplicati
+    - role: duplicati
       become: false
       tags:
         - duplicati
@@ -362,46 +254,32 @@
         - containers
       when: enable_duplicati | default(False)
 
-    - role: containers/services/firefox
+    - role: firefox
       become: false
       tags:
         - firefox
         - containers
       when: enable_firefox | default(False)
 
-    - role: containers/services/invidious
+    - role: invidious
       become: false
       tags:
         - invidious
         - containers
       when: enable_invidious | default(False)
 
-    - role: containers/services/speedtest_tracker
+    - role: speedtest_tracker
       become: false
       tags:
         - speedtest
         - containers
       when: enable_speedtest_tracker | default(False)
 
-    - role: containers/services/syncthing
-      become: false
-      tags:
-        - syncthing
-        - containers
-      when: enable_syncthing | default(False)
-
-    - role: backup-sync/rclone
+    - role: rclone
       tags:
         - rclone
         - backup-sync
       when: enable_rclone | default(False)
-
-    - role: containers/services/vaultwarden
-      become: false
-      tags:
-        - vaultwarden
-        - containers
-      when: enable_vaultwarden | default(False)
 
     #
     # Samba

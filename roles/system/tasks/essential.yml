@@ -50,12 +50,12 @@
   when: reboot_required_file.stat.exists
 
 - name: Install extra packages
-  package:
+  ansible.builtin.package:
     name: "{{ extra_packages }}"
     state: present
 
 - name: Set the hostname
-  hostname:
+  ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
 - name: Replace the hostname entry with our own
@@ -68,7 +68,7 @@
     mode: "0644"
 
 - name: Disable cron e-mail notifications
-  cron:
+  ansible.builtin.cron:
     name: MAILTO
     user: "{{ item }}"
     env: true

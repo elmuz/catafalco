@@ -1,0 +1,5 @@
+---
+arm_container_name: arm
+arm_dashboard_url: https://arm.{{ host_local }}
+arm_dashboard_name: Ripping Machine
+arm_homer_category: media

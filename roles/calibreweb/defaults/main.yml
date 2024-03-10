@@ -1,0 +1,5 @@
+---
+calibreweb_container_name: calibreweb
+calibreweb_dashboard_url: https://calibreweb.{{ host_local }}
+calibreweb_dashboard_name: Calibre-Web
+calibreweb_homer_category: media

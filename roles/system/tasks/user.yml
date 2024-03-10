@@ -15,7 +15,7 @@
     state: present
     append: true
 
-- name: Ensure group "{{ username }}" exists
+- name: Ensure exists group "{{ username }}"
   become: true
   group:
     name: "{{ username }}"

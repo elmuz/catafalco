@@ -1,0 +1,5 @@
+---
+invidious_container_name: invidious
+invidious_dashboard_url: https://invidious.{{ host_local }}
+invidious_dashboard_name: Invidious
+invidious_homer_category: services

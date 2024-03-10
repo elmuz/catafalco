@@ -1,0 +1,18 @@
+---
+- name: Make sure that Radarr container is created and running
+  docker_container:
+    name: "{{ container_name }}"
+    image: ghcr.io/linuxserver/radarr
+    pull: true
+    networks:
+      - name: swag_internal_network
+    state: started
+    env:
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - "{{ docker_dir }}/{{ container_name }}:/config"
+      - "{{ mergerfs_root }}:/storage"
+    restart_policy: unless-stopped

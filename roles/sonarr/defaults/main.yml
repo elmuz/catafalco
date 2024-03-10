@@ -1,0 +1,5 @@
+---
+sonarr_container_name: sonarr
+sonarr_dashboard_url: https://sonarr.{{ host_local }}
+sonarr_dashboard_name: Sonarr
+sonarr_homer_category: servarr

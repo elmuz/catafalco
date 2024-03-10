@@ -1,0 +1,18 @@
+---
+nut_managed_config: true
+nut_host: "0.0.0.0"
+nut_user: monitor
+nut_password: "{{ nut_monitor_password }}"
+nut_mode: netserver
+nut_packages:
+  - nut-client
+  - nut-server
+nut_services:
+  - nut-driver
+  - nut-server
+nut_ups:
+  - name: epyc-ion
+    driver: usbhid-ups
+    device: /dev/bus/usb/001/003
+    description: Epyc ION UPS
+nut_upsd_extra: LISTEN 0.0.0.0 3493

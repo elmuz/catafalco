@@ -1,14 +1,20 @@
 ---
-- include_tasks: essential.yml
-- include_tasks: yeet_snaps.yml
-- include_tasks: user.yml
-- include_tasks: dotfiles.yml
+- name: Essential
+  include_tasks: essential.yml
 
-- include_tasks: powersaving.yml
+- name: Purge snap
+  include_tasks: yeet_snaps.yml
+
+- name: Prepare users
+  include_tasks: user.yml
+
+- name: Prepare dotfiles (eg. oh-my-zsh)
+  include_tasks: dotfiles.yml
+
+- name: Set powersaving policies
+  include_tasks: powersaving.yml
   when: enable_powersaving | default(False)
 
-- include_tasks: monitoring.yml
-  when: enable_node_exporter | default(False)
-
-- include_tasks: netplan.yml
+- name: Fix netplan
+  include_tasks: netplan.yml
   when: netplan_config is defined

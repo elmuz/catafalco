@@ -1,5 +1,12 @@
 ---
-- include_tasks: tasks/list_services.yml
-- include_tasks: xresources.yml
-- include_tasks: assets.yml
-- include_tasks: docker.yml
+- name: List services
+  include_tasks: tasks/list_services.yml
+
+- name: Set xresources
+  include_tasks: xresources.yml
+
+- name: Copy icons and other themes
+  include_tasks: assets.yml
+
+- name: Create and run docker container
+  include_tasks: docker.yml

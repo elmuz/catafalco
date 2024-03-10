@@ -1,0 +1,5 @@
+---
+radarr_container_name: radarr
+radarr_dashboard_url: https://radarr.{{ host_local }}/
+radarr_dashboard_name: Radarr
+radarr_homer_category: servarr

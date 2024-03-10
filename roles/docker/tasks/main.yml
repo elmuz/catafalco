@@ -86,7 +86,7 @@
     name: docker
     state: present
 
-- name: Add user "{{ username }}" to group docker
+- name: Add user to group docker
   user:
     name: "{{ username }}"
     groups:

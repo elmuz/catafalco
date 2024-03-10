@@ -1,8 +1,0 @@
----
-container_name: openspeedtest
-
-dashboard_url: https://openspeedtest.{{ host_local }}/
-
-homer_category: system
-
-dashboard_name: OpenSpeedTest
