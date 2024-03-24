@@ -5,7 +5,7 @@
 # Noes:
 # Run `lsscsi -g`, identify optical device and mount both sr/sg
 ---
-- name: Create the necessary {{ container_name }} folder
+- name: Create the necessary ARM folder
   file:
     path: "{{ docker_dir }}/{{ container_name }}"
     state: directory
@@ -15,7 +15,7 @@
 
 - name: Copy the main ARM config
   copy:
-    src: roles/containers/media/arm/templates/arm.yaml.j2
+    src: roles/containers/media/arm/files/arm.yaml
     dest: "{{ docker_dir }}/{{ container_name }}/config/arm.yaml"
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -23,13 +23,13 @@
 
 - name: Copy HandBrake custom presets
   copy:
-    src: roles/containers/media/arm/templates/handbrake-presets/HQ-576p-x264-crf20.json.j2
+    src: roles/containers/media/arm/files/handbrake-presets/HQ-576p-x264-crf20.json
     dest: "{{ docker_dir }}/{{ container_name }}/config/HQ-576p-x264-crf20.json"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
 
-- name: Make sure that {{ container_name }} container is created and running
+- name: Make sure that ARM container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: automaticrippingmachine/automatic-ripping-machine:latest

@@ -1,8 +1,5 @@
 ---
-container_name: duplicati
-
-dashboard_url: https://duplicati.{{ host_local }}
-
-dashboard_name: Duplicati
-
-homer_category: services
+duplicati_container_name: duplicati
+duplicati_dashboard_url: https://duplicati.{{ host_local }}
+duplicati_dashboard_name: Duplicati
+duplicati_homer_category: services

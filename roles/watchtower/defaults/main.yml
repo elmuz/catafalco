@@ -1,2 +1,2 @@
 ---
-container_name: watchtower
+watchtower_container_name: watchtower

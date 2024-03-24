@@ -1,8 +1,5 @@
 ---
-container_name: handbrake
-
-dashboard_url: https://handbrake.{{ host_local }}
-
-dashboard_name: HandBrake
-
-homer_category: media
+handbrake_container_name: handbrake
+handbrake_dashboard_url: https://handbrake.{{ host_local }}
+handbrake_dashboard_name: HandBrake
+handbrake_homer_category: media

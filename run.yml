@@ -67,7 +67,7 @@
         - mounts
       when: enable_nas_stuff | default(False)
 
-    - role: hd-idle
+    - role: hd_idle
       become: true
       tags:
         - hd-idle
@@ -83,6 +83,15 @@
       become: true
       tags:
         - snapraid
+      when: enable_nas_stuff | default(False)
+
+    #
+    # Samba
+    #
+    - role: vladgh.samba.server
+      become: true
+      tags:
+        - samba
       when: enable_nas_stuff | default(False)
 
     #
@@ -103,7 +112,6 @@
       tags:
         - swag
         - containers
-      when: enable_swag | default(False)
 
     #
     # Homer
@@ -113,7 +121,6 @@
       tags:
         - homer
         - containers
-      when: enable_homer | default(False)
 
     #
     # System containers
@@ -138,20 +145,17 @@
         - influxdb
         - containers
         - monitoring
-      when: enable_influxdb | default(False)
 
     - role: telegraf
       tags:
         - telegraf
         - monitoring
-      when: enable_telegraf | default(False)
 
     - role: nut
       tags:
         - ups
         - nut
         - monitoring
-      when: enable_nut | default(False)
 
     #
     # ServArr
@@ -161,42 +165,36 @@
       tags:
         - deluge
         - containers
-      when: enable_deluge | default(False)
 
     - role: sonarr
       become: false
       tags:
         - sonarr
         - containers
-      when: enable_sonarr | default(False)
 
     - role: radarr
       become: false
       tags:
         - radarr
         - containers
-      when: enable_radarr | default(False)
 
     - role: lidarr
       become: false
       tags:
         - lidarr
         - containers
-      when: enable_lidarr | default(False)
 
     - role: readarr
       become: false
       tags:
         - readarr
         - containers
-      when: enable_readarr | default(False)
 
     - role: prowlarr
       become: false
       tags:
         - prowlarr
         - containers
-      when: enable_prowlarr | default(False)
 
     #
     # Media
@@ -206,42 +204,36 @@
       tags:
         - jellyfin
         - containers
-      when: enable_jellyfin | default(False)
 
     - role: photoprism
       become: false
       tags:
         - photoprism
         - containers
-      when: enable_photoprism | default(False)
 
     - role: navidrome
       become: false
       tags:
         - navidrome
         - containers
-      when: enable_navidrome | default(False)
 
     - role: calibreweb
       become: false
       tags:
         - calibreweb
         - containers
-      when: enable_calibreweb | default(False)
 
     - role: arm
       become: false
       tags:
         - arm
         - containers
-      when: enable_arm | default(False)
 
     - role: handbrake
       become: false
       tags:
         - handbrake
         - containers
-      when: enable_handbrake | default(False)
 
     #
     # Services
@@ -252,40 +244,26 @@
         - duplicati
         - backup-sync
         - containers
-      when: enable_duplicati | default(False)
 
     - role: firefox
       become: false
       tags:
         - firefox
         - containers
-      when: enable_firefox | default(False)
 
     - role: invidious
       become: false
       tags:
         - invidious
         - containers
-      when: enable_invidious | default(False)
 
     - role: speedtest_tracker
       become: false
       tags:
         - speedtest
         - containers
-      when: enable_speedtest_tracker | default(False)
 
     - role: rclone
       tags:
         - rclone
         - backup-sync
-      when: enable_rclone | default(False)
-
-    #
-    # Samba
-    #
-    - role: vladgh.samba.server
-      become: true
-      tags:
-        - samba
-      when: enable_nas_stuff | default(False)

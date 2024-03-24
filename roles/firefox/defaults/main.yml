@@ -1,8 +1,5 @@
 ---
-container_name: firefox
-
-dashboard_url: https://firefox.{{ host_local }}
-
-dashboard_name: Firefox
-
-homer_category: services
+firefox_container_name: firefox
+firefox_dashboard_url: https://firefox.{{ host_local }}
+firefox_dashboard_name: Firefox
+firefox_homer_category: services

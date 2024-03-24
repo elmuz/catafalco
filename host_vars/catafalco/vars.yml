@@ -1,51 +1,31 @@
 ---
-#
-# Misc
-#
+# General variables
 hostname: "{{ inventory_hostname }}"
-
 timezone: Europe/Rome
-
 dot_nameservers: [185.95.218.42@853#dns.digitale-gesellschaft.ch, 94.140.15.140@853#dns-unfiltered.adguard.com]
 ntp_timezone: "{{ timezone }}"
-
 locale: en_US.UTF-8
-
 lan_network: 192.168.1.0/24
-
-vpn_network: 10.1.1.0/24
-
-lan_gateway: 192.168.1.1
+# vpn_network: 10.1.1.0/24
 
 netplan_config: files/netplan/ethernet.yaml
 
 dns_nameservers: [192.168.1.2, 9.9.9.9, 149.112.112.112]
-fish_prompt_color: blue
-
-keyboard_layout: us
-
+# User
 username: funkysloth
-
 guid: "1000"
-
 shell: /usr/bin/zsh
 
+# File systems, partitions and mounts
 docker_dir: /opt/docker/data
-
 boot_drive_serial: PBEEEBB21101806811 # Patriot Burst El
 
-enable_pikvm: true
-
-pikvm_address: pikvm.box
-
+# Hard disk
 spindown_time: 600 # in seconds
 
 colorscheme: nord
 
-subdomains: { nextcloud: nextcloud }
-#
 # Packages
-#
 extra_packages:
   - zsh
   - iperf3
@@ -77,13 +57,9 @@ apt_mirror: https://ubuntu.mirror.garr.it/ubuntu/
 # Email credentials (for SMART and Snapraid error reporting)
 #
 email: funkysloth@disroot.org
-
 email_login: "{{ email }}"
-
 email_smtp_host: disroot.org
-
 email_smtp_port: 465
-
 email_smtp_port_startls: 587
 
 # MSMTP
@@ -117,48 +93,29 @@ security_autoupdate_mail_on_error: true
 #
 enable_nas_stuff: true
 
-# Home automation
-
-enable_deconz: false
-
-enable_homeassistant: false
-
 #
-# Media
+# Active containers
 #
-enable_jellyfin: true
-
-enable_koel: false
-
-enable_navidrome: true
-
-enable_beets: false
-
-enable_photoprism: true
-
-enable_paperless: false
-
-enable_calibreweb: true
-
-enable_arm: true
-
-enable_handbrake: true
-
-#
-# Personal
-#
-enable_firefly: false
-
-#
-# Internal services
-#
-enable_duplicati: true
-
-enable_firefox: true
-
-enable_syncthing: false
-
-enable_rclone: true
+containers:
+  - arm
+  - calibreweb
+  - deluge
+  - duplicati
+  - firefox
+  - handbrake
+  - healthchecks
+  - influxdb
+  - invidious
+  - jellyfin
+  - lidarr
+  - navidrome
+  - photoprism
+  - prowlarr
+  - radarr
+  - readarr
+  - sonarr
+  - speedtest_tracker
+  - watchtower
 
 rclone_version: "0.0.0"
 rclone_release: stable
@@ -174,95 +131,10 @@ rclone_configs:
       user: catafalco
       pass: ""
 
-enable_invidious: true
-
-enable_speedtest_tracker: true
-
-#
-# Yo-ho-ho
-#
-enable_deluge: true
-
-enable_sonarr: true
-
-enable_radarr: true
-
-enable_lidarr: true
-
-enable_readarr: true
-
-enable_prowlarr: true
-
-enable_openbooks: false
-
-# Public-facing services
-
-enable_nextcloud: false
-
-enable_vaultwarden: false
-
-enable_swag: true
-
-enable_bunkerized_nginx: false
-
-# DDNS
-
-enable_duckdns: false
-
-enable_cloudflare: false
-
-enable_ddclient: false
-
-# VPN
-
-enable_wireguard: false
-
-# Homepages
-
-enable_homer: true
-
-enable_flame: false
-
-# Misc
-
-enable_unifi: false
-
-enable_authelia: false
-
-enable_pihole: false
-
-enable_watchtower: true
-
-enable_healthchecks: true
-
-enable_endlessh: false
-
-#
-# Monitoring
-#
-enable_cockpit: true
-
 cockpit_config:
   WebService:
     Origins: https://cockpit.{{ host_local }} wss://cockpit.{{ host_local }}
     ProtocolHeader: X-Forwarded-Proto
-
-enable_telegraf: true
-
-enable_influxdb: true
-
-enable_openspeedtest: false
-
-enable_nut: true
-
-#
-# Time Machine
-#
-timemachine_root: /mnt/timemachine
-
-timemachine_drive: /dev/disk/by-label/TimeMachine
-
-enable_timemachine: false
 
 #
 # SMB
@@ -439,8 +311,6 @@ smartd_default_mail_recipients: ["{{ email }}"]
 #
 # Security
 #
-enable_iptables: true
-
 enable_fail2ban: true
 
 # We have our own f2b rules

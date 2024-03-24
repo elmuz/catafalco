@@ -1,5 +1,5 @@
 ---
-- name: Create the necessary {{ container_name }} folder
+- name: Create the necessary HandBrake folder
   file:
     path: "{{ docker_dir }}/{{ container_name }}"
     state: directory
@@ -7,7 +7,7 @@
     group: "{{ guid }}"
     mode: "0755"
 
-- name: Make sure that {{ container_name }} container is created and running
+- name: Make sure that HandBrake container is created and running
   docker_container:
     name: "{{ container_name }}"
     image: jlesage/handbrake:latest

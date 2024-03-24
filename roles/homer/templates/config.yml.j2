@@ -54,7 +54,7 @@ services:
         url: "https://jellyfin.{{ host_local }}"
         type: "Emby"
         apikey: "{{homer_api_keys['Jellyfin']}}"
-        libraryType: "series"
+        libraryType: "movies"
         target: "_blank"
 {% for item in web_applications if "media" in item.category and item.name != "Jellyfin" and item.url != "" %}
       - name: "{{ item.name }}"
