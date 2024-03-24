@@ -23,4 +23,9 @@
       - 127.0.0.1:8086:8086/tcp
     restart_policy: unless-stopped
 
-# docker exec influxdb influx auth create --org "catafalco" --read-authorizations --write-authorizations --read-buckets --write-buckets --read-dashboards --write-dashboards --read-tasks --write-tasks --read-telegrafs  --write-telegrafs --read-users --write-users --read-variables --write-variables --read-secrets --write-secrets --read-labels --write-labels --read-views --write-views --read-documents --write-documents --read-notificationRules --write-notificationRules --read-notificationEndpoints --write-notificationEndpoints --read-checks --write-checks --read-dbrp --write-dbrp --read-annotations --write-annotations --read-sources --write-sources --read-scrapers --write-scrapers --read-notebooks --write-notebooks --read-remotes --write-remotes --read-replications --write-replications
+# docker exec influxdb influx auth create --org "catafalco" --read-authorizations --write-authorizations --read-buckets --write-buckets --read-dashboards
+#   --write-dashboards --read-tasks --write-tasks --read-telegrafs  --write-telegrafs --read-users --write-users --read-variables --write-variables
+#   --read-secrets --write-secrets --read-labels --write-labels --read-views --write-views --read-documents --write-documents --read-notificationRules
+#   --write-notificationRules --read-notificationEndpoints --write-notificationEndpoints --read-checks --write-checks --read-dbrp --write-dbrp
+#   --read-annotations --write-annotations --read-sources --write-sources --read-scrapers --write-scrapers --read-notebooks --write-notebooks --read-remotes
+#   --write-remotes --read-replications --write-replications

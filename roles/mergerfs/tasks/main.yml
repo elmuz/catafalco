@@ -17,5 +17,6 @@
     minute: "0"
     hour: "7"
     weekday: 1-6
-    job: /usr/local/bin/mergerfs-uncache -s {{ cache_root }} -d {{ mergerfs_root }}_slow -t 75 --exclude {{ cache_root }}/docker-volumes-cache --healthchecks-url
+    job: >
+      /usr/local/bin/mergerfs-uncache -s {{ cache_root }} -d {{ mergerfs_root }}_slow -t 75 --exclude {{ cache_root }}/docker-volumes-cache --healthchecks-url
       https://healthchecks.{{ host_local }}/ping/a7a66ee2-eed8-4dfa-bfa1-b6217d472c02

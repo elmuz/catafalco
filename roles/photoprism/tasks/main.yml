@@ -30,8 +30,9 @@
     pull: true
     networks:
       - name: swag_internal_network
-    command: mariadbd --innodb-buffer-pool-size=512M --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --max-connections=512
-      --innodb-rollback-on-timeout=OFF --innodb-lock-wait-timeout=120
+    command: >
+      mariadbd --innodb-buffer-pool-size=512M --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      --max-connections=512 --innodb-rollback-on-timeout=OFF --innodb-lock-wait-timeout=120
     state: started
     user: "{{ guid }}:{{ guid }}"
     env:
@@ -118,5 +119,6 @@
     name: Backup PhotoPrism database
     minute: "0"
     hour: "0"
-    job: mv {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql.old || /usr/bin/docker
-      exec --user {{ guid }}:{{ guid }} {{ container_name }} photoprism backup -i /photoprism/storage/backup/mysql/backup.sql
+    job: >
+      mv {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql.old ||
+      docker exec --user {{ guid }}:{{ guid }} {{ container_name }} photoprism backup -i /photoprism/storage/backup/mysql/backup.sql

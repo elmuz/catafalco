@@ -19,8 +19,10 @@
     name: "Synch task: {{ item.src }} => {{ item.dst }}"
     minute: "{{ item.mm }}"
     hour: "{{ item.HH }}"
-    job: /usr/local/bin/rclone --config {{ rclone_config_location }} sync {{ item.src }} {{ item.dst }} --exclude '@Recently-Snapshot/**' --exclude '@Recycle/**'
-      --syslog --log-level NOTICE --syslog-facility SYSLOG && curl -fsS -m 10 --retry 5 -o /dev/null https://healthchecks.{{ host_local }}/ping/{{ item.hc_uuid }}
+    job: >
+      /usr/local/bin/rclone --config {{ rclone_config_location }} sync {{ item.src }} {{ item.dst }} --exclude '@Recently-Snapshot/**' --exclude '@Recycle/**'
+      --syslog --log-level NOTICE --syslog-facility SYSLOG && curl -fsS -m 10 --retry 5 -o /dev/null
+      https://healthchecks.{{ host_local }}/ping/{{ item.hc_uuid }}
   with_items:
     - { src: julia:doc-alessio, dst: "{{ mergerfs_root }}/Documents/alessio", HH: 8, mm: 0, hc_uuid: 23383efc-3976-4e21-a63a-1c722e3956e0 }
     - { src: julia:doc-sara, dst: "{{ mergerfs_root }}/Documents/sara", HH: 8, mm: 10, hc_uuid: bee92dc9-0a1d-4402-b555-ed8818d0c823 }

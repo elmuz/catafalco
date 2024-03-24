@@ -18,8 +18,9 @@
 
 - name: Parse the Xresources file
   shell:
-    cmd: python3 -c 'import xrp; import json; result = xrp.parse_file("/home/{{ username }}/.Xresources", encoding="utf8"); print(json.dumps(dict(result.resources),
-      indent = 4).replace("*.", "").replace("*", ""))'
+    cmd: >
+      python3 -c 'import xrp; import json; result = xrp.parse_file("/home/{{ username }}/.Xresources", encoding="utf8");
+      print(json.dumps(dict(result.resources), indent = 4).replace("*.", "").replace("*", ""))'
   register: xresources
   changed_when: false
 
