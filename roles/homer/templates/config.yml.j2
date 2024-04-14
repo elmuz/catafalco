@@ -56,8 +56,8 @@ services:
         apikey: "{{homer_api_keys['Jellyfin']}}"
         libraryType: "movies"
         target: "_blank"
-{% for item in web_applications if "media" in item.category and item.name != "Jellyfin" and item.url != "" %}
-      - name: "{{ item.name }}"
+{% for item in web_applications if "media" in item.category and item.name != "jellyfin" and item.url != "" %}
+      - name: "{{ item.dashboard }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
         target: "_blank"
@@ -66,8 +66,8 @@ services:
   - name: "Services"
     icon: "fas fa-stream"
     items:
-{% for item in web_applications if "services" in item.category and item.name != "Speedtest Tracker" and item.url != "" %}
-      - name: "{{ item.name }}"
+{% for item in web_applications if "services" in item.category and item.dashboard != "Speedtest Tracker" and item.url != "" %}
+      - name: "{{ item.dashboard }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
         target: "_blank"
@@ -87,8 +87,8 @@ services:
         type: "Healthchecks"
         apikey: "{{ healthchecks_api_ro_key }}"
         target: "_blank"
-{% for item in web_applications if "system" in item.category and item.name != "Healthchecks" and item.url != "" %}
-      - name: "{{ item.name }}"
+{% for item in web_applications if "system" in item.category and item.name != "healthchecks" and item.url != "" %}
+      - name: "{{ item.dashboard }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
         target: "_blank"
@@ -116,18 +116,18 @@ services:
   - name: "ServArr"
     icon: "fas fa-search-dollar"
     items:
-{% for item in web_applications if "servarr" in item.category and item.name == "Deluge" and item.url != "" %}
-      - name: "{{ item.name }}"
+{% for item in web_applications if "servarr" in item.category and item.name == "deluge" and item.url != "" %}
+      - name: "{{ item.dashboard }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
         target: "_blank"
 {% endfor %}
-{% for item in web_applications if "servarr" in item.category and item.name != "Deluge" and item.url != "" %}
-      - name: "{{ item.name }}"
+{% for item in web_applications if "servarr" in item.category and item.name != "deluge" and item.url != "" %}
+      - name: "{{ item.dashboard }}"
         logo: "{{ item.logo }}"
         url: "{{ item.url }}"
-        type: "{{ item.name }}"
-        apikey: "{{ homer_api_keys[item.name] }}"
+        type: "{{ item.dashboard }}"
+        apikey: "{{ homer_api_keys[item.dashboard] }}"
         target: "_blank"
 {% endfor %}
 

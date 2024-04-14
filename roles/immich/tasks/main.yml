@@ -1,0 +1,43 @@
+---
+- name: Create the necessary Immich folders (models)
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/immich/models/"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Create the necessary Immich folders (upload)
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/immich/upload/"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Copy the necessary Immich files (compose)
+  ansible.builtin.template:
+    src: templates/compose.yml.j2
+    dest: "{{ docker_dir }}/immich/compose.yml"
+    mode: "0644"
+
+- name: Copy the necessary Immich files (env vars)
+  ansible.builtin.template:
+    src: templates/.env.j2
+    dest: hwaccel.ml.yml
+    mode: "0644"
+
+- name: Copy the necessary Immich files (hw machine learning)
+  ansible.builtin.copy:
+    src: hwaccel.ml.yml
+    dest: "{{ docker_dir }}/immich/hwaccel.ml.yml"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"
+
+- name: Make sure Immich containers are running
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_dir }}/immich"
+    state: present
+    remove_orphans: true
+    remove_volumes: true

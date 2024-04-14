@@ -1,4 +1,5 @@
 ---
 prowlarr_container_name: prowlarr
 prowlarr_dashboard_url: https://prowlarr.{{ host_local }}
+prowlarr_dashboard_name: Prowlarr
 prowlarr_homer_category: servarr

@@ -104,6 +104,8 @@ containers:
   - firefox
   - handbrake
   - healthchecks
+  - homer
+  - immich
   - influxdb
   - invidious
   - jellyfin

@@ -2,7 +2,7 @@
 - name: Make sure that swag_internal container is created and running
   docker_container:
     name: swag_internal
-    image: ghcr.io/linuxserver/swag
+    image: ghcr.io/linuxserver/swag:latest
     pull: true
     networks:
       - name: swag_internal_network

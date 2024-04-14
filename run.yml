@@ -211,6 +211,12 @@
         - photoprism
         - containers
 
+    - role: immich
+      become: false
+      tags:
+        - immich
+        - containers
+
     - role: navidrome
       become: false
       tags:
