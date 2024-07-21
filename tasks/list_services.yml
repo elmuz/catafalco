@@ -11,9 +11,9 @@
 
 - name: Populate the dictionary of all containers
   set_fact:
-    web_applications: "{{ web_applications | default([]) + [{'name': item, 'logo': '/assets/tools/homer-icons/' + item + '.png', 'dashboard': lookup('vars', item)[item
-      + '_dashboard_name'] | default(item), 'url': lookup('vars', item)[item + '_dashboard_url'] | default(''), 'endpoint': lookup('vars', item)[item + '_health_url']
-      | default(''), 'category': lookup('vars', item)[item + '_homer_category'] | default('')}] }}"
+    web_applications: "{{ web_applications | default([]) + [{'name': item, 'logo': '/assets/tools/homer-icons/' + item + '.png', 'dashboard': lookup('vars',
+    item)[item + '_dashboard_name'] | default(item), 'url': lookup('vars', item)[item + '_dashboard_url'] | default(''), 'endpoint': lookup('vars', item)[item
+    + '_health_url'] | default(''), 'category': lookup('vars', item)[item + '_homer_category'] | default('')}] }}"
   loop: "{{ containers }}"
 
 - name: Populate the URL dictionary with all containers

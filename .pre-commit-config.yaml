@@ -4,7 +4,7 @@ repos:
     rev: v24.2.0
     hooks:
       - id: ansible-lint
-        args: [--offline, --fix]
+        args: [--offline]
         files: \.(yaml|yml)$
         additional_dependencies:
           - ansible

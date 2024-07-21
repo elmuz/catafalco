@@ -24,7 +24,7 @@
 - name: Copy the necessary Immich files (env vars)
   ansible.builtin.template:
     src: templates/.env.j2
-    dest: hwaccel.ml.yml
+    dest: "{{ docker_dir }}/immich/.env"
     mode: "0644"
 
 - name: Copy the necessary Immich files (hw machine learning)

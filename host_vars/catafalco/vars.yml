@@ -111,7 +111,6 @@ containers:
   - jellyfin
   - lidarr
   - navidrome
-  - photoprism
   - prowlarr
   - radarr
   - readarr

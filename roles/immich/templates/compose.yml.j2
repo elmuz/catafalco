@@ -12,7 +12,12 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    user: "{{ guid }}:{{ guid }}"
     command: ['start.sh', 'immich']
+    networks:
+      default:
+        aliases:
+          - immich-server
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
@@ -27,10 +32,15 @@ services:
   immich-microservices:
     container_name: immich_microservices
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    user: "{{ guid }}:{{ guid }}"
     # extends: # uncomment this section for hardware acceleration - see https://immich.app/docs/features/hardware-transcoding
     #   file: hwaccel.transcoding.yml
     #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     command: ['start.sh', 'microservices']
+    networks:
+      default:
+        aliases:
+          - immich-microservices
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
@@ -47,9 +57,14 @@ services:
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
     # Example tag: ${IMMICH_VERSION:-release}-cuda
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}-openvino
+    user: "{{ guid }}:{{ guid }}"
     extends:  # uncomment this section for hardware acceleration - see https://immich.app/docs/features/ml-hardware-acceleration
       file: hwaccel.ml.yml
       service: openvino  # set to one of [armnn, cuda, openvino, openvino-wsl] for accelerated inference - use the `-wsl` version for WSL2 where applicable
+    networks:
+      default:
+        aliases:
+          - immich-machine-learning
     volumes:
       - model-cache:/cache
     env_file:
@@ -89,4 +104,4 @@ volumes:
     driver_opts:
       o: bind
       type: none
-      device: "{{ docker_dir }}/immich/models"
+      device: "{{ cache_root }}/docker-volumes-cache/immich/models"

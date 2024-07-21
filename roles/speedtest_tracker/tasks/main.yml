@@ -1,7 +1,7 @@
 ---
-- name: Craete the necessary Speedtest Tracker database
+- name: Create the necessary Speedtest Tracker database
   file:
-    path: "{{ docker_dir }}/{{ container_name }}"
+    path: "{{ docker_dir }}/{{ speedtest_tracker_container_name }}"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -9,7 +9,7 @@
 
 - name: Make sure that speedtest_tracker-mariadb container is created and running
   docker_container:
-    name: "{{ container_name }}-db"
+    name: "{{ speedtest_tracker_container_name }}-db"
     image: linuxserver/mariadb
     pull: true
     env:
@@ -25,19 +25,21 @@
     state: started
     restart_policy: unless-stopped
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}/data:/config"
+      - "{{ docker_dir }}/{{ speedtest_tracker_container_name }}/data:/config"
 
 - name: Make sure that Speedtest tracker container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ speedtest_tracker_container_name }}"
     image: lscr.io/linuxserver/speedtest-tracker:latest
     pull: true
     env:
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"
       TZ: "{{ timezone }}"
+      APP_KEY: "{{ speedtest_tracker_app_key }}"
+      APP_URL: "{{ speedtest_tracker_dashboard_url }}"
       DB_CONNECTION: mysql
-      DB_HOST: "{{ container_name }}-db"
+      DB_HOST: "{{ speedtest_tracker_container_name }}-db"
       DB_DATABASE: speedtest
       DB_USERNAME: "{{ mysql_user }}"
       DB_PASSWORD: "{{ mysql_password }}"

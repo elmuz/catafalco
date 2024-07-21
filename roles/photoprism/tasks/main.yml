@@ -120,5 +120,6 @@
     minute: "0"
     hour: "0"
     job: >
-      mv {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql.old ||
+      mv {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql {{ docker_dir }}/{{ container_name }}/storage/backup/mysql/backup.sql.old
+      ||
       docker exec --user {{ guid }}:{{ guid }} {{ container_name }} photoprism backup -i /photoprism/storage/backup/mysql/backup.sql

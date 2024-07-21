@@ -7,7 +7,7 @@
 ---
 - name: Create the necessary folder for {{ container_name }}
   file:
-    path: "{{ docker_dir }}/{{ container_name }}/config"
+    path: "{{ docker_dir }}/{{ calibreweb_container_name }}/config"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -15,7 +15,7 @@
 
 - name: Create the Calibre folder
   file:
-    path: "{{ docker_dir }}/{{ container_name }}/calibre"
+    path: "{{ docker_dir }}/{{ calibreweb_container_name }}/calibre"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -24,7 +24,7 @@
 - name: Create the custom-services folder
   become: true
   file:
-    path: "{{ docker_dir }}/{{ container_name }}/custom-services.d"
+    path: "{{ docker_dir }}/{{ calibreweb_container_name }}/custom-services.d"
     state: directory
     owner: root
     group: root
@@ -32,8 +32,8 @@
 
 - name: Copy the users database
   copy:
-    src: roles/containers/media/calibreweb/files/users.sqlite
-    dest: "{{ docker_dir }}/{{ container_name }}/calibre/users.sqlite"
+    src: roles/{{ calibreweb_container_name }}/files/users.sqlite
+    dest: "{{ docker_dir }}/{{ calibreweb_container_name }}/calibre/users.sqlite"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0755"
@@ -41,7 +41,7 @@
 - name: Copy the launcher for Calibre server
   become: true
   copy:
-    src: roles/containers/media/calibreweb/templates/start-calibre.sh.j2
+    src: roles/{{ calibreweb_container_name }}/templates/start-calibre.sh.j2
     dest: "{{ docker_dir }}/{{ container_name }}/custom-services.d/start-calibre.sh"
     owner: root
     group: root

@@ -2,12 +2,12 @@
 #  * https://github.com/automatic-ripping-machine/automatic-ripping-machine/wiki/docker
 #  * https://hub.docker.com/r/automaticrippingmachine/automatic-ripping-machine
 #
-# Noes:
+# Notes:
 # Run `lsscsi -g`, identify optical device and mount both sr/sg
 ---
 - name: Create the necessary ARM folder
   file:
-    path: "{{ docker_dir }}/{{ container_name }}"
+    path: "{{ docker_dir }}/{{ arm_container_name }}"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -15,23 +15,23 @@
 
 - name: Copy the main ARM config
   copy:
-    src: roles/containers/media/arm/files/arm.yaml
-    dest: "{{ docker_dir }}/{{ container_name }}/config/arm.yaml"
+    src: roles/{{ arm_container_name }}/files/arm.yaml
+    dest: "{{ docker_dir }}/{{ arm_container_name }}/config/arm.yaml"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
 
 - name: Copy HandBrake custom presets
   copy:
-    src: roles/containers/media/arm/files/handbrake-presets/HQ-576p-x264-crf20.json
-    dest: "{{ docker_dir }}/{{ container_name }}/config/HQ-576p-x264-crf20.json"
+    src: roles/{{ arm_container_name }}/files/handbrake-presets/HQ-576p-x264-crf20.json
+    dest: "{{ docker_dir }}/{{ arm_container_name }}/config/HQ-576p-x264-crf20.json"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
 
 - name: Make sure that ARM container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ arm_container_name }}"
     image: automaticrippingmachine/automatic-ripping-machine:latest
     pull: true
     networks:
@@ -39,15 +39,15 @@
     privileged: true
     devices:
       - /dev/sr0:/dev/sr0
-      - /dev/sg0:/dev/sg0
+      - /dev/sg4:/dev/sg4
     state: started
     env:
       ARM_UID: "{{ guid }}"
       ARM_GID: "{{ guid }}"
       TZ: "{{ timezone }}"
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}/config:/etc/arm/config"
-      - "{{ docker_dir }}/{{ container_name }}/db:/home/arm/db"
+      - "{{ docker_dir }}/{{ arm_container_name }}/config:/etc/arm/config"
+      - "{{ docker_dir }}/{{ arm_container_name }}/db:/home/arm/db"
       - "{{ cache_root }}/Downloads/arm_raw:/home/arm/media/raw"
       - "{{ cache_root }}/Downloads/arm_transcode:/home/arm/media/transcode"
       - "{{ mergerfs_root }}/Downloads/arm_completed:/home/arm/media/completed"
