@@ -2,7 +2,7 @@
 - name: Copy the necessary invidous-db files (1)
   copy:
     src: sql
-    dest: "{{ docker_dir }}/{{ container_name }}/db/sql"
+    dest: "{{ docker_dir }}/{{ invidious_container_name }}/db/sql"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0755"
@@ -10,14 +10,14 @@
 - name: Copy the necessary invidous-db files (2)
   copy:
     src: init-invidious-db.sh
-    dest: "{{ docker_dir }}/{{ container_name }}/db/init-invidious-db.sh"
+    dest: "{{ docker_dir }}/{{ invidious_container_name }}/db/init-invidious-db.sh"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0755"
 
 - name: Make sure that invidous-db container is created and running
   docker_container:
-    name: "{{ container_name }}-db"
+    name: "{{ invidious_container_name }}-db"
     image: docker.io/library/postgres:14
     pull: true
     env:
@@ -29,14 +29,14 @@
     state: started
     restart_policy: unless-stopped
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}/db/sql:/config/sql"
-      - "{{ docker_dir }}/{{ container_name }}/db/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh"
+      - "{{ docker_dir }}/{{ invidious_container_name }}/db/sql:/config/sql"
+      - "{{ docker_dir }}/{{ invidious_container_name }}/db/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh"
     healthcheck:
       test: [CMD-SHELL, pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB]
 
-- name: Make sure that Invidous container is created and running
+- name: Make sure that Invidious container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ invidious_container_name }}"
     image: quay.io/invidious/invidious:latest
     pull: true
     env:
@@ -67,3 +67,11 @@
     log_options:
       max-size: 1G
       max-file: "4"
+
+- name: Install the SWAG config files
+  template:
+    src: "templates/{{ invidious_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ invidious_container_name }}.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

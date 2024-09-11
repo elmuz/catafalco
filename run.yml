@@ -113,6 +113,18 @@
         - swag
         - containers
 
+#    - role: caddy
+#      become: false
+#      tags:
+#        - caddy
+#        - containers
+#
+#    - role: traefik
+#      become: false
+#      tags:
+#        - traefik
+#        - containers
+
     #
     # Homer
     #
@@ -203,12 +215,6 @@
       become: false
       tags:
         - jellyfin
-        - containers
-
-    - role: photoprism
-      become: false
-      tags:
-        - photoprism
         - containers
 
     - role: immich

@@ -16,7 +16,7 @@
 
 - name: Make sure that Jellyfin container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ jellyfin_container_name }}"
     image: ghcr.io/linuxserver/jellyfin:latest
     pull: true
     networks:
@@ -39,7 +39,7 @@
     groups:
       - 109
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}:/config"
+      - "{{ docker_dir }}/{{ jellyfin_container_name }}:/config"
       - "{{ mergerfs_root }}/Media/Transcodes:/config/data/transcodes"
       - "{{ mergerfs_root }}/Media/Movies:/data/movies"
       - "{{ mergerfs_root }}/Media/TV:/data/tv"
@@ -47,3 +47,11 @@
       - "{{ mergerfs_root }}/Media/Music:/data/music:ro"
       - /etc/localtime:/etc/localtime:ro
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: jellyfin.subdomain.conf.j2
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/jellyfin.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

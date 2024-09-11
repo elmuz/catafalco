@@ -1,7 +1,7 @@
 ---
 - name: Create the necessary Healthchecks folder
   file:
-    path: "{{ docker_dir }}/{{ container_name }}/config"
+    path: "{{ docker_dir }}/{{ healthchecks_container_name }}/config"
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -9,7 +9,7 @@
 
 - name: Make sure that Healthchecks container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ healthchecks_container_name }}"
     image: lscr.io/linuxserver/healthchecks:latest
     pull: true
     networks:
@@ -30,5 +30,13 @@
       REGENERATE_SETTINGS: "True"
       DEBUG: "False"
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+      - "{{ docker_dir }}/{{ healthchecks_container_name }}/config:/config"
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ healthchecks_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ healthchecks_container_name }}.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

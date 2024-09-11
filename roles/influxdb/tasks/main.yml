@@ -1,7 +1,7 @@
 ---
 - name: Make sure that InfluxDB container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ influxdb_container_name }}"
     image: influxdb
     pull: true
     networks:
@@ -16,12 +16,20 @@
       DOCKER_INFLUXDB_INIT_RETENTION: 4w
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "{{ influxdb_token }}"
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}/data:/var/lib/influxdb2"
-      - "{{ docker_dir }}/{{ container_name }}/config:/etc/influxdb2"
-      - /var/run/docker.sock:/var/run/docker.sock
+      - "{{ docker_dir }}/{{ influxdb_container_name }}/data:/var/lib/influxdb2"
+      - "{{ docker_dir }}/{{ influxdb_container_name }}/config:/etc/influxdb2"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - 127.0.0.1:8086:8086/tcp
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ influxdb_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ influxdb_container_name }}.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"
 
 # docker exec influxdb influx auth create --org "catafalco" --read-authorizations --write-authorizations --read-buckets --write-buckets --read-dashboards
 #   --write-dashboards --read-tasks --write-tasks --read-telegrafs  --write-telegrafs --read-users --write-users --read-variables --write-variables

@@ -16,12 +16,12 @@
 ---
 - name: Create the configuration directory
   file:
-    path: "{{ docker_dir }}/{{ container_name }}"
+    path: "{{ docker_dir }}/{{ deluge_container_name }}"
     state: directory
 
 - name: Make sure that Deluge container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ deluge_container_name }}"
     image: binhex/arch-delugevpn:2.1.1-4-05 # In case of issues with MergerFS stick to :2.0.5-1-04
     pull: true
     networks:
@@ -46,8 +46,16 @@
       PGID: "{{ guid }}"
       TZ: "{{ timezone }}"
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}/data:/data"
-      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+      - "{{ docker_dir }}/{{ deluge_container_name }}/data:/data"
+      - "{{ docker_dir }}/{{ deluge_container_name }}/config:/config"
       - "{{ mergerfs_root }}/Downloads:/home/nobody/Downloads"
       - /etc/localtime:/etc/localtime:ro
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ deluge_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ deluge_container_name }}.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

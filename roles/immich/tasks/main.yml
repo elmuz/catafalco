@@ -41,3 +41,11 @@
     state: present
     remove_orphans: true
     remove_volumes: true
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ immich_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ immich_container_name }}.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

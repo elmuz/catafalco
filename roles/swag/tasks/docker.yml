@@ -19,9 +19,10 @@
       DNSPLUGIN: cloudflare
       EMAIL: "{{ cloudflare_email }}"
       PROPAGATION: "60"
-      DOCKER_MODS: linuxserver/mods:swag-dashboard
+      DOCKER_MODS: linuxserver/mods:swag-dashboard|linuxserver/mods:swag-auto-reload
     ports:
       - 192.168.1.3:443:443
+      - 192.168.1.3:80:80
     volumes:
       - "{{ docker_dir }}/swag/internal/nginx:/config/nginx"
       - "{{ docker_dir }}/swag/dns-conf:/config/dns-conf"

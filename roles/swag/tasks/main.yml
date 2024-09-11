@@ -1,7 +1,4 @@
 ---
-- name: Check status
-  include_tasks: check_status.yml
-
 - name: List services
   include_tasks: tasks/list_services.yml
 

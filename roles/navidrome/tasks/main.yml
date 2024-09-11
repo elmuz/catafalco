@@ -1,7 +1,7 @@
 ---
 - name: Create the necessary Navidrome folder
   file:
-    path: "{{ docker_dir }}/{{ container_name }}/data"
+    path: "{{ docker_dir }}/{{ navidrome_container_name }}/data"
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -9,7 +9,7 @@
 
 - name: Make sure that Navidrome container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ navidrome_container_name }}"
     image: deluan/navidrome:latest
     pull: true
     networks:
@@ -22,6 +22,14 @@
       ND_SESSIONTIMEOUT: 24h
       ND_DEFAULTTHEME: Spotify-ish
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}/data:/data"
+      - "{{ docker_dir }}/{{ navidrome_container_name }}/data:/data"
       - "{{ mergerfs_root }}/Media/Music:/music:ro"
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: "templates/{{ navidrome_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ navidrome_container_name }}.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

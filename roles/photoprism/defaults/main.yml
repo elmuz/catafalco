@@ -1,5 +1,0 @@
----
-photoprism_container_name: photoprism
-photoprism_dashboard_url: https://photoprism.{{ host_local }}
-photoprism_homer_category: media
-photoprism_dashboard_name: PhotoPrism

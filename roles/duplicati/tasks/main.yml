@@ -2,7 +2,7 @@
 ---
 - name: Make sure that Duplicati container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: duplicati
     image: ghcr.io/linuxserver/duplicati
     pull: true
     networks:
@@ -13,7 +13,15 @@
       PGID: "{{ guid }}"
       TZ: "{{ timezone }}"
     volumes:
-      - "{{ docker_dir }}/{{ container_name }}/config:/config"
+      - "{{ docker_dir }}/duplicati/config:/config"
       - "{{ mergerfs_root }}/Documents:/source/Documents:ro"
       - "{{ mergerfs_root }}/Pictures:/source/Pictures:ro"
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: templates/duplicati.subdomain.conf.j2
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/duplicati.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

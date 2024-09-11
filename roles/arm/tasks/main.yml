@@ -54,3 +54,11 @@
       - "{{ mergerfs_root }}/Downloads/arm_music:/home/arm/Music"
       - /etc/localtime:/etc/localtime:ro
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ arm_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ arm_container_name }}.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

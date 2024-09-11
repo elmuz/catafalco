@@ -28,6 +28,10 @@ services:
       - redis
       - database
     restart: always
+    labels:
+      swag: enable
+      swag_address: immich_server
+      swag_url: "immich.{{ host_local }}"
 
   immich-microservices:
     container_name: immich_microservices

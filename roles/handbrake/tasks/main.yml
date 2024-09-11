@@ -1,7 +1,7 @@
 ---
 - name: Create the necessary HandBrake folder
   file:
-    path: "{{ docker_dir }}/{{ container_name }}"
+    path: "{{ docker_dir }}/{{ handbrake_container_name }}"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -9,7 +9,7 @@
 
 - name: Make sure that HandBrake container is created and running
   docker_container:
-    name: "{{ container_name }}"
+    name: "{{ handbrake_container_name }}"
     image: jlesage/handbrake:latest
     pull: true
     networks:
@@ -26,3 +26,11 @@
       - "{{ mergerfs_root }}/Downloads/hb_watch:/watch"
       - "{{ mergerfs_root }}/Downloads/hb_completed:/output"
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ handbrake_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ handbrake_container_name }}.subdomain.conf"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"

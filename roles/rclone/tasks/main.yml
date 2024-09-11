@@ -46,7 +46,7 @@
     weekday: "{{ item.weekday }}"
     job: >
       /usr/local/bin/rclone --config {{ rclone_config_location }} sync {{ item.src }} {{ item.dst }} --exclude '@Recently-Snapshot/**' --exclude '@Recycle/**'
-      --exclude '/Transcodes' --exclude '/Books' --syslog --log-level NOTICE --syslog-facility SYSLOG && curl -fsS -m 10 --retry 5 -o /dev/null
+      --exclude '/Transcodes/**' --exclude '/Books/**' --syslog --log-level NOTICE --syslog-facility SYSLOG && curl -fsS -m 10 --retry 5 -o /dev/null
       https://healthchecks.{{ host_local }}/ping/{{ item.hc_uuid }}
   with_items:
     - src: "{{ mergerfs_root }}/Media"
