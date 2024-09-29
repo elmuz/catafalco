@@ -9,11 +9,22 @@
     name: "{{ item }}"
   loop: "{{ containers }}"
 
+# Create a variable 'web_applications' as a list of all containers which have a variable 'name_dashboard_url' defined.
+# Each element is a dictionary of the kind:
+#  {
+#     name: jellyfin
+#     logo: '/assets/tools/homer-icons/jellyfin.png'
+#     dashboard: Jellyfin
+#     url: jellyfin.catafal.co
+#     health_url: ''  # not used anywhere yet
+#     category: Media
+#  }
 - name: Populate the dictionary of all containers
   set_fact:
     web_applications: "{{ web_applications | default([]) + [{'name': item, 'logo': '/assets/tools/homer-icons/' + item + '.png', 'dashboard': lookup('vars',
-    item)[item + '_dashboard_name'] | default(item), 'url': lookup('vars', item)[item + '_dashboard_url'] | default(''), 'endpoint': lookup('vars', item)[item
+    item)[item + '_dashboard_name'] | default(item), 'url': lookup('vars', item)[item + '_dashboard_url'] | default(''), 'health_url': lookup('vars', item)[item
     + '_health_url'] | default(''), 'category': lookup('vars', item)[item + '_homer_category'] | default('')}] }}"
+  when: lookup('vars', item)[item + '_dashboard_url'] is defined
   loop: "{{ containers }}"
 
 - name: Populate the URL dictionary with all containers

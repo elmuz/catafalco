@@ -1,0 +1,11 @@
+# docker run authelia/authelia:latest authelia crypto hash generate argon2 --password 'password'
+# See in the ansible-vault the password that generated this hash
+users:
+  funkysloth:
+    disabled: false
+    displayname: 'FunkySloth'
+    password: "$argon2id$v=19$m=65536,t=3,p=4$pF8VPpgRh56pt6p/1WkhDg$GaKK4hFcEaur0wnVKPYAAaXiZ9ipomu3bqjEMvlzPac"
+    email: 'funkysloth@disroot.org'
+    groups:
+      - 'admins'
+      - 'dev'

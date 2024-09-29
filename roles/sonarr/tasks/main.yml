@@ -1,11 +1,19 @@
 ---
+- name: Create the necessary Sonarr folder
+  file:
+    path: "{{ docker_dir }}/{{ sonarr_container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
 - name: Make sure that Sonarr container is created and running
   docker_container:
     name: "{{ sonarr_container_name }}"
     image: ghcr.io/linuxserver/sonarr
     pull: true
     networks:
-      - name: swag_internal_network
+      - name: swag_network
     state: started
     env:
       PUID: "{{ guid }}"
@@ -16,11 +24,14 @@
       - "{{ docker_dir }}/{{ sonarr_container_name }}:/config"
       - "{{ mergerfs_root }}:/storage"
     restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ sonarr_dashboard_name }}"
 
 - name: Install the SWAG config files
   template:
     src: "{{ sonarr_container_name }}.subdomain.conf.j2"
-    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ sonarr_container_name }}.subdomain.conf"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ sonarr_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"

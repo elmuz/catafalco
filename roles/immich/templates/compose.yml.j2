@@ -10,7 +10,7 @@ name: immich
 
 services:
   immich-server:
-    container_name: immich_server
+    container_name: "{{ immich_container_name }}_server"
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
     user: "{{ guid }}:{{ guid }}"
     command: ['start.sh', 'immich']
@@ -29,9 +29,9 @@ services:
       - database
     restart: always
     labels:
-      swag: enable
-      swag_address: immich_server
-      swag_url: "immich.{{ host_local }}"
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ immich_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ immich_dashboard_url }}"
 
   immich-microservices:
     container_name: immich_microservices
@@ -93,7 +93,7 @@ services:
 
 networks:
   default:
-    name: swag_internal_network
+    name: swag_network
 
 volumes:
   pgdata:

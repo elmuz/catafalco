@@ -1,12 +1,18 @@
 ---
-- name: List services
-  include_tasks: tasks/list_services.yml
-
 - name: Install configs
   include_tasks: install_configs.yml
 
 - name: Create docker network
   include_tasks: networks.yml
 
+- name: Install Authelia before installing
+  ansible.builtin.include_role:
+    name: authelia
+  when: "'authelia' in containers"
+
 - name: Create and run Swag docker container
   include_tasks: docker.yml
+
+- name: Add 'whoami' container for testing purposes
+  ansible.builtin.include_role:
+    name: whoami

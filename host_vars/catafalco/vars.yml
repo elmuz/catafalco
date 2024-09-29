@@ -6,7 +6,7 @@ dot_nameservers: [185.95.218.42@853#dns.digitale-gesellschaft.ch, 94.140.15.140@
 ntp_timezone: "{{ timezone }}"
 locale: en_US.UTF-8
 lan_network: 192.168.1.0/24
-# vpn_network: 10.1.1.0/24
+site_url: "{{ host_local }}"
 
 netplan_config: files/netplan/ethernet.yaml
 
@@ -92,6 +92,7 @@ security_autoupdate_mail_on_error: true
 # Enable/disable functionality
 #
 enable_nas_stuff: true
+enable_containers: true
 
 #
 # Active containers
@@ -116,6 +117,7 @@ containers:
   - readarr
   - sonarr
   - speedtest_tracker
+  - uptime_kuma
   - watchtower
 
 rclone_version: "0.0.0"
@@ -150,13 +152,9 @@ samba_server_string: "{{ hostname }}"
 #     password: "{{ password }}"
 
 samba_global_include: global-include.conf
-
 samba_apple_extensions: false
-
 samba_mitigate_cve_2017_7494: false
-
 samba_server_max_protocol: SMB3
-
 samba_server_min_protocol: SMB3
 
 # Write permissions may conflict with UNIX permission. `{{ mergerfs_root }}/XXX`

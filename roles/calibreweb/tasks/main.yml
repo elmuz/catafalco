@@ -7,7 +7,7 @@
 ---
 - name: Create the necessary folder for Calibre-Web
   file:
-    path: "{{ docker_dir }}/calibreweb/config"
+    path: "{{ docker_dir }}/{{ calibreweb_container_name }}/config"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -15,7 +15,7 @@
 
 - name: Create the Calibre folder
   file:
-    path: "{{ docker_dir }}/calibreweb/calibre"
+    path: "{{ docker_dir }}/{{ calibreweb_container_name }}/calibre"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -24,7 +24,7 @@
 - name: Create the custom-services folder
   become: true
   file:
-    path: "{{ docker_dir }}/calibreweb/custom-services.d"
+    path: "{{ docker_dir }}/{{ calibreweb_container_name }}/custom-services.d"
     state: directory
     owner: root
     group: root
@@ -33,7 +33,7 @@
 - name: Copy the users database
   copy:
     src: roles/calibreweb/files/users.sqlite
-    dest: "{{ docker_dir }}/calibreweb/calibre/users.sqlite"
+    dest: "{{ docker_dir }}/{{ calibreweb_container_name }}/calibre/users.sqlite"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0755"
@@ -42,24 +42,24 @@
   become: true
   copy:
     src: roles/calibreweb/templates/start-calibre.sh.j2
-    dest: "{{ docker_dir }}/calibreweb/custom-services.d/start-calibre.sh"
+    dest: "{{ docker_dir }}/{{ calibreweb_container_name }}/custom-services.d/start-calibre.sh"
     owner: root
     group: root
     mode: "0755"
 
 - name: Add a crontab line to start Calibre webserver
   ansible.builtin.lineinfile:
-    path: "{{ docker_dir }}/calibreweb/config/crontabs/abc"
+    path: "{{ docker_dir }}/{{ calibreweb_container_name }}/config/crontabs/abc"
     line: "@reboot calibre-server /books"
     create: true
 
 - name: Make sure that Calibre-Web container is created and running
   docker_container:
-    name: "calibreweb"
+    name: "{{ calibreweb_container_name }}"
     image: lscr.io/linuxserver/calibre-web:latest
     pull: true
     networks:
-      - name: swag_internal_network
+      - name: swag_network
     state: started
     env:
       PUID: "{{ guid }}"
@@ -68,19 +68,22 @@
       DOCKER_MODS: linuxserver/mods:universal-calibre|linuxserver/mods:universal-package-install
       INSTALL_PACKAGES: wget
     volumes:
-      - "{{ docker_dir }}/calibreweb/calibre:/calibre"
-      - "{{ docker_dir }}/calibreweb/calibre/metadata.db:/books/metadata.db"
-      - "{{ docker_dir }}/calibreweb/config:/config"
-      - "{{ docker_dir }}/calibreweb/custom-services.d:/custom-services.d:ro"
+      - "{{ docker_dir }}/{{ calibreweb_container_name }}/calibre:/calibre"
+      - "{{ docker_dir }}/{{ calibreweb_container_name }}/calibre/metadata.db:/books/metadata.db"
+      - "{{ docker_dir }}/{{ calibreweb_container_name }}/config:/config"
+      - "{{ docker_dir }}/{{ calibreweb_container_name }}/custom-services.d:/custom-services.d:ro"
       - "{{ mergerfs_root }}/Media/Books:/books"
     restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ calibreweb_dashboard_name }}"
 
 - name: Install the SWAG config files
   template:
-    src: calibreweb.subdomain.conf.j2
-    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/calibreweb.subdomain.conf"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    src: "{{ calibreweb_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ calibreweb_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"
 
 # TODO: create ad-hoc Docker exec commands for user creation and server start

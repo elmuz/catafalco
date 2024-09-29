@@ -21,7 +21,7 @@
       MYSQL_USER: "{{ mysql_user }}"
       MYSQL_PASSWORD: "{{ mysql_password }}"
     networks:
-      - name: swag_internal_network
+      - name: swag_network
     state: started
     restart_policy: unless-stopped
     volumes:
@@ -49,14 +49,20 @@
       SPEEDTEST_SCHEDULE: "0,10,20,30,40,50 * * * *"
       PRUNE_RESULTS_OLDER_THAN: "30"
     networks:
-      - name: swag_internal_network
+      - name: swag_network
+    links:
+      - "{{ speedtest_tracker_container_name }}-db"
     state: started
     restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ speedtest_tracker_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ speedtest_tracker_dashboard_url }}"
 
 - name: Install the SWAG config files
   template:
     src: "speedtest.subdomain.conf.j2"
-    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/speedtest.subdomain.conf"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/speedtest.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"

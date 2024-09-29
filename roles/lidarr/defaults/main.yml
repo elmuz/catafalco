@@ -1,5 +1,6 @@
 ---
 lidarr_container_name: lidarr
-lidarr_dashboard_url: https://lidarr.{{ host_local }}
+lidarr_subdomain: lidarr
+lidarr_dashboard_url: https://{{ lidarr_subdomain }}.{{ site_url }}
 lidarr_dashboard_name: Lidarr
 lidarr_homer_category: servarr

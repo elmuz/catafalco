@@ -51,7 +51,7 @@ services:
     items:
       - name: "Jellyfin"
         logo: /assets/tools/homer-icons/jellyfin.png
-        url: "https://jellyfin.{{ host_local }}"
+        url: "https://jellyfin.{{ site_url }}"
         type: "Emby"
         apikey: "{{homer_api_keys['Jellyfin']}}"
         libraryType: "movies"
@@ -74,7 +74,7 @@ services:
 {% endfor %}
       - name: "Speedtest Tracker"
         logo: /assets/tools/homer-icons/speedtest_tracker.png
-        url: "https://speedtest.{{ host_local }}"
+        url: "https://speedtest.{{ site_url }}"
         type: "SpeedtestTracker"
         target: "_blank"
 
@@ -83,7 +83,7 @@ services:
     items:
       - name: "Healthchecks"
         logo: /assets/tools/homer-icons/healthchecks.png
-        url: "https://healthchecks.{{ host_local }}"
+        url: "https://healthchecks.{{ site_url }}"
         type: "Healthchecks"
         apikey: "{{ healthchecks_api_ro_key }}"
         target: "_blank"
@@ -93,23 +93,15 @@ services:
         url: "{{ item.url }}"
         target: "_blank"
 {% endfor %}
-      - name: "Cockpit"
-        logo: /assets/tools/homer-icons/cockpit.png
-        url: "https://cockpit.{{ host_local }}"
-        target: "_blank"
       - name: "SWAG Dashboard"
         logo: /assets/tools/homer-icons/linuxserver.png
-        url: "https://dashboard.{{ host_local }}"
+        url: "https://dashboard.{{ site_url }}"
         target: "_blank"
       - name: "PiHole"
         logo: /assets/tools/homer-icons/pihole.png
         url: "http://192.168.1.2/admin"
         apikey: "{{ homer_api_keys['PiHole'] }}"
         type: "PiHole"
-        target: "_blank"
-      - name: "ispani.co"
-        logo: /assets/tools/homer-icons/ispanico.png
-        url: "https://ispani.co"
         target: "_blank"
 
 # Switch to explicit media items because they're too much customized.
@@ -130,10 +122,3 @@ services:
         apikey: "{{ homer_api_keys[item.dashboard] }}"
         target: "_blank"
 {% endfor %}
-
-#- name: "PiKVM"
-#  logo: /assets/tools/homer-icons/pikvm.png
-#  url: "http://pikvm.box/"
-#  target: "_blank"
-
-

@@ -1,5 +1,6 @@
 ---
 firefox_container_name: firefox
-firefox_dashboard_url: https://firefox.{{ host_local }}
+firefox_subdomain: firefox
+firefox_dashboard_url: https://{{ firefox_subdomain }}.{{ site_url }}
 firefox_dashboard_name: Firefox
 firefox_homer_category: services

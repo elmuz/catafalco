@@ -1,0 +1,84 @@
+---
+- name: Create necessary folders
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/nextcloud/{{ item }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+  loop:
+    - config
+    - data
+    - mariadb
+    - backup
+    - mariadb/crontabs
+
+- name: Copy crontab file for automatic backup
+  ansible.builtin.template:
+    src: mariadb-cron.j2
+    dest: "{{ docker_dir }}/nextcloud/mariadb/crontabs/abc"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Make sure the MariaDB container is created and running
+  community.docker.docker_container:
+    name: "{{ nextcloud_mysql_host }}"
+    image: lscr.io/linuxserver/mariadb:latest
+    pull: true
+    state: started
+    networks:
+      - name: swag_network
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "MYSQL_ROOT_PASSWORD": "{{ nextcloud['mysql_root_password'] }}"
+      "MYSQL_DATABASE": "{{ nextcloud_mysql_database }}"
+      "MYSQL_USER": "{{ nextcloud_mysql_user }}"
+      "MYSQL_PASSWORD": "{{ nextcloud['mysql_password'] }}"
+      "DOCKER_MODS": "linuxserver/mods:universal-cron"
+    volumes:
+      - "{{ docker_dir }}/nextcloud/mariadb:/config"
+      - "{{ docker_dir }}/nextcloud/backup:/backup"
+    restart_policy: unless-stopped
+
+- name: Make sure the Nextcloud container is created and running
+  # https://hub.docker.com/r/linuxserver/nextcloud
+  community.docker.docker_container:
+    name: "{{ nextcloud_container_name }}"
+    image: lscr.io/linuxserver/nextcloud:latest
+    pull: true
+    state: started
+    networks:
+      - name: swag_network
+    env:
+      "PUID": "{{ guid }}"
+      "PGID": "{{ guid }}"
+      "TZ": "{{ timezone }}"
+      "MYSQL_PASSWORD": "{{ nextcloud['mysql_password'] }}"
+      "MYSQL_DATABASE": "{{ nextcloud_mysql_database }}"
+      "MYSQL_USER": "{{ nextcloud_mysql_user }}"
+      "MYSQL_HOST": "{{ nextcloud_mysql_host }}"
+    links:
+      - nextcloud-mariadb
+    volumes:
+      - "{{ docker_dir }}/nextcloud/config:/config"
+      - "{{ docker_dir }}/nextcloud/data:/data"
+    restart_policy: unless-stopped
+
+# - name: Update the PHP configuration
+#   include_tasks: configuration.yml
+
+- name: Install the SWAG config files
+  ansible.builtin.template:
+    src: nextcloud.subdomain.conf.j2
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/nextcloud.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+# - name: Install OnlyOffice for document integration
+#   ansible.builtin.include_role:
+#     name: onlyoffice
+#   when: "'onlyoffice' in containers"

@@ -20,37 +20,18 @@
         repo: deb https://download.docker.com/linux/ubuntu bionic stable
         state: present
 
-- name: Install Docker (Raspbian)
+- name: Install Docker (Debian)
   when: ansible_facts['distribution'] == 'Debian'
   block:
     - name: Add Docker GPG apt Key
       apt_key:
-        url: https://download.docker.com/linux/raspbian/gpg
+        url: https://download.docker.com/linux/debian/gpg
         state: present
 
     - name: Add Docker Repository
       apt_repository:
-        repo: deb https://download.docker.com/linux/raspbian buster stable
+        repo: deb https://download.docker.com/linux/debian bookworm stable
         state: present
-
-    - name: Add buster-backports GPG key (for libseccomp2)
-      apt_key:
-        keyserver: keyserver.ubuntu.com
-        id: "{{ item }}"
-      loop:
-        - "04EE7237B7D453EC"
-        - 648ACFD622F3D138
-
-    - name: Add buster-backports repository
-      apt_repository:
-        repo: deb http://deb.debian.org/debian buster-backports main contrib non-free
-
-    - name: Update to the latest version of libseccomp2
-      apt:
-        update_cache: true
-        name: libseccomp2
-        default_release: buster-backports
-        state: latest
 
     - name: Switch to iptables-legacy
       community.general.alternatives:
@@ -93,47 +74,21 @@
       - docker
     append: true
 
-- name: Install Docker Module for Python
-  pip:
-    name: docker
-
 - name: Make sure Docker is running and enabled
   service:
     name: docker
     state: started
     enabled: true
 
-- name: Get a list of containers
-  delegate_to: localhost
-  become: false
-  find:
-    paths:
-      - roles/containers/media
-      - roles/containers/homeautomation
-      - roles/containers/servarr
-      - roles/containers/services
-      - roles/containers/system
-    file_type: directory
-    recurse: false
-  register: containers
-
-- name: Stop and remove all the disabled containers
-  become: false
-  docker_container:
-    name: "{{ item.path.split('/')[-1] }}"
-    state: absent
-  when: not lookup('vars', 'enable_' + item.path.split('/')[-1])
-  with_items: "{{ containers.files }}"
-
 - name: Handle persistent data
   become: false
-  when: enable_nas_stuff | default(False)
+  when: enable_containers | default(False)
   block:
     - name: Check if the persistent data folder exists on the remote machine
       stat:
         path: "{{ docker_dir }}"
       register: persistent_data
-      when: enable_nas_stuff | default(False)
+      when: enable_containers | default(False)
 
     - name: Check if the persistent data folder is empty
       find:
@@ -141,21 +96,21 @@
           - "{{ docker_dir }}/"
         recurse: true
       register: persistent_data_find
-      when: enable_nas_stuff | default(False)
+      when: enable_containers | default(False)
 
-    - name: Check if the docker backup exists
-      stat:
-        path: "{{ mergerfs_root }}/docker-volumes-backup"
-      register: docker_backup_find
-      when: enable_nas_stuff | default(False)
+#    - name: Check if the docker backup exists
+#      stat:
+#        path: "{{ mergerfs_root }}/docker-volumes-backup"
+#      register: docker_backup_find
+#      when: enable_containers | default(False)
 
     - name: Create the persistent data folder on the remote machine
       become: true
       file:
         dest: "{{ docker_dir }}"
         state: directory
-        owner: "{{ username }}"
-        group: "{{ username }}"
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
         mode: "0755"
         recurse: true
       when: not persistent_data.stat.exists
@@ -174,6 +129,6 @@
       file:
         dest: "{{ docker_dir }}"
         state: directory
-        owner: "{{ username }}"
-        group: "{{ username }}"
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
         recurse: true

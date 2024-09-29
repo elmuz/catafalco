@@ -1,5 +1,6 @@
 ---
 readarr_container_name: readarr
-readarr_dashboard_url: https://readarr.{{ host_local }}
+readarr_subdomain: readarr
+readarr_dashboard_url: https://{{ readarr_subdomain }}.{{ host_local }}
 readarr_dashboard_name: Readarr
 readarr_homer_category: servarr

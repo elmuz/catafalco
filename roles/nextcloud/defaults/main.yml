@@ -1,0 +1,6 @@
+---
+nextcloud_container_name: nextcloud
+nextcloud_mysql_host: nextcloud-mariadb
+nextcloud_mysql_database: nextcloud
+nextcloud_mysql_user: nextcloud
+nextcloud_onlyoffice_host: onlyoffice

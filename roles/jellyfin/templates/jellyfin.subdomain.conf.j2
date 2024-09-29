@@ -7,13 +7,14 @@
 # in jellyfin settings, under "Advanced/Networking" add subdomain.mydomain.tld as a known proxy
 
 server {
-    {% include "roles/swag/templates/nginx/internal.j2" %}
-    server_name jellyfin.*;
+    {% include "roles/swag/templates/nginx/common.j2" %}
+
+    server_name {{ jellyfin_subdomain }}.*;
 
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        set $upstream_app jellyfin;
+        set $upstream_app {{ jellyfin_container_name }};
         set $upstream_port 8096;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;
@@ -25,7 +26,7 @@ server {
     location ~ (/jellyfin)?/socket {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        set $upstream_app jellyfin;
+        set $upstream_app {{ jellyfin_container_name }};
         set $upstream_port 8096;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;
@@ -35,7 +36,7 @@ server {
     # Restrict access to /metrics
     # https://jellyfin.org/docs/general/networking/monitoring/#prometheus-metrics
     location /metrics {
-        allow 192.168.0.0/16;
+        allow 192.168.1.0/24;
         allow 10.0.0.0/8;
         allow 172.16.0.0/12;
         allow 127.0.0.0/8;
@@ -44,7 +45,7 @@ server {
 
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        set $upstream_app jellyfin;
+        set $upstream_app {{ jellyfin_container_name }};
         set $upstream_port 8096;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;

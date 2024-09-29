@@ -1,5 +1,6 @@
 ---
 deluge_container_name: deluge
-deluge_dashboard_url: https://deluge.{{ host_local }}
+deluge_subdomain: deluge
+deluge_dashboard_url: https://{{ deluge_subdomain }}.{{ site_url }}
 deluge_dashboard_name: Deluge
 deluge_homer_category: servarr

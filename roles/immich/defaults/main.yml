@@ -1,5 +1,6 @@
 ---
 immich_container_name: immich
-immich_dashboard_url: https://immich.{{ host_local }}/
+immich_subdomain: immich
+immich_dashboard_url: https://{{ immich_subdomain }}.{{ site_url }}/
 immich_homer_category: media
 immich_dashboard_name: Immich

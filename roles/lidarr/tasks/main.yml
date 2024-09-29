@@ -4,23 +4,14 @@
 # or possibly:
 # for album in *.flac; do shnsplit -f "${album%.flac}".cue -o flac -t "%n - %t" "$album"; done
 
-# - name: Make sure that `shntool` and `cuetools` packages are installed
-#   become: yes
-#   package:
-#     name:
-#       - shntool
-#       - flac
-#       - cuetools
-#     state: present
-
-# - name: Install {{ container_name }} connection to beets template
-#   template:
-#     src: beets.sh.j2
-#     dest: "{{ docker_dir }}/{{ container_name }}/beets.sh"
-#     owner: "{{ username }}"
-#     group: "{{ username }}"
-#     mode: "0755"
-#   register: beets_connect
+- name: Make sure that `shntool` and `cuetools` packages are installed
+  become: true
+  package:
+    name:
+      - shntool
+      - flac
+      - cuetools
+    state: present
 
 - name: Make sure that Lidarr container is created and running
   docker_container:
@@ -28,7 +19,7 @@
     image: ghcr.io/linuxserver/lidarr
     pull: true
     networks:
-      - name: swag_internal_network
+      - name: swag_network
     state: started
     env:
       PUID: "{{ guid }}"
@@ -39,11 +30,14 @@
       - "{{ docker_dir }}/{{ lidarr_container_name }}:/config"
       - "{{ mergerfs_root }}:/storage"
     restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ lidarr_dashboard_name }}"
 
 - name: Install the SWAG config files
   template:
     src: "{{ lidarr_container_name }}.subdomain.conf.j2"
-    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ lidarr_container_name }}.subdomain.conf"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ lidarr_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"

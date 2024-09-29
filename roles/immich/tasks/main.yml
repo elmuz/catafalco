@@ -1,7 +1,7 @@
 ---
 - name: Create the necessary Immich folders (models)
   ansible.builtin.file:
-    path: "{{ docker_dir }}/immich/models/"
+    path: "{{ docker_dir }}/{{ immich_container_name }}/models/"
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -9,7 +9,7 @@
 
 - name: Create the necessary Immich folders (upload)
   ansible.builtin.file:
-    path: "{{ docker_dir }}/immich/upload/"
+    path: "{{ docker_dir }}/{{ immich_container_name }}/upload/"
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -18,26 +18,26 @@
 - name: Copy the necessary Immich files (compose)
   ansible.builtin.template:
     src: templates/compose.yml.j2
-    dest: "{{ docker_dir }}/immich/compose.yml"
+    dest: "{{ docker_dir }}/{{ immich_container_name }}/compose.yml"
     mode: "0644"
 
 - name: Copy the necessary Immich files (env vars)
   ansible.builtin.template:
     src: templates/.env.j2
-    dest: "{{ docker_dir }}/immich/.env"
+    dest: "{{ docker_dir }}/{{ immich_container_name }}/.env"
     mode: "0644"
 
 - name: Copy the necessary Immich files (hw machine learning)
   ansible.builtin.copy:
     src: hwaccel.ml.yml
-    dest: "{{ docker_dir }}/immich/hwaccel.ml.yml"
+    dest: "{{ docker_dir }}/{{ immich_container_name }}/hwaccel.ml.yml"
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: "0644"
 
 - name: Make sure Immich containers are running
   community.docker.docker_compose_v2:
-    project_src: "{{ docker_dir }}/immich"
+    project_src: "{{ docker_dir }}/{{ immich_container_name }}"
     state: present
     remove_orphans: true
     remove_volumes: true
@@ -45,7 +45,7 @@
 - name: Install the SWAG config files
   template:
     src: "{{ immich_container_name }}.subdomain.conf.j2"
-    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ immich_container_name }}.subdomain.conf"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ immich_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"

@@ -1,0 +1,77 @@
+---
+- name: Update the configuration file (1)
+  ansible.builtin.blockinfile:
+    path: "{{ docker_dir }}/nextcloud/config/www/nextcloud/config/config.php"
+    insertbefore: '.;'
+    marker: "// {mark} ANSIBLE MANAGED BLOCK"
+    block: |2
+        'objectstore' => [
+          'class' => '\OC\Files\ObjectStore\S3',
+          'arguments' => [
+            'bucket' => 'nextcloud',
+            'hostname' => '{{ nextcloud['s3_endpoint'] }}',
+            'key' => '{{ nextcloud['s3_access_key'] }}',
+            'secret' => '{{ nextcloud['s3_secret_key'] }}',
+            'use_ssl' => 'true',
+          ],
+        ],
+
+- name: Run the installation wizard
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: >
+      occ maintenance:install
+      --database='mysql'
+      --database-host={{ nextcloud_mysql_host }}
+      --database-name={{ nextcloud_mysql_database }}
+      --database-user={{ nextcloud_mysql_user }}
+      --database-pass={{ nextcloud['mysql_password'] }}
+      --admin-user={{ nextcloud['admin_user'] }}
+      --admin-pass={{ nextcloud['admin_password'] }}
+
+- name: Add indices to database
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: occ db:add-missing-indices
+
+# Wait for configuration to be created, then run the following task to modify
+- name: Update the configuration file (2)
+  ansible.builtin.lineinfile:
+    path: "{{ docker_dir }}/nextcloud/config/www/nextcloud/config/config.php"
+    search_string: "{{ item[0] }}"
+    insertbefore: '.;'
+    line: "{{ item[1] }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: '0644'
+  loop:
+    - ["overwritehost", "  'overwritehost' => 'nextcloud.{{ site_url }}',"]
+    - ["overwriteprotocol", "  'overwriteprotocol' => 'https',"]
+    - ["trusted_domains", "  'trusted_domains' => ['nextcloud.{{ site_url }}'],"]
+    - ["trusted_proxies", "  'trusted_proxies' => [gethostbyname('swag')],"]
+    - ["overwrite.cli.url", "  'overwrite.cli.url' => 'https://nextcloud.{{ site_url }}',"]
+    - ["memcache.local", "  'memcache.local' => '\\OC\\Memcache\\APCu',"]
+    - ["memcache.locking", "  'memcache.locking' => '\\OC\\Memcache\\APCu',"]
+
+- name: Update the PHP configuration file (1)
+  ansible.builtin.lineinfile:
+    path: "{{ docker_dir }}/nextcloud/config/php/php-local.ini"
+    search_string: "{{ item[0] }}"
+    line: "{{ item[1] }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: '0644'
+  loop:
+    - ["maintenance_window_start", "maintenance_window_start = 1"]
+    - ["memory_limit", "memory_limit = 1G"]
+    - ["apc.shm_size", "apc.shm_size = 128M"]
+    - ["pm.max_children", "pm.max_children = 28"]
+    - ["pm.start_servers", "pm.start_servers = 7"]
+    - ["pm.min_spare_servers", "pm.min_spare_servers = 7"]
+    - ["pm.max_spare_servers", "pm.max_spare_servers = 21"]
+    - ["opcache.enable", "opcache.enable = 1"]
+    - ["opcache.revalidate_freq", "opcache.revalidate_freq = 60"]
+    - ["opcache.jit", "opcache.jit = 1255"]
+    - ["opcache.jit_buffer_size", "opcache.jit_buffer_size = 128M"]
+  notify:
+    - Restart swag

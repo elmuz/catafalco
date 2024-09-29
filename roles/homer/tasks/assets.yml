@@ -4,52 +4,43 @@
     path: "{{ docker_dir }}/homer/tools/homer-icons"
     state: directory
     mode: "0755"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
 
 - name: Copy the icons
   copy:
-    src: files/icons/{{ item }}.png
+    src: files/icons/{{ item['name'] }}.png
     dest: "{{ docker_dir }}/homer/tools/homer-icons"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"
-  when: lookup('vars', item)['dashboard_url'] is defined
-  loop: "{{ containers }}"
+  when: item['url'] is defined
+  loop: "{{ web_applications }}"
 
 - name: Copy the icons for other dashboard elements
   copy:
     src: files/icons/{{ item }}
     dest: "{{ docker_dir }}/homer/tools/homer-icons"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"
   loop:
-    - cockpit.png
+    - logo.png
     - pihole.png
     - linuxserver.png
-    - ispanico.png
-
-- name: Copy the logo
-  copy:
-    src: files/icons/logo.png
-    dest: "{{ docker_dir }}/homer/tools/homer-icons"
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0644"
 
 - name: Copy the custom stylesheet
   copy:
     src: files/custom.css
     dest: "{{ docker_dir }}/homer"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"
 
 - name: Generate the Homer config file
   template:
     src: config.yml.j2
     dest: "{{ docker_dir }}/homer/config.yml"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"

@@ -3,8 +3,8 @@
   file:
     path: "{{ docker_dir }}/{{ readarr_container_name }}"
     state: directory
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0755"
 
 - name: Make sure that Readarr container is created and running
@@ -13,7 +13,7 @@
     image: lscr.io/linuxserver/readarr:develop
     pull: true
     networks:
-      - name: swag_internal_network
+      - name: swag_network
     state: started
     env:
       PUID: "{{ guid }}"
@@ -24,11 +24,14 @@
       - "{{ docker_dir }}/{{ readarr_container_name }}:/config"
       - "{{ mergerfs_root }}:/storage"
     restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ readarr_dashboard_name }}"
 
 - name: Install the SWAG config files
   template:
     src: "{{ readarr_container_name }}.subdomain.conf.j2"
-    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ readarr_container_name }}.subdomain.conf"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ readarr_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"

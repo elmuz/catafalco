@@ -169,6 +169,11 @@
         - nut
         - monitoring
 
+    - role: uptime_kuma
+      tags:
+        - uptime_kuma
+        - monitoring
+
     #
     # ServArr
     #

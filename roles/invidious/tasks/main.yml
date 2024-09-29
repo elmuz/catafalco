@@ -25,7 +25,7 @@
       POSTGRES_USER: funkysloth
       POSTGRES_PASSWORD: "{{ invidious_postgres_password }}"
     networks:
-      - name: swag_internal_network
+      - name: swag_network
     state: started
     restart_policy: unless-stopped
     volumes:
@@ -55,7 +55,9 @@
         statistics_enabled: false
         hmac_key: "{{ invidious_hmac }}"
     networks:
-      - name: swag_internal_network
+      - name: swag_network
+    links:
+      - "{{ invidious_container_name }}-db"
     state: started
     restart_policy: unless-stopped
     healthcheck:
@@ -67,11 +69,14 @@
     log_options:
       max-size: 1G
       max-file: "4"
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ invidious_dashboard_name }}"
 
 - name: Install the SWAG config files
   template:
     src: "templates/{{ invidious_container_name }}.subdomain.conf.j2"
-    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/{{ invidious_container_name }}.subdomain.conf"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ invidious_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"

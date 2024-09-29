@@ -1,0 +1,20 @@
+---
+- name: Create 'whoami' container to test
+  docker_container:
+    name: whoami
+    image: docker.io/traefik/whoami
+    pull: true
+    state: started
+    networks:
+      - name: swag_network
+    env:
+      TZ: "{{ timezone }}"
+    restart_policy: unless-stopped
+
+- name: Install the SWAG config files for 'whoami'
+  template:
+    src: "nginx/proxy-confs/whoami.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/whoami.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"

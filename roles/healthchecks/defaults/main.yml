@@ -1,5 +1,6 @@
 ---
 healthchecks_container_name: healthchecks
-healthchecks_dashboard_url: https://healthchecks.{{ host_local }}/
+healthchecks_subdomain: healthchecks
+healthchecks_dashboard_url: https://{{ healthchecks_subdomain }}.{{ site_url }}/
 healthchecks_homer_category: system
 healthchecks_dashboard_name: Healthchecks

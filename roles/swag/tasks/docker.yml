@@ -1,30 +1,90 @@
 ---
-- name: Make sure that swag_internal container is created and running
+- name: Install the SWAG dashboard config files (1)
+  template:
+    src: nginx/proxy-confs/dashboard.subdomain.conf.j2
+    dest: "{{ docker_dir }}/{{ swag_container_name }}/nginx/proxy-confs/dashboard.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Add optional 'Auto Uptime Kuma' Docker mod and ENV vars
+  when: "'uptime_kuma' in containers"
+  block:
+    - name: Append Docker mod
+      ansible.builtin.set_fact:
+        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS +
+        '|linuxserver/mods:universal-docker|linuxserver/mods:swag-auto-uptime-kuma'}) }}"
+    - name: Add ENV vars
+      ansible.builtin.set_fact:
+        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
+      loop:
+        - ["UPTIME_KUMA_URL", "http://{{ uptime_kuma_container_name }}:3001"]
+        - ["UPTIME_KUMA_USERNAME", "{{ uptime_kuma_user }}"]
+        - ["UPTIME_KUMA_PASSWORD", "{{ uptime_kuma_password }}"]
+
+- name: Add optional 'Maxmind' Docker mod and ENV vars
+  when: swag_maxmind_enable | default(False)
+  block:
+    - name: Append Docker mod
+      ansible.builtin.set_fact:
+        swag_container_env_vars: "{{ swag_container_env_vars |
+        ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:swag-maxmind'}) }}"
+    - name: Add ENV vars
+      ansible.builtin.set_fact:
+        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
+      loop:
+        - ["MAXMINDDB_LICENSE_KEY", "{{ maxmind_licence_key }}"]
+        - ["MAXMINDDB_USER_ID", "{{ maxmind_account_id }}"]
+
+- name: Make sure that SWAG container is created and running
   docker_container:
-    name: swag_internal
+    name: "{{ swag_container_name }}"
     image: ghcr.io/linuxserver/swag:latest
     pull: true
     networks:
-      - name: swag_internal_network
+      - name: "{{ swag_network_name }}"
     capabilities:
       - net_admin
     state: started
-    env:
-      PUID: "{{ guid }}"
-      PGID: "{{ guid }}"
-      TZ: "{{ timezone }}"
-      URL: "{{ host_local }}"
-      SUBDOMAINS: wildcard
-      VALIDATION: dns
-      DNSPLUGIN: cloudflare
-      EMAIL: "{{ cloudflare_email }}"
-      PROPAGATION: "60"
-      DOCKER_MODS: linuxserver/mods:swag-dashboard|linuxserver/mods:swag-auto-reload
+    env: "{{ swag_container_env_vars }}"
     ports:
-      - 192.168.1.3:443:443
-      - 192.168.1.3:80:80
+      - 443:443
     volumes:
-      - "{{ docker_dir }}/swag/internal/nginx:/config/nginx"
+      - "{{ docker_dir }}/swag/nginx:/config/nginx"
       - "{{ docker_dir }}/swag/dns-conf:/config/dns-conf"
       - "{{ docker_dir }}/swag/letsencrypt:/config/etc/letsencrypt"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     restart_policy: unless-stopped
+
+- name: Enable optional additional headers in 'ssl.conf'
+  ansible.builtin.replace:
+    path: "{{ docker_dir }}/swag/nginx/ssl.conf"
+    regexp: "{{ item[0] }}"
+    replace: "{{ item[1] }}"
+  loop:
+    - ["#add_header X-Content-Type-Options", "add_header X-Content-Type-Options"]
+    - ["#add_header X-Frame-Options", "add_header X-Frame-Options"]
+    - ["#add_header X-XSS-Protection", "add_header X-XSS-Protection"]
+    - ["#add_header Referrer-Policy", "add_header Referrer-Policy"]
+    - ["#add_header Strict-Transport-Security", "add_header Strict-Transport-Security"]
+  notify:
+    - Restart swag
+
+- name: Update Maxmind configuration
+  become: true
+  when: swag_maxmind_enable | default(False)
+  notify:
+    - Restart swag
+  block:
+    - name: Customize 'maxmind.conf'
+      ansible.builtin.template:
+        src: nginx/maxmind.conf.j2
+        dest: "{{ docker_dir }}/{{ swag_container_name }}/nginx/maxmind.conf"
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: "0644"
+    - name: Apply 'maxmind.conf to proxied services'
+      ansible.builtin.lineinfile:
+        path: "{{ docker_dir }}/{{ swag_container_name }}/nginx/nginx.conf"
+        insertafter: "http {"
+        line: "    include /config/nginx/maxmind.conf;"

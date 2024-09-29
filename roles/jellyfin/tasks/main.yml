@@ -20,21 +20,25 @@
     image: ghcr.io/linuxserver/jellyfin:latest
     pull: true
     networks:
-      - name: swag_internal_network
+      - name: swag_network
+    exposed_ports:
+      - 8096
     privileged: true
     devices:
       - /dev/dri/card0:/dev/dri/card0
       - /dev/dri/renderD128:/dev/dri/renderD128
     state: started
-    #    healthcheck:  # it doesn't work :-(
-    #      "test": ["CMD", "curl", "--fail", "http://jellyfin::8096/health", "||", "exit", "1"]
+    healthcheck:  # it doesn't work :-(
+      "test": ["CMD", "curl", "--fail", "http://{{ jellyfin_container_name }}:8096/health"]
+      retries: 3
+      start_period: 30s
     env:
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"
       UMASK: "002"
       TZ: "{{ timezone }}"
       VERSION: latest
-      JELLYFIN_PublishedServerUrl: https://jellyfin.{{ host_local }}
+      JELLYFIN_PublishedServerUrl: "https://jellyfin.{{ site_url }}"
       DOCKER_MODS: linuxserver/mods:jellyfin-opencl-intel
     groups:
       - 109
@@ -47,11 +51,20 @@
       - "{{ mergerfs_root }}/Media/Music:/data/music:ro"
       - /etc/localtime:/etc/localtime:ro
     restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ jellyfin_dashboard_name }}"
 
 - name: Install the SWAG config files
   template:
-    src: jellyfin.subdomain.conf.j2
-    dest: "{{ docker_dir }}/swag/internal/nginx/proxy-confs/jellyfin.subdomain.conf"
-    owner: "{{ username }}"
-    group: "{{ username }}"
+    src: "{{ jellyfin_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ jellyfin_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
     mode: "0644"
+
+- name: Enable Prometheus metrics
+  ansible.builtin.lineinfile:
+    path: "{{ docker_dir }}/{{ jellyfin_container_name }}/system.xml"
+    search_string: "  <EnableMetrics>false</EnableMetrics>"
+    line: "  <EnableMetrics>true</EnableMetrics>"
