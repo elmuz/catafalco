@@ -736,7 +736,7 @@ session:
       ##   - The above 'domain' option MUST either:
       ##      - Match the host portion of this URI.
       ##      - Match the suffix of the host portion when prefixed with '.'.
-      authelia_url: 'https://auth.{{ site_url }}'
+      authelia_url: 'https://{{ authelia_subdomain }}.{{ site_url }}'
 
       ## Optional. The fully qualified URI used as the redirection location if the portal is accessed directly. Not
       ## configuring this option disables the automatic redirection behaviour.

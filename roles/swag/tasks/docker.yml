@@ -86,5 +86,6 @@
     - name: Apply 'maxmind.conf to proxied services'
       ansible.builtin.lineinfile:
         path: "{{ docker_dir }}/{{ swag_container_name }}/nginx/nginx.conf"
+        search_string: "include /config/nginx/maxmind.conf;"
         insertafter: "http {"
         line: "    include /config/nginx/maxmind.conf;"

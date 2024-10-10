@@ -10,7 +10,7 @@ location ^~ /authelia {
 
     include /config/nginx/proxy.conf;
     include /config/nginx/resolver.conf;
-    set $upstream_authelia authelia;
+    set $upstream_authelia {{ authelia_container_name }};
     proxy_pass http://$upstream_authelia:9091;
 }
 
@@ -20,7 +20,7 @@ location = /authelia/api/verify {
 
     include /config/nginx/proxy.conf;
     include /config/nginx/resolver.conf;
-    set $upstream_authelia authelia;
+    set $upstream_authelia {{ authelia_container_name }};
     proxy_pass http://$upstream_authelia:9091/api/verify;
 
     ## Include the Set-Cookie header if present
@@ -37,7 +37,7 @@ location = /authelia/api/authz/auth-request {
 
     include /config/nginx/proxy.conf;
     include /config/nginx/resolver.conf;
-    set $upstream_authelia authelia;
+    set $upstream_authelia {{ authelia_container_name }};
     proxy_pass http://$upstream_authelia:9091/api/authz/auth-request;
 
     ## Include the Set-Cookie header if present

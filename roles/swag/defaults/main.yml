@@ -1,7 +1,7 @@
 ---
 swag_container_name: swag
 swag_network_name: swag_network
-swag_dashboard_url: https://dashboard.{{ site_url }}/
+swag_dashboard_url: https://dashboard.{{ site_url }}
 swag_homer_category: system
 swag_dashboard_name: "SWAG Dashboard"
 swag_container_env_vars:

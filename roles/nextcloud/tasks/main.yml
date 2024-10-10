@@ -24,7 +24,7 @@
 - name: Make sure the MariaDB container is created and running
   community.docker.docker_container:
     name: "{{ nextcloud_mysql_host }}"
-    image: lscr.io/linuxserver/mariadb:latest
+    image: lscr.io/linuxserver/mariadb:10.11.8
     pull: true
     state: started
     networks:
@@ -42,6 +42,24 @@
       - "{{ docker_dir }}/nextcloud/mariadb:/config"
       - "{{ docker_dir }}/nextcloud/backup:/backup"
     restart_policy: unless-stopped
+
+- name: Add the ".ncdata" file
+  block:
+    - name: Create the file
+      ansible.builtin.file:
+        path: "{{ docker_dir }}/nextcloud/data/.ncdata"
+        state: touch
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: '0644'
+    - name: Add the line
+      ansible.builtin.lineinfile:
+        path: "{{ docker_dir }}/nextcloud/data/.ncdata"
+        search_string: "# Nextcloud data directory"
+        line: "# Nextcloud data directory"
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: '0644'
 
 - name: Make sure the Nextcloud container is created and running
   # https://hub.docker.com/r/linuxserver/nextcloud
@@ -67,8 +85,9 @@
       - "{{ docker_dir }}/nextcloud/data:/data"
     restart_policy: unless-stopped
 
-# - name: Update the PHP configuration
-#   include_tasks: configuration.yml
+- name: Update the PHP configuration
+  ansible.builtin.include_tasks:
+    file: configuration.yml
 
 - name: Install the SWAG config files
   ansible.builtin.template:

@@ -404,31 +404,12 @@
   ## Each data format has its own unique set of configuration options, read
   ## more about them here:
   ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_INPUT.md
-  data_format = "influx"
+  data_format = "json_v2"
 
   ## Enable extracting tag values from MQTT topics
   ## _ denotes an ignored entry in the topic path
   [[inputs.mqtt_consumer.json_v2]]
     measurement_name = "tasmota"
 
-    [[inputs.mqtt_consumer.topic_parsing]]
-      topic = "tele/{{ hostname }}/SENSOR"
-      tags = "_/site/sensor/_"
-
-    [[inputs.mqtt_consumer.json_v2.tag]]
-    path = "TempUnit"
-    [[inputs.mqtt_consumer.json_v2.tag]]
-    path = "PressureUnit"
-
     [[inputs.mqtt_consumer.json_v2.object]]
-    path = "@this"
-    disable_prepend_keys = true
-    type = "float"
-    excluded_keys = ["Time","TempUnit","PressureUnit"]
-
-      [[inputs.mqtt_consumer.json_v2.field]]
-      path = "eCO2"
-      type = "int"
-      [[inputs.mqtt_consumer.json_v2.field]]
-      path = "TVOC"
-      type = "int"
+    path = "ENERGY"

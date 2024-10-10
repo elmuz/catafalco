@@ -1,0 +1,4 @@
+---
+authelia_container_name: authelia
+authelia_subdomain: auth
+authelia_url: https://{{ authelia_subdomain }}.{{ site_url }}

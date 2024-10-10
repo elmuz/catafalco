@@ -17,7 +17,7 @@
 server {
 {% include "roles/swag/templates/nginx/common.j2" %}
 
-    server_name nextcloud.*;
+    server_name {{ nextcloud_subdomain }}.*;
 
     client_body_buffer_size 512k;
     client_body_timeout 300s;
@@ -51,7 +51,7 @@ server {
     }
 
 {% if 'onlyoffice' in containers %}
-    location /editors/ {
+    location /{{ onlyoffice_subfolder }}/ {
         proxy_set_header X-Forwarded-Host $http_host/editors;
         include /config/nginx/resolver.conf;
         proxy_pass http://{{ nextcloud_onlyoffice_host }}/;

@@ -1,20 +1,7 @@
 ---
-- name: Update the configuration file (1)
-  ansible.builtin.blockinfile:
-    path: "{{ docker_dir }}/nextcloud/config/www/nextcloud/config/config.php"
-    insertbefore: '.;'
-    marker: "// {mark} ANSIBLE MANAGED BLOCK"
-    block: |2
-        'objectstore' => [
-          'class' => '\OC\Files\ObjectStore\S3',
-          'arguments' => [
-            'bucket' => 'nextcloud',
-            'hostname' => '{{ nextcloud['s3_endpoint'] }}',
-            'key' => '{{ nextcloud['s3_access_key'] }}',
-            'secret' => '{{ nextcloud['s3_secret_key'] }}',
-            'use_ssl' => 'true',
-          ],
-        ],
+- name: Pause for 30 seconds to run the Nextcloud app
+  ansible.builtin.pause:
+    seconds: 30
 
 - name: Run the installation wizard
   community.docker.docker_container_exec:
@@ -28,14 +15,24 @@
       --database-pass={{ nextcloud['mysql_password'] }}
       --admin-user={{ nextcloud['admin_user'] }}
       --admin-pass={{ nextcloud['admin_password'] }}
+      --data-dir /data
+      --no-interaction
+      --verbose
 
-- name: Add indices to database
+- name: Add email for main user (to avoid warnings)
   community.docker.docker_container_exec:
     container: "{{ nextcloud_container_name }}"
-    command: occ db:add-missing-indices
+    command: "occ user:setting {{ nextcloud['admin_user'] }} settings email {{ email }}"
 
-# Wait for configuration to be created, then run the following task to modify
-- name: Update the configuration file (2)
+- name: Apply other settings via command line
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: "occ config:system:set trusted_domains {{ item[0] }} --value={{ item[1] }}"
+  loop:
+    - ["0", "localhost"]
+    - ["1", "{{ nextcloud_subdomain }}.{{ site_url }}"]
+
+- name: Update the configuration file
   ansible.builtin.lineinfile:
     path: "{{ docker_dir }}/nextcloud/config/www/nextcloud/config/config.php"
     search_string: "{{ item[0] }}"
@@ -45,13 +42,60 @@
     group: "{{ guid }}"
     mode: '0644'
   loop:
+    - ["dbport", "  'dbport' => '3306',"]
     - ["overwritehost", "  'overwritehost' => 'nextcloud.{{ site_url }}',"]
     - ["overwriteprotocol", "  'overwriteprotocol' => 'https',"]
-    - ["trusted_domains", "  'trusted_domains' => ['nextcloud.{{ site_url }}'],"]
     - ["trusted_proxies", "  'trusted_proxies' => [gethostbyname('swag')],"]
     - ["overwrite.cli.url", "  'overwrite.cli.url' => 'https://nextcloud.{{ site_url }}',"]
     - ["memcache.local", "  'memcache.local' => '\\OC\\Memcache\\APCu',"]
     - ["memcache.locking", "  'memcache.locking' => '\\OC\\Memcache\\APCu',"]
+    - ["enable_previews", "  'enable_previews' => false,"]
+
+- name: Add indices to database
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: occ db:add-missing-indices
+
+- name: Configure migrating the mimetypes
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: occ maintenance:repair --include-expensive
+
+- name: Configure maintenance window start time
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: occ config:system:set maintenance_window_start --type=integer --value=1
+
+# This is necessary to avoid unwanted error messages. Hope it will be fixed.
+- name: Install the Whiteboard
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: occ app:install whiteboard
+
+- name: Disable the "survey client" app
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: occ app:disable survey_client
+
+- name: Install and configure ONLYOFFICE connector app
+  when: "'onlyoffice' in containers"
+  block:
+    - name: Install the app
+      community.docker.docker_container_exec:
+        container: "{{ nextcloud_container_name }}"
+        command: occ app:install onlyoffice
+    - name: Configuration
+      community.docker.docker_container_exec:
+        container: "{{ nextcloud_container_name }}"
+        command: "occ config:app:set onlyoffice {{ item[0] }} --value={{ item[1] }}"
+      loop:
+        - ["DocumentServerUrl", "https://{{ nextcloud_subdomain }}.{{ site_url }}/{{ onlyoffice_subfolder }}/"]
+        - ["DocumentServerInternalUrl", "http://{{ onlyoffice_container_name }}/"]
+        - ["StorageUrl", "http://{{ nextcloud_container_name }}/"]
+        - ["jwt_header", ""]
+        - ["jwt_secret", "{{ onlyoffice_jwt_secret }}"]
+        - ["settings_error", ""]
+        - ["verify_peer_off", "false"]
 
 - name: Update the PHP configuration file (1)
   ansible.builtin.lineinfile:
@@ -62,7 +106,6 @@
     group: "{{ guid }}"
     mode: '0644'
   loop:
-    - ["maintenance_window_start", "maintenance_window_start = 1"]
     - ["memory_limit", "memory_limit = 1G"]
     - ["apc.shm_size", "apc.shm_size = 128M"]
     - ["pm.max_children", "pm.max_children = 28"]
@@ -74,4 +117,4 @@
     - ["opcache.jit", "opcache.jit = 1255"]
     - ["opcache.jit_buffer_size", "opcache.jit_buffer_size = 128M"]
   notify:
-    - Restart swag
+    - Restart Nextcloud

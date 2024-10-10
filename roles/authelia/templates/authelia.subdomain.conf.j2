@@ -5,13 +5,13 @@
 server {
     {% include "roles/swag/templates/nginx/common.j2" %}
 
-    server_name auth.*;
+    server_name {{ authelia_subdomain }}.*;
 
     location / {
 
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        set $upstream_app authelia;
+        set $upstream_app {{ authelia_container_name }};
         set $upstream_port 9091;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;
@@ -21,7 +21,7 @@ server {
     location ~ (/authelia)?/api {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        set $upstream_app authelia;
+        set $upstream_app {{ authelia_container_name }};
         set $upstream_port 9091;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;

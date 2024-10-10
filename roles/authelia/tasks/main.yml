@@ -1,7 +1,7 @@
 ---
 - name: Create the necessary Authelia folders
   ansible.builtin.file:
-    path: "{{ docker_dir }}/authelia/config"
+    path: "{{ docker_dir }}/{{ authelia_container_name }}/config"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -10,7 +10,7 @@
 - name: Install the Authelia config files (1)
   template:
     src: configuration.yml.j2
-    dest: "{{ docker_dir }}/authelia/config/configuration.yml"
+    dest: "{{ docker_dir }}/{{ authelia_container_name }}/config/configuration.yml"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
@@ -18,14 +18,14 @@
 - name: Install the Authelia config files (2)
   copy:
     src: users_database.yml
-    dest: "{{ docker_dir }}/authelia/config/users_database.yml"
+    dest: "{{ docker_dir }}/{{ authelia_container_name }}/config/users_database.yml"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
 
 - name: Make sure that Authelia container is created and running
   docker_container:
-    name: authelia
+    name: "{{ authelia_container_name }}"
     image: docker.io/authelia/authelia:latest
     pull: true
     state: started
@@ -37,7 +37,7 @@
       TZ: "{{ timezone }}"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - "{{ docker_dir }}/authelia/config:/config"
+      - "{{ docker_dir }}/{{ authelia_container_name }}/config:/config"
     restart_policy: unless-stopped
 
 - name: Install the SWAG config files (1)
@@ -49,8 +49,8 @@
     mode: "0644"
 
 - name: Install the SWAG config files (2)
-  copy:
-    src: authelia-server.conf
+  template:
+    src: authelia-server.conf.j2
     dest: "{{ docker_dir }}/swag/nginx/authelia-server.conf"
     owner: "{{ guid }}"
     group: "{{ guid }}"

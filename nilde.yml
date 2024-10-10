@@ -1,0 +1,38 @@
+---
+- name: Set SSH correctly before executing other roles
+  hosts: nilde
+  gather_facts: false
+  pre_tasks:
+    - name: Set SSH correctly before executing other roles
+      import_tasks: tasks/ssh.yml
+      tags:
+        - port
+
+- name: Install Docker
+  hosts: nilde
+  become: true
+  roles:
+    - role: docker
+      tags:
+        - docker
+
+    - role: geerlingguy.ntp
+      tags:
+        - ntp
+
+- name: Install services
+  hosts: nilde
+  become: true
+  roles:
+    - role: swag
+      tags:
+        - swag
+    - role: authelia
+      tags:
+        - authelia
+    - role: nextcloud
+      tags:
+        - nextcloud
+    - role: onlyoffice
+      tags:
+        - onlyoffice
