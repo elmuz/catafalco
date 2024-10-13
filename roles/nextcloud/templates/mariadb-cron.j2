@@ -1,1 +1,1 @@
-0 * * * *    mysqldump --single-transaction --default-character-set=utf8mb4 -h localhost -u {{ nextcloud_mysql_user }} -p{{ nextcloud['mysql_password'] }} {{ nextcloud_mysql_database }} > /backup/nc-sql-backup_`date +"%q"`.bak
+0 * * * *    mysqldump --single-transaction --default-character-set=utf8mb4 -h localhost -u {{ nextcloud_mysql_user }} -p{{ nextcloud['mysql_password'] }} {{ nextcloud_mysql_database }} > /backup/nc-sql.bkp

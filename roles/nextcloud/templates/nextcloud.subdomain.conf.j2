@@ -34,6 +34,7 @@ server {
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
+
         set $upstream_app {{ nextcloud_container_name }};
         set $upstream_port 80;
         set $upstream_proto http;

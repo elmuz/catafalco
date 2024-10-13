@@ -48,3 +48,8 @@ swag_maxmind_allowed_countries:
   - "CH"
   - "GB"
   - "US"
+
+swag_maxmind_blocked_countries:
+  - "CN"
+  - "IR"
+  - "RU"

@@ -7,6 +7,31 @@
     group: "{{ guid }}"
     mode: "0644"
 
+- name: Add optional 'Cloudflare tunnel' Docker mod and ENV vars
+  when: swag_cloudflare_tunnel_enable | default(False)
+  block:
+    - name: Append Docker mod
+      ansible.builtin.set_fact:
+        swag_container_env_vars: "{{ swag_container_env_vars |
+        ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:universal-cloudflared'}) }}"
+    - name: Add ENV vars
+      ansible.builtin.set_fact:
+        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
+      loop:
+        - ["CF_ZONE_ID", "{{ cloudflare_zone_id[site_url] }}"]
+        - ["CF_ACCOUNT_ID", "{{ cloudflare_account_id }}"]
+        - ["CF_API_TOKEN", "{{ cloudflare_api_token }}"]
+        - ["CF_TUNNEL_NAME", "{{ site_url }}"]
+        - ["CF_TUNNEL_PASSWORD", "{{ cloudflare_tunnel_password }}"]
+        - ["FILE__CF_TUNNEL_CONFIG", "/config/tunnelconfig.yml"]
+    - name: Copy the configuration for the tunnel
+      ansible.builtin.template:
+        src: tunnelconfig.yml.j2
+        dest: "{{ docker_dir }}/{{ swag_container_name }}/tunnelconfig.yml"
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: "0644"
+
 - name: Add optional 'Auto Uptime Kuma' Docker mod and ENV vars
   when: "'uptime_kuma' in containers"
   block:
@@ -43,18 +68,24 @@
     pull: true
     networks:
       - name: "{{ swag_network_name }}"
+    etc_hosts: "{{ [{'key': site_url, 'value': '127.0.0.1'}] | items2dict }}"
     capabilities:
       - net_admin
     state: started
     env: "{{ swag_container_env_vars }}"
-    ports:
-      - 443:443
+    # ports:
+    #   - 443:443
     volumes:
-      - "{{ docker_dir }}/swag/nginx:/config/nginx"
-      - "{{ docker_dir }}/swag/dns-conf:/config/dns-conf"
-      - "{{ docker_dir }}/swag/letsencrypt:/config/etc/letsencrypt"
+      - "{{ docker_dir }}/{{ swag_container_name }}/nginx:/config/nginx"
+      - "{{ docker_dir }}/{{ swag_container_name }}/dns-conf:/config/dns-conf"
+      - "{{ docker_dir }}/{{ swag_container_name }}/letsencrypt:/config/etc/letsencrypt"
+      - "{{ docker_dir }}/{{ swag_container_name }}/tunnelconfig.yml:/config/tunnelconfig.yml"
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart_policy: unless-stopped
+
+- name: Pause for 10 seconds and let SWAG creating configuration files
+  ansible.builtin.pause:
+    seconds: 10
 
 - name: Enable optional additional headers in 'ssl.conf'
   ansible.builtin.replace:

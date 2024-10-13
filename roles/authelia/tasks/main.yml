@@ -13,7 +13,7 @@
     dest: "{{ docker_dir }}/{{ authelia_container_name }}/config/configuration.yml"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: "0644"
+    mode: "0600"
 
 - name: Install the Authelia config files (2)
   copy:
@@ -21,7 +21,7 @@
     dest: "{{ docker_dir }}/{{ authelia_container_name }}/config/users_database.yml"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: "0644"
+    mode: "0600"
 
 - name: Make sure that Authelia container is created and running
   docker_container:

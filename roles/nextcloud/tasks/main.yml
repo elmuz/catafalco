@@ -45,14 +45,14 @@
 
 - name: Add the ".ncdata" file
   block:
-    - name: Create the file
+    - name: Create the ".ncdata" file
       ansible.builtin.file:
         path: "{{ docker_dir }}/nextcloud/data/.ncdata"
         state: touch
         owner: "{{ guid }}"
         group: "{{ guid }}"
         mode: '0644'
-    - name: Add the line
+    - name: Add the line in the ".ncdata" file
       ansible.builtin.lineinfile:
         path: "{{ docker_dir }}/nextcloud/data/.ncdata"
         search_string: "# Nextcloud data directory"
@@ -85,9 +85,25 @@
       - "{{ docker_dir }}/nextcloud/data:/data"
     restart_policy: unless-stopped
 
-- name: Update the PHP configuration
+- name: Pause for 30 seconds to run the Nextcloud app
+  ansible.builtin.pause:
+    seconds: 30
+
+- name: Check if Nextcloud has been installed already
+  community.docker.docker_container_exec:
+    container: "{{ nextcloud_container_name }}"
+    command: "sh -c 'occ status --output json | jq .installed'"
+  register: nextcloud_is_installed
+
+- name: Update Nextcloud configuration
+  when: not (nextcloud_is_installed.stdout | bool)
   ansible.builtin.include_tasks:
     file: configuration.yml
+
+- name: Install OnlyOffice for document integration
+  ansible.builtin.include_role:
+    name: onlyoffice
+  when: "'onlyoffice' in containers"
 
 - name: Install the SWAG config files
   ansible.builtin.template:
@@ -96,8 +112,3 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
-
-# - name: Install OnlyOffice for document integration
-#   ansible.builtin.include_role:
-#     name: onlyoffice
-#   when: "'onlyoffice' in containers"

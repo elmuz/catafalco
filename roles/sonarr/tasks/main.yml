@@ -1,4 +1,12 @@
 ---
+# Notes: this will remux files keeping only English audio and subtitle tracks. Improve to handle multiple languages...
+# =======
+# for v in *.mkv; do \
+#   mkvmerge -o output/$v \
+#   -a `mkvmerge -J $v | jq '[.tracks | map(select(.type == "audio" and .properties.language == "eng")) | .[].id] | .[0]'` \
+#   -s `mkvmerge -J $v | jq '[.tracks | map(select(.type == "subtitles" and .properties.language == "eng")) | .[].id] | .[0]'` \
+#   $v; done
+# =======
 - name: Create the necessary Sonarr folder
   file:
     path: "{{ docker_dir }}/{{ sonarr_container_name }}"

@@ -1,4 +1,6 @@
 ---
+# First, deploy NextCloud. In this way, the proxy https://nextcloud.example.com/editors.
+
 - name: Create necessary folders
   ansible.builtin.file:
     path: "{{ docker_dir }}/onlyoffice/DocumentServer/{{ item }}"
@@ -21,7 +23,9 @@
       - name: swag_network
     state: started
     env:
+      JWT_ENABLED: "true"
       JWT_SECRET: "{{ onlyoffice_jwt_secret }}"
+      JWT_HEADER: AuthorizationJwt
       USE_UNAUTHORIZED_STORAGE: "true"
     volumes:
       - "{{ docker_dir }}/onlyoffice/DocumentServer/data:/var/www/onlyoffice/Data"

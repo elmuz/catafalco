@@ -1,0 +1,7 @@
+protocol: http2
+ingress:
+  - hostname: {{ site_url }}
+    service: https://{{ site_url }}
+  - hostname: "*.{{ site_url }}"
+    service: https://{{ site_url }}
+  - service: http_status:404

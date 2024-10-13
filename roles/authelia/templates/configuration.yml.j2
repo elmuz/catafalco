@@ -21,12 +21,12 @@
 # certificates_directory: '/config/certificates/'
 
 ## The theme to display: light, dark, grey, auto.
-theme: 'auto'
+theme: 'light'
 
 ## Set the default 2FA method for new users and for when a user has a preferred method configured that has been
 ## disabled. This setting must be a method that is enabled.
 ## Options are totp, webauthn, mobile_push.
-# default_2fa_method: ''
+default_2fa_method: 'totp'
 
 ##
 ## Server Configuration
@@ -121,7 +121,7 @@ server:
 ##
 log:
   ## Level of verbosity for logs: info, debug, trace.
-  level: 'debug'
+  level: 'info'
 
   ## Format the logs are written as: json, text.
   format: 'text'
@@ -183,35 +183,35 @@ totp:
   disable: false
 
   ## The issuer name displayed in the Authenticator application of your choice.
-  # issuer: 'authelia.com'
+  issuer: '{{ authelia_url }}'
 
   ## The TOTP algorithm to use.
   ## It is CRITICAL you read the documentation before changing this option:
   ## https://www.authelia.com/c/totp#algorithm
-  # algorithm: 'SHA1'
+  algorithm: 'sha256'
 
   ## The number of digits a user has to input. Must either be 6 or 8.
   ## Changing this option only affects newly generated TOTP configurations.
   ## It is CRITICAL you read the documentation before changing this option:
   ## https://www.authelia.com/c/totp#digits
-  # digits: 6
+  digits: 6
 
   ## The period in seconds a Time-based One-Time Password is valid for.
   ## Changing this option only affects newly generated TOTP configurations.
-  # period: 30
+  period: 30
 
   ## The skew controls number of Time-based One-Time Passwords either side of the current one that are valid.
   ## Warning: before changing skew read the docs link below.
-  # skew: 1
+  skew: 1
   ## See: https://www.authelia.com/c/totp#input-validation to read
   ## the documentation.
 
   ## The size of the generated shared secrets. Default is 32 and is sufficient in most use cases, minimum is 20.
-  # secret_size: 32
+  secret_size: 32
 
   ## The allowed algorithms for a user to pick from.
-  # allowed_algorithms:
-  # - 'SHA1'
+  allowed_algorithms:
+  - 'sha256'
 
   ## The allowed digits for a user to pick from.
   # allowed_digits:
@@ -230,7 +230,7 @@ totp:
 ## Parameters used for WebAuthn.
 webauthn:
   ## Disable WebAuthn.
-  disable: false
+  disable: true
 
   ## The interaction timeout for WebAuthn dialogues in the duration common syntax.
   # timeout: '60 seconds'
@@ -1141,38 +1141,35 @@ notifier:
 ##
 ## Identity Providers
 ##
-# identity_providers:
+identity_providers:
 
   ##
   ## OpenID Connect (Identity Provider)
   ##
   ## It's recommended you read the documentation before configuration of this section:
   ## https://www.authelia.com/c/oidc
-  # oidc:
+  oidc:
     ## The hmac_secret is used to sign OAuth2 tokens (authorization code, access tokens and refresh tokens).
     ## HMAC Secret can also be set using a secret: https://www.authelia.com/c/secrets
-    # hmac_secret: 'this_is_a_secret_abc123abc123abc'
+    hmac_secret: "{{ authelia_oidc['hmac_secret'] }}"
 
     ## The JWK's issuer option configures multiple JSON Web Keys. It's required that at least one of the JWK's
     ## configured has the RS256 algorithm. For RSA keys (RS or PS) the minimum is a 2048 bit key.
-    # jwks:
-    # -
+    jwks:
+    -
       ## Key ID embedded into the JWT header for key matching. Must be an alphanumeric string with 7 or less characters.
       ## This value is automatically generated if not provided. It's recommended to not configure this.
       # key_id: 'example'
 
       ## The key algorithm used with this key.
-      # algorithm: 'RS256'
+      algorithm: 'RS256'
 
       ## The key use expected with this key. Currently only 'sig' is supported.
-      # use: 'sig'
+      use: 'sig'
 
       ## Required Private Key in PEM DER form.
-      # key: |
-        # -----BEGIN RSA PRIVATE KEY-----
-        # ...
-        # -----END RSA PRIVATE KEY-----
-
+      key: |
+        {{ authelia_oidc['jwk_private_key'] | indent(8) }}
 
       ## Optional matching certificate chain in PEM DER form that matches the key. All certificates within the chain
       ## must be valid and current, and from top to bottom each certificate must be signed by the subsequent one.
@@ -1226,7 +1223,7 @@ notifier:
       # refresh_token: '90 minutes'
 
     ## Cross-Origin Resource Sharing (CORS) settings.
-    # cors:
+    cors:
       ## List of endpoints in addition to the metadata endpoints to permit cross-origin requests on.
       # endpoints:
         #  - 'authorization'
@@ -1239,15 +1236,15 @@ notifier:
       ## List of allowed origins.
       ## Any origin with https is permitted unless this option is configured or the
       ## allowed_origins_from_client_redirect_uris option is enabled.
-      # allowed_origins:
-        # - 'https://example.com'
+      allowed_origins:
+        - 'https://{{ site_url }}'
 
       ## Automatically adds the origin portion of all redirect URI's on all clients to the list of allowed_origins,
       ## provided they have the scheme http or https and do not have the hostname of localhost.
       # allowed_origins_from_client_redirect_uris: false
 
     ## Clients is a list of known clients and their configuration.
-    # clients:
+    clients:
       # -
         ## The Client ID is the OAuth 2.0 and OpenID Connect 1.0 Client ID which is used to link an application to a
         ## configuration.
@@ -1418,4 +1415,21 @@ notifier:
               # -----BEGIN CERTIFICATE-----
               # ...
               # -----END CERTIFICATE-----
-...
+{% if "nextcloud" in containers %}
+      - client_id: "{{ authelia_oidc['nextcloud_client_id'] }}"
+        client_name: 'NextCloud'
+        client_secret: "{{ authelia_oidc['nextcloud_client_secret_digest'] }}"
+        public: false
+        authorization_policy: 'two_factor'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://{{ nextcloud_subdomain }}.{{ site_url }}/apps/oidc_login/oidc'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'email'
+          - 'groups'
+        userinfo_signed_response_alg: 'none'
+        token_endpoint_auth_method: 'client_secret_basic'
+{% endif %}

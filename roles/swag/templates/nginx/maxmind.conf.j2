@@ -13,18 +13,17 @@ geoip2 /config/geoip2db/GeoLite2-City.mmdb {
 # Country Codes: https://en.wikipedia.org/wiki/ISO_3166-2
 
 map $geoip2_data_country_iso_code $geo-whitelist {
-    # default yes;
+    default yes;
     # Example for whitelisting a country, comment out 'default yes;' above and uncomment 'default no;' and the whitelisted country below
-    default no;
-{% for item in swag_maxmind_allowed_countries %}
-    {{ item }} yes;
-{% endfor %}
+    # default no;
 }
 
 map $geoip2_data_country_iso_code $geo-blacklist {
     default yes;
     # Example for blacklisting a country, uncomment the blacklisted country below
-    # UK no;
+{% for item in swag_maxmind_blocked_countries %}
+    {{ item }} no;
+{% endfor %}
  }
 
 geo $lan-ip {

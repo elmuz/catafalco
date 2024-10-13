@@ -5,19 +5,24 @@ ntp_timezone: "{{ timezone }}"
 locale: en_US.UTF-8
 
 username: funkysloth
-email: funkysloth@disroot.org
 guid: "1001"
 shell: /usr/bin/zsh
-
 security_ssh_port: 69
 
+email_login: "{{ username }}"
+email_smtp_host: disroot.org
+email: "{{ email_login }}@{{ email_smtp_host }}"
+email_smtp_port: 465
+email_smtp_port_startls: 587
+
 enable_containers: true
-docker_dir: /opt/docker/data
+docker_dir: /var/opt/docker
 containers:
   - authelia
   - nextcloud
   - onlyoffice
 
-site_url: ispani.co
+site_url: catafal.co
 
+swag_cloudflare_tunnel_enable: true
 swag_maxmind_enable: true

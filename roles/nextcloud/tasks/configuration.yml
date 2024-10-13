@@ -1,8 +1,4 @@
 ---
-- name: Pause for 30 seconds to run the Nextcloud app
-  ansible.builtin.pause:
-    seconds: 30
-
 - name: Run the installation wizard
   community.docker.docker_container_exec:
     container: "{{ nextcloud_container_name }}"
@@ -72,6 +68,30 @@
     container: "{{ nextcloud_container_name }}"
     command: occ app:install whiteboard
 
+# See here for details: https://github.com/pulsejet/nextcloud-oidc-login
+- name: Install and configure OpenID Connect
+  when: "'authelia' in containers"
+  block:
+    - name: Install the app
+      community.docker.docker_container_exec:
+        container: "{{ nextcloud_container_name }}"
+        command: occ app:install oidc_login
+    - name: Configure the app
+      ansible.builtin.template:
+        src: authelia.config.php.j2
+        dest: "{{ docker_dir }}/nextcloud/config/www/nextcloud/config/authelia.config.php"
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: "0644"
+
+- name: Configure the administration email
+  ansible.builtin.template:
+    src: email.config.php.j2
+    dest: "{{ docker_dir }}/nextcloud/config/www/nextcloud/config/email.config.php"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
 - name: Disable the "survey client" app
   community.docker.docker_container_exec:
     container: "{{ nextcloud_container_name }}"
@@ -92,7 +112,7 @@
         - ["DocumentServerUrl", "https://{{ nextcloud_subdomain }}.{{ site_url }}/{{ onlyoffice_subfolder }}/"]
         - ["DocumentServerInternalUrl", "http://{{ onlyoffice_container_name }}/"]
         - ["StorageUrl", "http://{{ nextcloud_container_name }}/"]
-        - ["jwt_header", ""]
+        - ["jwt_header", "AuthorizationJwt"]
         - ["jwt_secret", "{{ onlyoffice_jwt_secret }}"]
         - ["settings_error", ""]
         - ["verify_peer_off", "false"]
