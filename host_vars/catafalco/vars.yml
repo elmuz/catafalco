@@ -115,10 +115,13 @@ containers:
   - prowlarr
   - radarr
   - readarr
+  - socket_proxy
   - sonarr
   - speedtest_tracker
+  - stirling_pdf
   - uptime_kuma
   - watchtower
+  - wud
 
 rclone_version: "0.0.0"
 rclone_release: stable

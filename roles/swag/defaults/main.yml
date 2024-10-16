@@ -1,9 +1,11 @@
 ---
 swag_container_name: swag
 swag_network_name: swag_network
-swag_dashboard_url: https://dashboard.{{ site_url }}
+swag_dashboard_subdomain: dashboard
+swag_dashboard_url: https://{{ swag_dashboard_subdomain }}.{{ site_url }}
 swag_homer_category: system
 swag_dashboard_name: "SWAG Dashboard"
+
 swag_container_env_vars:
   PUID: "{{ guid }}"
   PGID: "{{ guid }}"
@@ -16,6 +18,9 @@ swag_container_env_vars:
   EMAIL: "{{ cloudflare_email }}"
   PROPAGATION: "60"
   DOCKER_MODS: "linuxserver/mods:swag-dashboard|linuxserver/mods:swag-auto-reload"
+
+swag_container_ports:
+  - 443:443
 
 swag_maxmind_allowed_countries:
   - "AT"
@@ -50,6 +55,22 @@ swag_maxmind_allowed_countries:
   - "US"
 
 swag_maxmind_blocked_countries:
-  - "CN"
-  - "IR"
-  - "RU"
+  - "CN"  # China
+  - "RU"  # Russia
+  - "HK"  # Hong Kong
+  - "IN"  # India
+  - "IR"  # Iran
+  - "VN"  # Vietnam
+  - "TR"  # Turkey
+  - "EG"  # Egypt
+  - "MX"  # Mexico
+  - "JP"  # Japan
+  - "KR"  # South Korea
+  - "KP"  # North Korea
+  - "PE"  # Peru
+  - "BR"  # Brazil
+  - "UA"  # Ukraine
+  - "ID"  # Indonesia
+  - "TH"  # Thailand
+
+swag_cloudflare_tunnel_enable: false

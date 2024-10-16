@@ -89,7 +89,7 @@ services:
         target: "_blank"
       - name: "Uptime Kuma"
         logo: /assets/tools/homer-icons/uptime_kuma.png
-        url: "{{ uptime_kuma_dashboard_url }}"
+        url: "{{ uptime_kuma_dashboard_url }}/status"
         type: "UptimeKuma"
         target: "_blank"
 {% for item in web_applications if "system" in item.category and item.name not in ["healthchecks", "uptime_kuma"] and item.url != "" %}

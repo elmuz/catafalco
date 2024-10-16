@@ -1,0 +1,28 @@
+## Version 2024/07/16
+server {
+{% include "roles/swag/templates/nginx/common.j2" %}
+{% if "authelia" in containers %}
+    include /config/nginx/authelia-server.conf;
+{% endif %}
+
+    server_name {{ tasks_md_subdomain }}.*;
+
+
+    location / {
+{% if "authelia" in containers %}
+        include /config/nginx/authelia-location.conf;
+        allow all;
+{% else %}
+        allow 10.0.0.0/8;
+        allow 172.16.0.0/12;
+        allow 192.168.0.0/16;
+        deny all;
+{% endif %}
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app {{ tasks_md_container_name }};
+        set $upstream_port 8080;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+}

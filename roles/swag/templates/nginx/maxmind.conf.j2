@@ -24,7 +24,7 @@ map $geoip2_data_country_iso_code $geo-blacklist {
 {% for item in swag_maxmind_blocked_countries %}
     {{ item }} no;
 {% endfor %}
- }
+}
 
 geo $lan-ip {
     default no;

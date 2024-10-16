@@ -661,10 +661,13 @@ access_control:
         # - 'private.example.com'
     #   policy: 'two_factor'
 
-    - domain: 'dashboard.{{ site_url }}'
-      policy: 'one_factor'
+    - domain: '{{ swag_dashboard_subdomain }}.{{ site_url }}'
+      policy: 'two_factor'
 
-    - domain: 'nextcloud.{{ site_url }}'
+    - domain: '{{ nextcloud_subdomain }}.{{ site_url }}'
+      policy: 'two_factor'
+
+    - domain: '{{ tasks_md_subdomain }}.{{ site_url }}'
       policy: 'two_factor'
 
     ## Rules applied to 'admins' group

@@ -1,5 +1,6 @@
 ---
 - name: Create the proxy-conf folders
+  become: true
   file:
     path: "{{ docker_dir }}/swag/nginx/proxy-confs/"
     state: directory

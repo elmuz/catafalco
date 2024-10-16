@@ -1,6 +1,7 @@
 ---
 nextcloud_container_name: nextcloud
 nextcloud_subdomain: nextcloud
+nextcloud_dashboard_url: "https://{{ nextcloud_subdomain }}.{{ site_url }}"
 nextcloud_mysql_host: nextcloud-mariadb
 nextcloud_mysql_database: nextcloud
 nextcloud_mysql_user: nextcloud

@@ -1,0 +1,6 @@
+---
+wud_container_name: wud
+wud_subdomain: wud
+wud_dashboard_url: https://{{ wud_subdomain }}.{{ site_url }}
+wud_homer_category: system
+wud_dashboard_name: "What's up Docker?"

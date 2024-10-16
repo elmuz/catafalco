@@ -1,6 +1,6 @@
 ---
 - name: Create an docker network
-  docker_network:
+  community.docker.docker_network:
     name: swag_network
     ipam_config:
       - subnet: 172.18.0.0/16

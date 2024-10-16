@@ -1,0 +1,20 @@
+---
+- name: Make sure that Docker Socket Proxy container is created and running
+  docker_container:
+    name: "{{ socket_proxy_container_name }}"
+    image: lscr.io/linuxserver/socket-proxy:latest
+    pull: true
+    networks:
+      - name: swag_network
+    state: started
+    env:
+      TZ: "{{ timezone }}"
+      CONTAINERS: "1"
+      IMAGES: "1"
+      POST: "0"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    restart_policy: unless-stopped
+    read_only: true
+    tmpfs:
+      - /run

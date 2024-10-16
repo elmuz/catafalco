@@ -9,8 +9,6 @@ server {
     root /dashboard/www;
     index index.php;
 
-    client_max_body_size 0;
-
     # enable for ldap auth (requires ldap-location.conf in the location block)
     #include /config/nginx/ldap-server.conf;
 
@@ -43,7 +41,7 @@ server {
 {% else %}
         allow 10.0.0.0/8;
         allow 172.16.0.0/12;
-        allow 192.168.1.0/24;
+        allow 192.168.0.0/16;
         deny all;
 {% endif %}
 
@@ -71,7 +69,7 @@ server {
 {% else %}
         allow 10.0.0.0/8;
         allow 172.16.0.0/12;
-        allow 192.168.1.0/24;
+        allow 192.168.0.0/16;
         deny all;
 {% endif %}
 
@@ -83,17 +81,12 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    {% include "roles/swag/templates/nginx/common.j2" %}
 
-    server_name dashboard.*;
+    server_name {{ swag_dashboard_subdomain }}.*;
 
     root /dashboard/www;
     index index.php;
-
-    include /config/nginx/ssl.conf;
-
-    client_max_body_size 0;
 
     # enable for ldap auth (requires ldap-location.conf in the location block)
     #include /config/nginx/ldap-server.conf;
@@ -127,7 +120,7 @@ server {
 {% else %}
         allow 10.0.0.0/8;
         allow 172.16.0.0/12;
-        allow 192.168.1.0/24;
+        allow 192.168.0.0/16;
         deny all;
 {% endif %}
 
@@ -155,7 +148,7 @@ server {
 {% else %}
         allow 10.0.0.0/8;
         allow 172.16.0.0/12;
-        allow 192.168.1.0/24;
+        allow 192.168.0.0/16;
         deny all;
 {% endif %}
 

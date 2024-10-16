@@ -1,0 +1,30 @@
+---
+- name: Run the Docker Socket Proxy
+  ansible.builtin.include_role:
+    name: socket_proxy
+
+- name: Add ENV vars
+  ansible.builtin.set_fact:
+    wud_container_env_vars: "{{ wud_container_env_vars | default({}) | ansible.builtin.combine({item[0]: item[1]}) }}"
+  loop:
+    - ["TZ", "{{ timezone }}"]
+    - ["WUD_WATCHER_{{ hostname }}_HOST", "{{ socket_proxy_container_name }}"]
+
+- name: Make sure that WUD container is created and running
+  docker_container:
+    name: "{{ wud_container_name }}"
+    image: fmartinou/whats-up-docker
+    pull: true
+    networks:
+      - name: swag_network
+    state: started
+    env: "{{ wud_container_env_vars }}"
+    restart_policy: unless-stopped
+
+- name: Install the WUD config files
+  ansible.builtin.template:
+    src: "{{ wud_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ wud_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"

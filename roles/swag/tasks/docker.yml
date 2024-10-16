@@ -31,6 +31,9 @@
         owner: "{{ guid }}"
         group: "{{ guid }}"
         mode: "0644"
+    - name: Strip container published ports
+      ansible.builtin.set_fact:
+        swag_container_ports: []
 
 - name: Add optional 'Auto Uptime Kuma' Docker mod and ENV vars
   when: "'uptime_kuma' in containers"
@@ -62,7 +65,7 @@
         - ["MAXMINDDB_USER_ID", "{{ maxmind_account_id }}"]
 
 - name: Make sure that SWAG container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ swag_container_name }}"
     image: ghcr.io/linuxserver/swag:latest
     pull: true
@@ -73,8 +76,7 @@
       - net_admin
     state: started
     env: "{{ swag_container_env_vars }}"
-    # ports:
-    #   - 443:443
+    ports: "{{ swag_container_ports }}"
     volumes:
       - "{{ docker_dir }}/{{ swag_container_name }}/nginx:/config/nginx"
       - "{{ docker_dir }}/{{ swag_container_name }}/dns-conf:/config/dns-conf"

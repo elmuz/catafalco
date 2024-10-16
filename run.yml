@@ -149,6 +149,18 @@
         - healthchecks
         - containers
 
+    - role: socket_proxy
+      become: false
+      tags:
+        - socket-proxy
+        - containers
+
+    - role: wud
+      become: false
+      tags:
+        - wud
+        - containers
+
     #
     # Monitoring
     #
@@ -250,6 +262,12 @@
       become: false
       tags:
         - handbrake
+        - containers
+
+    - role: stirling_pdf
+      become: false
+      tags:
+        - pdf
         - containers
 
     #

@@ -21,8 +21,10 @@ containers:
   - authelia
   - nextcloud
   - onlyoffice
+  - tasks_md
 
 site_url: catafal.co
 
+swag_dashboard_subdomain: swag
 swag_cloudflare_tunnel_enable: true
 swag_maxmind_enable: true
