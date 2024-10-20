@@ -6,3 +6,6 @@ nextcloud_mysql_host: nextcloud-mariadb
 nextcloud_mysql_database: nextcloud
 nextcloud_mysql_user: nextcloud
 nextcloud_onlyoffice_host: onlyoffice
+nextcloud_volume_config: "{{ docker_dir }}/nextcloud/config"
+nextcloud_volume_data: "{{ docker_dir }}/nextcloud/data"
+nextcloud_log_file: "{{ nextcloud_volume_data }}/nextcloud.log"

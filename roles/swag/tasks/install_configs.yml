@@ -2,7 +2,7 @@
 - name: Create the proxy-conf folders
   become: true
   file:
-    path: "{{ docker_dir }}/swag/nginx/proxy-confs/"
+    path: "{{ swag_volume_nginx_proxy_confs }}"
     state: directory
     recurse: true
     owner: "{{ guid }}"

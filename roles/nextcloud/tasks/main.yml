@@ -81,8 +81,8 @@
     links:
       - nextcloud-mariadb
     volumes:
-      - "{{ docker_dir }}/nextcloud/config:/config"
-      - "{{ docker_dir }}/nextcloud/data:/data"
+      - "{{ nextcloud_volume_config }}:/config"
+      - "{{ nextcloud_volume_data }}:/data"
     restart_policy: unless-stopped
 
 - name: Pause for 30 seconds to run the Nextcloud app
@@ -105,10 +105,10 @@
     name: onlyoffice
   when: "'onlyoffice' in containers"
 
-- name: Install the SWAG config files
+- name: Install SWAG proxy-conf
   ansible.builtin.template:
     src: nextcloud.subdomain.conf.j2
-    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/nextcloud.subdomain.conf"
+    dest: "{{ swag_volume_nginx_proxy_confs }}/nextcloud.subdomain.conf"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"

@@ -1,9 +1,15 @@
 ---
-- name: Restart swag
+- name: Restart SWAG
   community.docker.docker_container:
-    name: swag
+    name: "{{ swag_container_name }}"
     state: started
     restart: true
+
+- name: Recreate SWAG
+  community.docker.docker_container:
+    name: "{{ swag_container_name }}"
+    state: started
+    recreate: true
 
 - name: Refresh Uptime Kuma monitored services
   community.docker.docker_container_exec:

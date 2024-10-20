@@ -1,0 +1,29 @@
+---
+- name: Install fail2ban filter configuration
+  ansible.builtin.copy:
+    src: fail2ban_filter.conf
+    dest: "{{ swag_volume_fail2ban }}/filter.d/authelia.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: '0644'
+
+- name: Install fail2ban jail configuration
+  ansible.builtin.blockinfile:
+    path: "{{ swag_volume_fail2ban }}/jail.local"
+    marker: "# {mark} ANSIBLE | AUTHELIA CONFIGURATION"
+    prepend_newline: true
+    block: |
+      [authelia]
+      enabled = true
+      port = http,https,9091
+      filter = authelia
+      maxretry = 3
+      bantime = 1d
+      findtime = 1d
+      chain = DOCKER-USER
+      action = iptables-allports[name=authelia]
+      logpath = {{ swag_fail2ban_monitored_logs }}/authelia.log
+
+- name: Add Authelia to the list of logs to be mounted by SWAG
+  ansible.builtin.set_fact:
+    swag_container_volumes: "{{ swag_container_volumes + [authelia_log_file + ':' + swag_fail2ban_monitored_logs + '/authelia.log:ro'] }}"

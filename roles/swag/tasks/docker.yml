@@ -2,7 +2,7 @@
 - name: Install the SWAG dashboard config files (1)
   template:
     src: nginx/proxy-confs/dashboard.subdomain.conf.j2
-    dest: "{{ docker_dir }}/{{ swag_container_name }}/nginx/proxy-confs/dashboard.subdomain.conf"
+    dest: "{{ swag_volume_nginx_proxy_confs }}/dashboard.subdomain.conf"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
@@ -13,7 +13,8 @@
     - name: Append Docker mod
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars |
-        ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:universal-cloudflared'}) }}"
+        ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS +
+        '|linuxserver/mods:universal-cloudflared|linuxserver/mods:swag-cloudflare-real-ip'}) }}"
     - name: Add ENV vars
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
@@ -34,10 +35,27 @@
     - name: Strip container published ports
       ansible.builtin.set_fact:
         swag_container_ports: []
+    - name: Update `nginx.conf` configuration for real ip
+      ansible.builtin.lineinfile:
+        path: "{{ docker_dir }}/{{ swag_container_name }}/nginx/nginx.conf"
+        search_string: "{{ item[0] }}"
+        insertafter: "http {"
+        line: "{{ item[1] }}"
+      loop:
+        - ["set_real_ip_from 127.0.0.1;", "    set_real_ip_from 127.0.0.1;"]
+        - ["include /config/nginx/cf_real-ip.conf;", "    include /config/nginx/cf_real-ip.conf;"]
+        - ["real_ip_recursive on;", "    real_ip_recursive on;"]
+        - ["real_ip_header X-Forwarded-For;", "    real_ip_header X-Forwarded-For;"]
+    - name: Add the volume for `tunnelconfig.yml`
+      ansible.builtin.set_fact:
+        swag_container_volumes: "{{ swag_container_volumes + [docker_dir + '/' + swag_container_name + '/tunnelconfig.yml:/config/tunnelconfig.yml'] }}"
 
 - name: Add optional 'Auto Uptime Kuma' Docker mod and ENV vars
   when: "'uptime_kuma' in containers"
   block:
+    - name: Run the Docker Socket Proxy
+      ansible.builtin.include_role:
+        name: socket_proxy
     - name: Append Docker mod
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS +
@@ -46,6 +64,7 @@
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
       loop:
+        - ["DOCKER_HOST", "{{ socket_proxy_container_name }}:2375"]
         - ["UPTIME_KUMA_URL", "http://{{ uptime_kuma_container_name }}:3001"]
         - ["UPTIME_KUMA_USERNAME", "{{ uptime_kuma_user }}"]
         - ["UPTIME_KUMA_PASSWORD", "{{ uptime_kuma_password }}"]
@@ -64,6 +83,33 @@
         - ["MAXMINDDB_LICENSE_KEY", "{{ maxmind_licence_key }}"]
         - ["MAXMINDDB_USER_ID", "{{ maxmind_account_id }}"]
 
+#  This container includes fail2ban set up with 5 jails by default:
+#    * nginx-http-auth
+#    * nginx-badbots
+#    * nginx-botsearch
+#    * nginx-deny
+#    * nginx-unauthorized
+#  To enable or disable other jails, modify the file `/config/fail2ban/jail.local`
+#  To modify filters and actions, instead of editing the .conf files, create .local files with the same name
+#  and edit those because .conf files get overwritten when the actions and filters are updated. .local files
+#  will append whatever's in the .conf files (ie. nginx-http-auth.conf --> nginx-http-auth.local).
+#  You can check which jails are active via `docker exec -it swag fail2ban-client status`
+#  You can check the status of a specific jail via `docker exec -it swag fail2ban-client status <jail name>`
+#  You can unban an IP via `docker exec -it swag fail2ban-client set <jail name> unbanip <IP>`
+#  A list of commands can be found here: https://www.fail2ban.org/wiki/index.php/Commands
+- name: Prepare all Fail2Ban configurations
+  block:
+    - name: Select services for which 'fail2ban.yml' is available
+      ansible.builtin.set_fact:
+        fail2ban_services: "{{ fail2ban_services | default([]) + [item] }}"
+      loop: "{{ containers }}"
+      when: "lookup('ansible.builtin.fileglob', 'roles/' + item + '/tasks/fail2ban.yml', wantlist=True) | length == 1"
+    - name: Include selected `fail2ban_services` roles and execute 'fail2ban' tasks
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+        tasks_from: fail2ban
+      loop: "{{ fail2ban_services }}"
+
 - name: Make sure that SWAG container is created and running
   community.docker.docker_container:
     name: "{{ swag_container_name }}"
@@ -77,12 +123,7 @@
     state: started
     env: "{{ swag_container_env_vars }}"
     ports: "{{ swag_container_ports }}"
-    volumes:
-      - "{{ docker_dir }}/{{ swag_container_name }}/nginx:/config/nginx"
-      - "{{ docker_dir }}/{{ swag_container_name }}/dns-conf:/config/dns-conf"
-      - "{{ docker_dir }}/{{ swag_container_name }}/letsencrypt:/config/etc/letsencrypt"
-      - "{{ docker_dir }}/{{ swag_container_name }}/tunnelconfig.yml:/config/tunnelconfig.yml"
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+    volumes: "{{ swag_container_volumes }}"
     restart_policy: unless-stopped
 
 - name: Pause for 10 seconds and let SWAG creating configuration files
@@ -91,7 +132,7 @@
 
 - name: Enable optional additional headers in 'ssl.conf'
   ansible.builtin.replace:
-    path: "{{ docker_dir }}/swag/nginx/ssl.conf"
+    path: "{{ swag_volume_nginx }}/ssl.conf"
     regexp: "{{ item[0] }}"
     replace: "{{ item[1] }}"
   loop:
@@ -101,13 +142,13 @@
     - ["#add_header Referrer-Policy", "add_header Referrer-Policy"]
     - ["#add_header Strict-Transport-Security", "add_header Strict-Transport-Security"]
   notify:
-    - Restart swag
+    - Restart SWAG
 
 - name: Update Maxmind configuration
   become: true
   when: swag_maxmind_enable | default(False)
   notify:
-    - Restart swag
+    - Restart SWAG
   block:
     - name: Customize 'maxmind.conf'
       ansible.builtin.template:

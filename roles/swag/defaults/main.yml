@@ -5,6 +5,16 @@ swag_dashboard_subdomain: dashboard
 swag_dashboard_url: https://{{ swag_dashboard_subdomain }}.{{ site_url }}
 swag_homer_category: system
 swag_dashboard_name: "SWAG Dashboard"
+swag_volume_nginx: "{{ docker_dir }}/{{ swag_container_name }}/nginx"
+swag_volume_nginx_proxy_confs: "{{ swag_volume_nginx }}/proxy-confs"
+swag_volume_fail2ban: "{{ docker_dir }}/{{ swag_container_name }}/fail2ban"
+swag_fail2ban_monitored_logs: "/var/log/fail2ban/monitored"
+
+swag_container_volumes:
+  - "{{ swag_volume_nginx }}:/config/nginx"
+  - "{{ docker_dir }}/{{ swag_container_name }}/dns-conf:/config/dns-conf"
+  - "{{ docker_dir }}/{{ swag_container_name }}/letsencrypt:/config/etc/letsencrypt"
+  - "{{ swag_volume_fail2ban }}:/config/fail2ban"
 
 swag_container_env_vars:
   PUID: "{{ guid }}"
@@ -74,3 +84,4 @@ swag_maxmind_blocked_countries:
   - "TH"  # Thailand
 
 swag_cloudflare_tunnel_enable: false
+swag_maxmind_enable: false
