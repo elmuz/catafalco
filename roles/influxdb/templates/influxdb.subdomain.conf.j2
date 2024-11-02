@@ -3,6 +3,13 @@ server {
     {% include "roles/swag/templates/nginx/common.j2" %}
 
     server_name {{ influxdb_subdomain }}.*;
+    proxy_hide_header 'Access-Control-Allow-Methods';
+    proxy_hide_header 'Access-Control-Allow-Headers';
+    proxy_hide_header 'Access-Control-Allow-Origin';
+    add_header 'Access-Control-Allow-Origin' '*';
+    add_header 'Access-Control-Allow-Methods' 'POST, GET, OPTIONS, PUT, DELETE, PATCH';
+    add_header 'Access-Control-Allow-Headers' 'Accept, Content-Type, Content-Length, Accept-Encoding, Authorization, User-Agent';
+
 
     location / {
         include /config/nginx/proxy.conf;

@@ -2,5 +2,8 @@
 prowlarr_container_name: prowlarr
 prowlarr_subdomain: prowlarr
 prowlarr_dashboard_url: https://{{ prowlarr_subdomain }}.{{ site_url }}
-prowlarr_dashboard_name: Prowlarr
 prowlarr_homer_category: servarr
+prowlarr_homer:
+  name: Prowlarr
+  type: Prowlarr
+  apikey: "{{ homer_api_keys['Prowlarr'] }}"

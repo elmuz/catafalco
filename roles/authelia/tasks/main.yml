@@ -23,6 +23,12 @@
     group: "{{ guid }}"
     mode: "0600"
 
+- name: Create a docker network
+  community.docker.docker_network:
+    name: authelia_network
+    connected:
+      - "{{ swag_container_name }}"
+
 - name: Make sure that Authelia container is created and running
   docker_container:
     name: "{{ authelia_container_name }}"
@@ -30,7 +36,7 @@
     pull: true
     state: started
     networks:
-      - name: swag_network
+      - name: authelia_network
     env:
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"

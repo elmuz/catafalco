@@ -53,8 +53,9 @@ server {
 
 {% if 'onlyoffice' in containers %}
     location /{{ onlyoffice_subfolder }}/ {
-        proxy_set_header X-Forwarded-Host $http_host/editors;
         include /config/nginx/resolver.conf;
+        proxy_http_version 1.1;
+        proxy_set_header X-Forwarded-Host $http_host/{{ onlyoffice_subfolder };
         proxy_pass http://{{ nextcloud_onlyoffice_host }}/;
     }
 {% endif %}

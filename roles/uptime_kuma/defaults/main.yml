@@ -3,4 +3,7 @@ uptime_kuma_container_name: uptime-kuma
 uptime_kuma_subdomain: status
 uptime_kuma_dashboard_url: https://{{ uptime_kuma_subdomain }}.{{ site_url }}
 uptime_kuma_homer_category: system
-uptime_kuma_dashboard_name: "Uptime Kuma"
+uptime_kuma_homer:
+  name: "Uptime Kuma"
+  url: "{{ uptime_kuma_dashboard_url }}"
+  type: "UptimeKuma"

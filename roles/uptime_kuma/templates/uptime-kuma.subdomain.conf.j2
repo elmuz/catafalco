@@ -3,6 +3,7 @@ server {
     {% include "roles/swag/templates/nginx/common.j2" %}
 
     server_name {{ uptime_kuma_subdomain }}.*;
+    add_header 'Access-Control-Allow-Origin' 'https://{{ site_url }}';
 
     location / {
         include /config/nginx/proxy.conf;
@@ -11,7 +12,6 @@ server {
         set $upstream_port 3001;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;
-
     }
 
     location ~ /(status|assets|icon.svg) {
@@ -21,6 +21,5 @@ server {
         set $upstream_port 3001;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;
-
     }
 }

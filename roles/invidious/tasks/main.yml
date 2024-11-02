@@ -34,6 +34,25 @@
     healthcheck:
       test: [CMD-SHELL, pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB]
 
+- name: Make sure that inv_sig_helper container is created and running
+  docker_container:
+    name: inv_sig_helper
+    image: quay.io/invidious/inv-sig-helper:latest
+    pull: true
+    cap_drop:
+      - all
+    read_only: true
+    security_opts:
+      - no-new-privileges:true
+    init: true
+    command: ["--tcp", "0.0.0.0:12999"]
+    env:
+      RUST_log: info
+    networks:
+      - name: swag_network
+    state: started
+    restart_policy: unless-stopped
+
 - name: Make sure that Invidious container is created and running
   docker_container:
     name: "{{ invidious_container_name }}"
@@ -44,16 +63,19 @@
         db:
           dbname: invidious
           user: funkysloth
-          password: "{{ invidious_postgres_password }}"
+          password: {{ invidious_postgres_password }}
           host: invidious-db
           port: 5432
         check_tables: true
+        signature_server: inv_sig_helper:12999
+        visitor_data: {{ invidious_visitor_data }}
+        po_token: {{ invidious_po_token }}
         https_only: true
         domain: "invidious.{{ host_local }}"
         external_port: 443
         use_pubsub_feeds: true
         statistics_enabled: false
-        hmac_key: "{{ invidious_hmac }}"
+        hmac_key: {{ invidious_hmac }}
     networks:
       - name: swag_network
     links:

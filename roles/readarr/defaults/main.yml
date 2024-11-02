@@ -2,5 +2,8 @@
 readarr_container_name: readarr
 readarr_subdomain: readarr
 readarr_dashboard_url: https://{{ readarr_subdomain }}.{{ host_local }}
-readarr_dashboard_name: Readarr
 readarr_homer_category: servarr
+readarr_homer:
+  name: Readarr
+  type: Readarr
+  apikey: "{{ homer_api_keys['Readarr'] }}"

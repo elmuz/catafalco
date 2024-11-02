@@ -2,5 +2,8 @@
 radarr_container_name: radarr
 radarr_subdomain: radarr
 radarr_dashboard_url: https://{{ radarr_subdomain }}.{{ site_url }}
-radarr_dashboard_name: Radarr
 radarr_homer_category: servarr
+radarr_homer:
+  name: Radarr
+  type: Radarr
+  apikey: "{{ homer_api_keys['Radarr'] }}"

@@ -99,6 +99,38 @@
 #  A list of commands can be found here: https://www.fail2ban.org/wiki/index.php/Commands
 - name: Prepare all Fail2Ban configurations
   block:
+    - name: Add the 'jail.local' configuration
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/linuxserver/docker-swag/refs/heads/master/root/defaults/fail2ban/jail.local
+        dest: "{{ swag_volume_fail2ban }}/jail.local"
+        mode: '0640'
+    - name: Create 'filter.d' directory, which may be missing
+      ansible.builtin.file:
+        path: "{{ swag_volume_fail2ban }}/filter.d"
+        state: directory
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: "0755"
+    - name: Add the 'cloudflare-token.local' configuration
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/fail2ban/fail2ban/refs/heads/master/config/action.d/cloudflare-token.conf
+        dest: "{{ swag_volume_fail2ban }}/action.d/cloudflare-token.local"
+        mode: '0640'
+      when: swag_cloudflare_tunnel_enable | default(False)
+    - name: Add Cloudflare Zone to 'clouflare-token.local'
+      ansible.builtin.lineinfile:
+        path: "{{ swag_volume_fail2ban }}/action.d/cloudflare-token.local"
+        regexp: "{{ item[0] }}"
+        firstmatch: true
+        line: "{{ item[1] }}"
+        insertafter: \[DEFAULT\]
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: '0640'
+      loop:
+        - ["cfzone =", "cfzone = {{ cloudflare_zone_id[site_url] }}"]
+        - ["cftoken =", "cftoken ="]  # remove # comment, if present.
+      when: swag_cloudflare_tunnel_enable | default(False)
     - name: Select services for which 'fail2ban.yml' is available
       ansible.builtin.set_fact:
         fail2ban_services: "{{ fail2ban_services | default([]) + [item] }}"
@@ -108,7 +140,21 @@
       ansible.builtin.include_role:
         name: "{{ item }}"
         tasks_from: fail2ban
-      loop: "{{ fail2ban_services }}"
+      loop: "{{ fail2ban_services | default([]) }}"
+    - name: Add CF token to 'jail.local'
+      ansible.builtin.lineinfile:
+        path: "{{ swag_volume_fail2ban }}/jail.local"
+        regexp: "{{ item[0] }}"
+        firstmatch: true
+        line: "{{ item[1] }}"
+        insertafter: \[DEFAULT\]
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: '0640'
+      loop:
+        - ["^bantime", "bantime = 3600"]
+        - ["^maxretry", "maxretry = 3"]
+
 
 - name: Make sure that SWAG container is created and running
   community.docker.docker_container:

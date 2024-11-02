@@ -9,9 +9,11 @@
   loop:
     - ["TZ", "{{ timezone }}"]
     - ["WUD_WATCHER_{{ hostname }}_HOST", "{{ socket_proxy_container_name }}"]
+    - ["WUD_SERVER_CORS_ENABLED", "true"]
+    - ["WUD_SERVER_CORS_ORIGIN", "https://{{ site_url }}"]
 
 - name: Make sure that WUD container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ wud_container_name }}"
     image: fmartinou/whats-up-docker
     pull: true

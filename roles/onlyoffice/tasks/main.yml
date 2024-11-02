@@ -20,7 +20,7 @@
     image: onlyoffice/documentserver:8.1
     pull: true
     networks:
-      - name: swag_network
+      - name: nextcloud_network
     state: started
     env:
       JWT_ENABLED: "true"

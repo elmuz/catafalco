@@ -21,13 +21,8 @@
 #  }
 - name: Populate the dictionary of all containers
   set_fact:
-    web_applications: "{{ web_applications | default([]) + [{'name': item, 'logo': '/assets/tools/homer-icons/' + item + '.png', 'dashboard': lookup('vars',
-    item)[item + '_dashboard_name'] | default(item), 'url': lookup('vars', item)[item + '_dashboard_url'] | default(''), 'health_url': lookup('vars', item)[item
-    + '_health_url'] | default(''), 'category': lookup('vars', item)[item + '_homer_category'] | default('')}] }}"
+    dashboard_apps: "{{ dashboard_apps | default([]) + [{'name': item, 'logo': '/assets/tools/homer-icons/' + item + '.png', 'url': lookup('vars', item)[item +
+    '_dashboard_url'] | default(''), 'target': '_blank', 'category': lookup('vars', item)[item + '_homer_category'] | default(''), 'type': 'Ping', 'method':
+    'get'} | ansible.builtin.combine(lookup('vars', item)[item + '_homer'] | default({}))] }}"
   when: lookup('vars', item)[item + '_dashboard_url'] is defined
   loop: "{{ containers }}"
-
-- name: Populate the URL dictionary with all containers
-  set_fact:
-    swag_urls: "{{ swag_urls | default({}) | combine({item.name: item.url | regex_replace('https?://|/*', '')}) }}"
-  loop: "{{ web_applications }}"

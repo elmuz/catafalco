@@ -21,6 +21,7 @@
       ND_LOGLEVEL: info
       ND_SESSIONTIMEOUT: 24h
       ND_DEFAULTTHEME: Nord
+      ND_HTTPSECURITYHEADERS_CUSTOMFRAMEOPTIONSVALUE: SAMEORIGIN
     volumes:
       - "{{ docker_dir }}/{{ navidrome_container_name }}/data:/data"
       - "{{ mergerfs_root }}/Media/Music:/music:ro"

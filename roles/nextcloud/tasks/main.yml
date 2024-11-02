@@ -21,6 +21,12 @@
     group: "{{ guid }}"
     mode: "0644"
 
+- name: Create a docker network
+  community.docker.docker_network:
+    name: nextcloud_network
+    connected:
+      - "{{ swag_container_name }}"
+
 - name: Make sure the MariaDB container is created and running
   community.docker.docker_container:
     name: "{{ nextcloud_mysql_host }}"
@@ -28,7 +34,7 @@
     pull: true
     state: started
     networks:
-      - name: swag_network
+      - name: nextcloud_network
     env:
       "PUID": "{{ guid }}"
       "PGID": "{{ guid }}"
@@ -69,7 +75,7 @@
     pull: true
     state: started
     networks:
-      - name: swag_network
+      - name: nextcloud_network
     env:
       "PUID": "{{ guid }}"
       "PGID": "{{ guid }}"

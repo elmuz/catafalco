@@ -2,7 +2,7 @@
 - name: Install fail2ban filter configuration
   ansible.builtin.copy:
     src: fail2ban_filter.conf
-    dest: "{{ swag_volume_fail2ban }}/filter.d/nextcloud.conf"
+    dest: "{{ swag_volume_fail2ban }}/filter.d/nextcloud.local"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: '0644'
@@ -19,9 +19,8 @@
       port = 80,443
       protocol = tcp
       filter = nextcloud
-      maxretry = 3
-      bantime = 86400
-      findtime = 43200
+      action = {{ 'cloudflare-token' if swag_cloudflare_tunnel_enable | default(False) else 'iptables-allports' }}[name=nextcloud,cftoken="{{
+        cloudflare_api_token }}"]
       logpath = {{ swag_fail2ban_monitored_logs }}/nextcloud.log
 
 - name: Add Nextcloud to the list of logs to be mounted by SWAG

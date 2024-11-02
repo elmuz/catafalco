@@ -21,7 +21,6 @@ containers:
   - authelia
   - nextcloud
   - onlyoffice
-  - tasks_md
 
 site_url: catafal.co
 

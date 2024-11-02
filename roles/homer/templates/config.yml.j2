@@ -49,59 +49,29 @@ services:
   - name: "Media"
     icon: "fas fa-photo-video"
     items:
-      - name: "Jellyfin"
-        logo: /assets/tools/homer-icons/jellyfin.png
-        url: "https://jellyfin.{{ site_url }}"
-        type: "Emby"
-        apikey: "{{homer_api_keys['Jellyfin']}}"
-        libraryType: "movies"
-        target: "_blank"
-{% for item in web_applications if "media" in item.category and item.name != "jellyfin" and item.url != "" %}
-      - name: "{{ item.dashboard }}"
-        logo: "{{ item.logo }}"
-        url: "{{ item.url }}"
-        target: "_blank"
+{% for item in dashboard_apps if item.category == "media" %}
+      - {{ item }}
 {% endfor %}
 
   - name: "Services"
     icon: "fas fa-stream"
     items:
-{% for item in web_applications if "services" in item.category and item.dashboard != "Speedtest Tracker" and item.url != "" %}
-      - name: "{{ item.dashboard }}"
-        logo: "{{ item.logo }}"
-        url: "{{ item.url }}"
-        target: "_blank"
+{% for item in dashboard_apps if item.category == "services" %}
+      - {{ item }}
 {% endfor %}
-      - name: "Speedtest Tracker"
-        logo: /assets/tools/homer-icons/speedtest_tracker.png
-        url: "https://speedtest.{{ site_url }}"
-        type: "SpeedtestTracker"
-        target: "_blank"
 
   - name: "System"
     icon: "fas fa-cog"
     items:
-      - name: "Healthchecks"
-        logo: /assets/tools/homer-icons/healthchecks.png
-        url: "https://healthchecks.{{ site_url }}"
-        type: "Healthchecks"
-        apikey: "{{ healthchecks_api_ro_key }}"
-        target: "_blank"
-      - name: "Uptime Kuma"
-        logo: /assets/tools/homer-icons/uptime_kuma.png
-        url: "{{ uptime_kuma_dashboard_url }}/status"
-        type: "UptimeKuma"
-        target: "_blank"
-{% for item in web_applications if "system" in item.category and item.name not in ["healthchecks", "uptime_kuma"] and item.url != "" %}
-      - name: "{{ item.dashboard }}"
-        logo: "{{ item.logo }}"
-        url: "{{ item.url }}"
-        target: "_blank"
+{% for item in dashboard_apps if item.category == "system" %}
+      - {{ item }}
 {% endfor %}
       - name: "SWAG Dashboard"
         logo: /assets/tools/homer-icons/linuxserver.png
         url: "https://dashboard.{{ site_url }}"
         target: "_blank"
+
+      # See here for details https://github.com/bastienwirtz/homer/issues/478#issuecomment-1192372131
       - name: "PiHole"
         logo: /assets/tools/homer-icons/pihole.png
         url: "http://192.168.1.2/admin"
@@ -113,17 +83,6 @@ services:
   - name: "ServArr"
     icon: "fas fa-search-dollar"
     items:
-{% for item in web_applications if "servarr" in item.category and item.name == "deluge" and item.url != "" %}
-      - name: "{{ item.dashboard }}"
-        logo: "{{ item.logo }}"
-        url: "{{ item.url }}"
-        target: "_blank"
-{% endfor %}
-{% for item in web_applications if "servarr" in item.category and item.name != "deluge" and item.url != "" %}
-      - name: "{{ item.dashboard }}"
-        logo: "{{ item.logo }}"
-        url: "{{ item.url }}"
-        type: "{{ item.dashboard }}"
-        apikey: "{{ homer_api_keys[item.dashboard] }}"
-        target: "_blank"
+{% for item in dashboard_apps if item.category == "servarr" %}
+      - {{ item }}
 {% endfor %}
