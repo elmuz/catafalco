@@ -36,6 +36,7 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ healthchecks_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ healthchecks_dashboard_url }}"
     restart_policy: unless-stopped
 
 - name: Install the SWAG config files

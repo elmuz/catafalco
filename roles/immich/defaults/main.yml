@@ -2,8 +2,9 @@
 immich_container_name: immich
 immich_subdomain: immich
 immich_dashboard_url: https://{{ immich_subdomain }}.{{ site_url }}
-immich_homer_category: media
+immich_dashboard_name: Immich
 immich_homer:
   name: Immich
+  category: media
   type: Immich
   apikey: "{{ homer_api_keys['Immich'] }}"

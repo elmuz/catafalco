@@ -9,13 +9,13 @@
 
 - name: Copy the icons
   copy:
-    src: files/icons/{{ item['name'] }}.png
+    src: files/icons/{{ item['logo'] | basename }}
     dest: "{{ docker_dir }}/homer/tools/homer-icons"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
   when: item['url'] is defined
-  loop: "{{ web_applications }}"
+  loop: "{{ dashboard_apps }}"
 
 - name: Copy the icons for other dashboard elements
   copy:

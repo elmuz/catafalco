@@ -19,13 +19,20 @@
     path: "{{ docker_dir }}/{{ deluge_container_name }}"
     state: directory
 
+- name: Create a docker network
+  community.docker.docker_network:
+    name: arr_network
+    connected:
+      - "{{ swag_container_name }}"
+    appends: true
+
 - name: Make sure that Deluge container is created and running
   docker_container:
     name: "{{ deluge_container_name }}"
     image: binhex/arch-delugevpn:2.1.1-6-05
     pull: true
     networks:
-      - name: swag_network
+      - name: arr_network
     exposed_ports:
       - 8112
       - 8118
@@ -58,6 +65,7 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ deluge_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ deluge_dashboard_url }}"
 
 - name: Install the SWAG config files
   template:

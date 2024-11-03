@@ -13,13 +13,28 @@
       - cuetools
     state: present
 
+- name: Create the necessary Lidarr folder
+  file:
+    path: "{{ docker_dir }}/{{ lidarr_container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create a docker network
+  community.docker.docker_network:
+    name: arr_network
+    connected:
+      - "{{ swag_container_name }}"
+    appends: true
+
 - name: Make sure that Lidarr container is created and running
   docker_container:
     name: "{{ lidarr_container_name }}"
     image: ghcr.io/linuxserver/lidarr
     pull: true
     networks:
-      - name: swag_network
+      - name: arr_network
     state: started
     env:
       PUID: "{{ guid }}"
@@ -33,6 +48,7 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ lidarr_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ lidarr_dashboard_url }}"
 
 - name: Install the SWAG config files
   template:

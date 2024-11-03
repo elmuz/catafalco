@@ -28,6 +28,7 @@
     name: authelia_network
     connected:
       - "{{ swag_container_name }}"
+    appends: true  # not necessary
 
 - name: Make sure that Authelia container is created and running
   docker_container:

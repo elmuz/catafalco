@@ -20,6 +20,7 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ duplicati_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ duplicati_dashboard_url }}"
 
 - name: Install the SWAG config files
   template:

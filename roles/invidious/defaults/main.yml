@@ -3,4 +3,6 @@ invidious_container_name: invidious
 invidious_subdomain: invidious
 invidious_dashboard_url: https://{{ invidious_subdomain }}.{{ site_url }}
 invidious_dashboard_name: Invidious
-invidious_homer_category: services
+invidious_homer:
+  name: "{{ invidious_dashboard_name }}"
+  category: services

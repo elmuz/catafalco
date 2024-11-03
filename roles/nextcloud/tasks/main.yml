@@ -26,6 +26,7 @@
     name: nextcloud_network
     connected:
       - "{{ swag_container_name }}"
+    appends: true
 
 - name: Make sure the MariaDB container is created and running
   community.docker.docker_container:

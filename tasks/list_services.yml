@@ -22,7 +22,7 @@
 - name: Populate the dictionary of all containers
   set_fact:
     dashboard_apps: "{{ dashboard_apps | default([]) + [{'name': item, 'logo': '/assets/tools/homer-icons/' + item + '.png', 'url': lookup('vars', item)[item +
-    '_dashboard_url'] | default(''), 'target': '_blank', 'category': lookup('vars', item)[item + '_homer_category'] | default(''), 'type': 'Ping', 'method':
-    'get'} | ansible.builtin.combine(lookup('vars', item)[item + '_homer'] | default({}))] }}"
+    '_dashboard_url'] | default(''), 'target': '_blank', 'type': 'Ping', 'method': 'get'} | ansible.builtin.combine(lookup('vars', item)[item + '_homer'] |
+    default({}))] }}"
   when: lookup('vars', item)[item + '_dashboard_url'] is defined
   loop: "{{ containers }}"

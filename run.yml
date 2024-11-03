@@ -193,36 +193,42 @@
       become: false
       tags:
         - deluge
+        - servarr
         - containers
 
     - role: sonarr
       become: false
       tags:
         - sonarr
+        - servarr
         - containers
 
     - role: radarr
       become: false
       tags:
         - radarr
+        - servarr
         - containers
 
     - role: lidarr
       become: false
       tags:
         - lidarr
+        - servarr
         - containers
 
     - role: readarr
       become: false
       tags:
         - readarr
+        - servarr
         - containers
 
     - role: prowlarr
       become: false
       tags:
         - prowlarr
+        - servarr
         - containers
 
     #
@@ -302,3 +308,7 @@
       tags:
         - rclone
         - backup-sync
+
+    - role: vaultwarden
+      tags:
+        - vaultwarden

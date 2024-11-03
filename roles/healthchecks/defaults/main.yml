@@ -2,8 +2,9 @@
 healthchecks_container_name: healthchecks
 healthchecks_subdomain: healthchecks
 healthchecks_dashboard_url: https://{{ healthchecks_subdomain }}.{{ site_url }}
-healthchecks_homer_category: system
+healthchecks_dashboard_name: Healthchecks
 healthchecks_homer:
-  name: "Healthchecks"
+  name: "{{ healthchecks_dashboard_name }}"
+  category: system
   type: "Healthchecks"
   apikey: "{{ healthchecks_api_ro_key }}"

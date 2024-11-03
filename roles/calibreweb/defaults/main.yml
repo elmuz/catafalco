@@ -3,4 +3,6 @@ calibreweb_container_name: calibreweb
 calibreweb_subdomain: calibreweb
 calibreweb_dashboard_url: https://{{ calibreweb_subdomain }}.{{ site_url }}
 calibreweb_dashboard_name: Calibre-Web
-calibreweb_homer_category: media
+calibreweb_homer:
+  name: "{{ calibreweb_dashboard_name }}"
+  category: media

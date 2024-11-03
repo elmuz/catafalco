@@ -17,7 +17,7 @@
       swag.uptime-kuma.monitor.name: "Homer"
       swag.uptime-kuma.monitor.url: "{{ site_url }}"
 
-- name: Install the SWAG config files
+- name: Install the Homer config files
   template:
     src: homer.subdomain.conf.j2
     dest: "{{ docker_dir }}/swag/nginx/proxy-confs/homer.subdomain.conf"

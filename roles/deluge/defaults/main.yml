@@ -3,4 +3,6 @@ deluge_container_name: deluge
 deluge_subdomain: deluge
 deluge_dashboard_url: https://{{ deluge_subdomain }}.{{ site_url }}
 deluge_dashboard_name: Deluge
-deluge_homer_category: servarr
+deluge_homer:
+  name: "{{ deluge_dashboard_name }}"
+  category: servarr

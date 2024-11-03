@@ -94,6 +94,7 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ invidious_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ invidious_dashboard_url }}"
 
 - name: Install the SWAG config files
   template:

@@ -120,6 +120,7 @@ containers:
   - speedtest_tracker
   - stirling_pdf
   - uptime_kuma
+  - vaultwarden
   - watchtower
   - wud
 

@@ -1,0 +1,8 @@
+---
+vaultwarden_container_name: vaultwarden
+vaultwarden_subdomain: vault
+vaultwarden_dashboard_url: https://{{ vaultwarden_subdomain }}.{{ site_url }}
+vaultwarden_dashboard_name: Vaultwarden
+vaultwarden_homer:
+  name: "{{ vaultwarden_dashboard_name }}"
+  category: services

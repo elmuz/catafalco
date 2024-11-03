@@ -29,6 +29,7 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ navidrome_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ navidrome_dashboard_url }}"
 
 - name: Install the SWAG config files
   template:

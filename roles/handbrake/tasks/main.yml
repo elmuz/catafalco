@@ -29,6 +29,7 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ handbrake_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ handbrake_dashboard_url }}"
 
 - name: Install the SWAG config files
   template:

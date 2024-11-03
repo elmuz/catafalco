@@ -36,7 +36,3 @@
     - role: onlyoffice
       tags:
         - onlyoffice
-    - role: tasks_md
-      tags:
-        - todo
-        - tasks_md

@@ -1,0 +1,35 @@
+---
+- name: Create the necessary Vaultwarden folder
+  file:
+    path: "{{ docker_dir }}/{{ vaultwarden_container_name }}/data"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0750"
+
+- name: Make sure that Vaultwarden container is created and running
+  community.docker.docker_container:
+    name: "{{ vaultwarden_container_name }}"
+    image: vaultwarden/server:latest-alpine
+    pull: true
+    networks:
+      - name: swag_network
+    state: started
+    env:
+      ADMIN_TOKEN: "{{ vaultwarden_admin_token_hash }}"
+    volumes:
+      - "{{ docker_dir }}/{{ vaultwarden_container_name }}/data:/data"
+    user: "{{ guid }}:{{ guid }}"
+    restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ vaultwarden_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ vaultwarden_dashboard_url }}"
+
+- name: Install the Vaultwarden config files
+  ansible.builtin.template:
+    src: "{{ vaultwarden_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ vaultwarden_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"

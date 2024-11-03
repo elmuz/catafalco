@@ -3,4 +3,6 @@ duplicati_container_name: duplicati
 duplicati_subdomain: duplicati
 duplicati_dashboard_url: https://{{ duplicati_subdomain }}.{{ site_url }}
 duplicati_dashboard_name: Duplicati
-duplicati_homer_category: services
+duplicati_homer:
+  name: "{{ duplicati_dashboard_name }}"
+  category: services

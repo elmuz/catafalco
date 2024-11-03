@@ -2,8 +2,9 @@
 sonarr_container_name: sonarr
 sonarr_subdomain: sonarr
 sonarr_dashboard_url: https://{{ sonarr_subdomain }}.{{ site_url }}
-sonarr_homer_category: servarr
+sonarr_dashboard_name: Sonarr
 sonarr_homer:
-  name: Sonarr
+  name: "{{ sonarr_dashboard_name }}"
+  category: servarr
   type: Sonarr
   apikey: "{{ homer_api_keys['Sonarr'] }}"

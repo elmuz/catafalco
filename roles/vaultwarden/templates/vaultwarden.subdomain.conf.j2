@@ -1,0 +1,73 @@
+## Version 2024/07/16
+# make sure that your vaultwarden container is named vaultwarden
+# make sure that your dns has a cname set for vaultwarden
+# if you are using bitwarden (the official image), use the bitwarden conf
+# if you are using vaultwarden (an unofficial implementation), use the vaultwarden conf
+#
+# vaultwarden defaults to port 80 and can be changed using the environment variable ROCKET_PORT on the vaultwarden container
+
+server {
+{% include "roles/swag/templates/nginx/common.j2" %}
+
+{% if "authelia" in containers %}
+    include /config/nginx/authelia-server.conf;
+{% endif %}
+
+    server_name {{ vaultwarden_subdomain }}.*;
+
+    location / {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+
+{% if "authelia" in containers %}
+        include /config/nginx/authelia-location.conf;
+{% endif %}
+
+        set $upstream_app {{ vaultwarden_container_name }};
+        set $upstream_port 80;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+
+    }
+
+    location ~ ^(/vaultwarden)?/admin {
+{% if "authelia" in containers %}
+        include /config/nginx/authelia-location.conf;
+{% endif %}
+
+        # if you enable admin page via ADMIN_TOKEN env variable
+        # consider restricting access to LAN only via uncommenting the following lines
+        allow 10.0.0.0/8;
+        allow 172.16.0.0/12;
+        allow 192.168.0.0/16;
+        deny all;
+
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app {{ vaultwarden_container_name }};
+        set $upstream_port 80;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+
+    }
+
+    location ~ (/vaultwarden)?/api {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app {{ vaultwarden_container_name }};
+        set $upstream_port 80;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+
+    }
+
+    location ~ (/vaultwarden)?/notifications/hub {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app {{ vaultwarden_container_name }};
+        set $upstream_port 80;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+
+    }
+}

@@ -1,5 +1,16 @@
 ---
-- name: Install the SWAG dashboard config files (1)
+- name: Create the necessary SWAG folder
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0750"
+  loop:
+    - "{{ swag_volume_nginx }}"
+    - "{{ swag_volume_fail2ban }}"
+
+- name: Install the SWAG dashboard config file
   template:
     src: nginx/proxy-confs/dashboard.subdomain.conf.j2
     dest: "{{ swag_volume_nginx_proxy_confs }}/dashboard.subdomain.conf"

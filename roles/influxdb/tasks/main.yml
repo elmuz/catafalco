@@ -25,6 +25,7 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ influxdb_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ influxdb_dashboard_url }}"
 
 - name: Install the SWAG config files
   template:

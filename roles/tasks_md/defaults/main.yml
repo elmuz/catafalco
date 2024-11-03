@@ -1,5 +1,0 @@
----
-tasks_md_container_name: tasks-md
-tasks_md_subdomain: todo
-tasks_md_dashboard_url: https://{{ tasks_md_subdomain }}.{{ site_url }}
-tasks_md_dashboard_name: Tasks.md
