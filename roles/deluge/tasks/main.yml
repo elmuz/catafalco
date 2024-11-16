@@ -19,12 +19,9 @@
     path: "{{ docker_dir }}/{{ deluge_container_name }}"
     state: directory
 
-- name: Create a docker network
-  community.docker.docker_network:
-    name: arr_network
-    connected:
-      - "{{ swag_container_name }}"
-    appends: true
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
 
 - name: Make sure that Deluge container is created and running
   docker_container:
@@ -32,7 +29,7 @@
     image: binhex/arch-delugevpn:2.1.1-6-05
     pull: true
     networks:
-      - name: arr_network
+      - name: "{{ deluge_network_name }}"
     exposed_ports:
       - 8112
       - 8118

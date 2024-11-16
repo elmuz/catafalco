@@ -1,19 +1,31 @@
 # https://duplicati.readthedocs.io/en/latest/08-disaster-recovery/
 ---
+- name: Create the Duplicati folder
+  file:
+    path: "{{ docker_dir }}/{{ duplicati_container_name }}/config"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that Duplicati container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ duplicati_container_name }}"
     image: ghcr.io/linuxserver/duplicati
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ duplicati_network_name }}"
     state: started
     env:
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"
       TZ: "{{ timezone }}"
     volumes:
-      - "{{ docker_dir }}/duplicati/config:/config"
+      - "{{ docker_dir }}/{{ duplicati_container_name }}/config:/config"
       - "{{ mergerfs_root }}/Documents:/source/Documents:ro"
       - "{{ mergerfs_root }}/Pictures:/source/Pictures:ro"
     restart_policy: unless-stopped

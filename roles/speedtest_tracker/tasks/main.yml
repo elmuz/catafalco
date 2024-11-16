@@ -7,8 +7,12 @@
     group: "{{ guid }}"
     mode: "0755"
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that speedtest_tracker-mariadb container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ speedtest_tracker_container_name }}-db"
     image: linuxserver/mariadb
     pull: true
@@ -21,7 +25,7 @@
       MYSQL_USER: "{{ mysql_user }}"
       MYSQL_PASSWORD: "{{ mysql_password }}"
     networks:
-      - name: swag_network
+      - name: "{{ speedtest_tracker_network_name }}"
     state: started
     restart_policy: unless-stopped
     volumes:
@@ -49,7 +53,7 @@
       SPEEDTEST_SCHEDULE: "0,10,20,30,40,50 * * * *"
       PRUNE_RESULTS_OLDER_THAN: "30"
     networks:
-      - name: swag_network
+      - name: "{{ speedtest_tracker_network_name }}"
     links:
       - "{{ speedtest_tracker_container_name }}-db"
     state: started

@@ -1,5 +1,6 @@
 ---
 jellyfin_container_name: jellyfin
+jellyfin_network_name: jellyfin_network
 jellyfin_subdomain: jellyfin
 jellyfin_dashboard_url: https://{{ jellyfin_subdomain }}.{{ site_url }}
 jellyfin_dashboard_name: Jellyfin

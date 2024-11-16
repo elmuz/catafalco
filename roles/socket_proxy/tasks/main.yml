@@ -4,8 +4,6 @@
     name: "{{ socket_proxy_container_name }}"
     image: lscr.io/linuxserver/socket-proxy:latest
     pull: true
-    networks:
-      - name: swag_network
     state: started
     env:
       TZ: "{{ timezone }}"

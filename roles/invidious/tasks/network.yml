@@ -1,0 +1,7 @@
+---
+- name: Create a docker network
+  community.docker.docker_network:
+    name: "{{ invidious_network_name }}"
+    connected:
+      - "{{ swag_container_name }}"
+    appends: true  # not necessary

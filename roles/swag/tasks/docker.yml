@@ -67,6 +67,12 @@
     - name: Run the Docker Socket Proxy
       ansible.builtin.include_role:
         name: socket_proxy
+    - name: Create a docker network with 'socket-proxy' container
+      community.docker.docker_network:
+        name: "{{ swag_network_name }}"
+        connected:
+          - "{{ socket_proxy_container_name }}"
+        appends: true
     - name: Append Docker mod
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS +
@@ -166,7 +172,6 @@
         - ["^bantime", "bantime = 3600"]
         - ["^maxretry", "maxretry = 3"]
 
-
 - name: Make sure that SWAG container is created and running
   community.docker.docker_container:
     name: "{{ swag_container_name }}"
@@ -182,6 +187,12 @@
     ports: "{{ swag_container_ports }}"
     volumes: "{{ swag_container_volumes }}"
     restart_policy: unless-stopped
+
+- name: Attach Swag to the network of {{ item }}
+  ansible.builtin.include_role:
+    name: "{{ item }}"
+    tasks_from: network
+  loop: "{{ containers }}"
 
 - name: Pause for 10 seconds and let SWAG creating configuration files
   ansible.builtin.pause:

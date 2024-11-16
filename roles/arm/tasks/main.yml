@@ -29,13 +29,17 @@
     group: "{{ guid }}"
     mode: "0644"
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that ARM container is created and running
   docker_container:
     name: "{{ arm_container_name }}"
     image: automaticrippingmachine/automatic-ripping-machine:latest
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ arm_network_name }}"
     privileged: true
     devices:
       - /dev/sr0:/dev/sr0

@@ -1,10 +1,11 @@
 ---
 immich_container_name: immich
+immich_network_name: immich_network
 immich_subdomain: immich
 immich_dashboard_url: https://{{ immich_subdomain }}.{{ site_url }}
 immich_dashboard_name: Immich
 immich_homer:
-  name: Immich
+  name: "{{ immich_dashboard_name }}"
   category: media
   type: Immich
   apikey: "{{ homer_api_keys['Immich'] }}"

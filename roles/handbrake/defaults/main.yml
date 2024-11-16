@@ -1,8 +1,9 @@
 ---
 handbrake_container_name: handbrake
+handbrake_network_name: handbrake_network
 handbrake_subdomain: handbrake
 handbrake_dashboard_url: https://{{ handbrake_subdomain }}.{{ site_url }}
 handbrake_dashboard_name: HandBrake
 handbrake_homer:
-  name: "{{ invidious_dashboard_name }}"
+  name: "{{ handbrake_dashboard_name }}"
   category: media

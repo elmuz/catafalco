@@ -1,5 +1,6 @@
 ---
 speedtest_tracker_container_name: speedtest_tracker
+speedtest_tracker_network_name: speedtest_network
 speedtest_tracker_subdomain: speedtest
 speedtest_tracker_dashboard_url: https://{{ speedtest_tracker_subdomain }}.{{ site_url }}
 speedtest_tracker_dashboard_name: Speedtest Tracker

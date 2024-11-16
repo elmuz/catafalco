@@ -1,11 +1,31 @@
 ---
+- name: Create the necessary folder (1)
+  file:
+    path: "{{ docker_dir }}/{{ influxdb_container_name }}/config"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create the necessary folder (2)
+  file:
+    path: "{{ docker_dir }}/{{ influxdb_container_name }}/data"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that InfluxDB container is created and running
   community.docker.docker_container:
     name: "{{ influxdb_container_name }}"
     image: influxdb
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ influxdb_network_name }}"
     state: started
     env:
       DOCKER_INFLUXDB_INIT_MODE: setup

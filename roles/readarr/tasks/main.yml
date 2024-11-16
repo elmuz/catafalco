@@ -7,12 +7,9 @@
     group: "{{ guid }}"
     mode: "0755"
 
-- name: Create a docker network
-  community.docker.docker_network:
-    name: arr_network
-    connected:
-      - "{{ swag_container_name }}"
-    appends: true
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
 
 - name: Make sure that Readarr container is created and running
   docker_container:
@@ -20,7 +17,7 @@
     image: lscr.io/linuxserver/readarr:develop
     pull: true
     networks:
-      - name: arr_network
+      - name: "{{ readarr_network_name }}"
     state: started
     env:
       PUID: "{{ guid }}"

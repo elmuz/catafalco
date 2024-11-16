@@ -23,12 +23,9 @@
     group: "{{ guid }}"
     mode: "0600"
 
-- name: Create a docker network
-  community.docker.docker_network:
-    name: authelia_network
-    connected:
-      - "{{ swag_container_name }}"
-    appends: true  # not necessary
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
 
 - name: Make sure that Authelia container is created and running
   docker_container:
@@ -37,7 +34,7 @@
     pull: true
     state: started
     networks:
-      - name: authelia_network
+      - name: "{{ authelia_network_name }}"
     env:
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"

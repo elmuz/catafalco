@@ -7,8 +7,12 @@
     group: "{{ guid }}"
     mode: "0755"
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that Firefox container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ firefox_container_name }}"
     image: lscr.io/linuxserver/mullvad-browser:latest
     pull: true
@@ -17,7 +21,7 @@
     security_opts:
       - seccomp:unconfined
     networks:
-      - name: swag_network
+      - name: "{{ firefox_network_name }}"
     state: started
     env:
       PUID: "{{ guid }}"

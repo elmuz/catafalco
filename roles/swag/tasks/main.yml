@@ -2,9 +2,6 @@
 - name: Install configs
   include_tasks: install_configs.yml
 
-- name: Create docker network
-  include_tasks: networks.yml
-
 - name: Install Authelia before installing
   ansible.builtin.include_role:
     name: authelia

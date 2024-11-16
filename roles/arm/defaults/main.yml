@@ -1,5 +1,6 @@
 ---
 arm_container_name: arm
+arm_network_name: arm_network
 arm_subdomain: arm
 arm_dashboard_url: https://{{ arm_subdomain }}.{{ site_url }}
 arm_dashboard_name: Ripping Machine

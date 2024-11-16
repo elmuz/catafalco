@@ -74,10 +74,18 @@
       - docker
     append: true
 
+- name: Update default network pools
+  ansible.builtin.copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Make sure Docker is running and enabled
-  service:
+  ansible.builtin.service:
     name: docker
-    state: started
+    state: restarted
     enabled: true
 
 - name: Handle persistent data

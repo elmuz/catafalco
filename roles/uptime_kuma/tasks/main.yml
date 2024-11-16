@@ -7,13 +7,18 @@
     group: "{{ guid }}"
     mode: "0750"
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that Uptime Kuma container is created and running
   community.docker.docker_container:
     name: "{{ uptime_kuma_container_name }}"
     image: louislam/uptime-kuma:1
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ uptime_kuma_network_name }}"
+    dns_servers: "{{ dns_nameservers }}"
     state: started
     env:
       PUID: "{{ guid }}"

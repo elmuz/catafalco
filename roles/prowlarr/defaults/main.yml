@@ -1,5 +1,6 @@
 ---
 prowlarr_container_name: prowlarr
+prowlarr_network_name: arr_network
 prowlarr_subdomain: prowlarr
 prowlarr_dashboard_url: https://{{ prowlarr_subdomain }}.{{ site_url }}
 prowlarr_dashboard_name: Prowlarr

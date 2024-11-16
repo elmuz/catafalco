@@ -1,5 +1,6 @@
 ---
 authelia_container_name: authelia
+authelia_network_name: authelia_network
 authelia_subdomain: auth
 authelia_url: https://{{ authelia_subdomain }}.{{ site_url }}
 authelia_log_file: "{{ docker_dir }}/{{ authelia_container_name }}/config/authelia.log"

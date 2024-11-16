@@ -7,13 +7,17 @@
     group: "{{ guid }}"
     mode: "0750"
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that Vaultwarden container is created and running
   community.docker.docker_container:
     name: "{{ vaultwarden_container_name }}"
     image: vaultwarden/server:latest-alpine
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ vaultwarden_network_name }}"
     state: started
     env:
       ADMIN_TOKEN: "{{ vaultwarden_admin_token_hash }}"

@@ -1,5 +1,6 @@
 ---
 radarr_container_name: radarr
+radarr_network_name: arr_network
 radarr_subdomain: radarr
 radarr_dashboard_url: https://{{ radarr_subdomain }}.{{ site_url }}
 radarr_dashboard_name: Radarr

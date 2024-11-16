@@ -667,9 +667,6 @@ access_control:
     - domain: '{{ nextcloud_subdomain }}.{{ site_url }}'
       policy: 'two_factor'
 
-    - domain: '{{ tasks_md_subdomain }}.{{ site_url }}'
-      policy: 'two_factor'
-
     ## Rules applied to 'admins' group
     # - domain: 'mx2.mail.example.com'
     #   subject: 'group:admins'

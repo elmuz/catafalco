@@ -53,13 +53,17 @@
     line: "@reboot calibre-server /books"
     create: true
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that Calibre-Web container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ calibreweb_container_name }}"
     image: lscr.io/linuxserver/calibre-web:latest
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ calibreweb_network_name }}"
     state: started
     env:
       PUID: "{{ guid }}"

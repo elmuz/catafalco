@@ -1,5 +1,6 @@
 ---
 wud_container_name: wud
+wud_network_name: wud_network
 wud_subdomain: wud
 wud_dashboard_url: https://{{ wud_subdomain }}.{{ site_url }}
 wud_homer:

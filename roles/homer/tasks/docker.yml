@@ -1,4 +1,16 @@
 ---
+- name: Create the necessary folder
+  file:
+    path: "{{ docker_dir }}/homer"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 # https://github.com/bastienwirtz/homer
 - name: Make sure that Homer container is created and running
   community.docker.docker_container:
@@ -6,7 +18,7 @@
     image: b4bz/homer:latest
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ homer_network_name }}"
     state: started
     user: "{{ guid }}:{{ guid }}"
     volumes:

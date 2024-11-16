@@ -1,4 +1,5 @@
 ---
 homer_container_name: homer
+homer_network_name: homer_network
 homer_title: Welcome to Cata Falco dashboard!
 homer_subtitle: I wish I could fly

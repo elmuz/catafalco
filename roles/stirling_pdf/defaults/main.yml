@@ -1,5 +1,6 @@
 ---
 stirling_pdf_container_name: stirling-pdf
+stirling_pdf_network_name: stirling_pdf_network
 stirling_pdf_subdomain: pdf
 stirling_pdf_dashboard_url: https://{{ stirling_pdf_subdomain }}.{{ site_url }}
 stirling_pdf_dashboard_name: Stirling PDF

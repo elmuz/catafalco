@@ -15,8 +15,12 @@
     group: "{{ guid }}"
     mode: "0755"
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that invidous-db container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ invidious_container_name }}-db"
     image: docker.io/library/postgres:14
     pull: true
@@ -25,7 +29,7 @@
       POSTGRES_USER: funkysloth
       POSTGRES_PASSWORD: "{{ invidious_postgres_password }}"
     networks:
-      - name: swag_network
+      - name: "{{ invidious_network_name }}"
     state: started
     restart_policy: unless-stopped
     volumes:
@@ -35,7 +39,7 @@
       test: [CMD-SHELL, pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB]
 
 - name: Make sure that inv_sig_helper container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: inv_sig_helper
     image: quay.io/invidious/inv-sig-helper:latest
     pull: true
@@ -49,12 +53,12 @@
     env:
       RUST_log: info
     networks:
-      - name: swag_network
+      - name: "{{ invidious_network_name }}"
     state: started
     restart_policy: unless-stopped
 
 - name: Make sure that Invidious container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ invidious_container_name }}"
     image: quay.io/invidious/invidious:latest
     pull: true
@@ -77,7 +81,7 @@
         statistics_enabled: false
         hmac_key: {{ invidious_hmac }}
     networks:
-      - name: swag_network
+      - name: "{{ invidious_network_name }}"
     links:
       - "{{ invidious_container_name }}-db"
     state: started

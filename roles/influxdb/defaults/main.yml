@@ -1,5 +1,6 @@
 ---
 influxdb_container_name: influxdb
+influxdb_network_name: influxdb_network
 influxdb_subdomain: influxdb
 influxdb_dashboard_url: https://{{ influxdb_subdomain }}.{{ host_local }}/
 influxdb_dashboard_name: InfluxDB

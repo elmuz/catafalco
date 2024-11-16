@@ -12,13 +12,17 @@
     - ["WUD_SERVER_CORS_ENABLED", "true"]
     - ["WUD_SERVER_CORS_ORIGIN", "https://{{ site_url }}"]
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that WUD container is created and running
   community.docker.docker_container:
     name: "{{ wud_container_name }}"
     image: fmartinou/whats-up-docker
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ wud_network_name }}"
     state: started
     env: "{{ wud_container_env_vars }}"
     restart_policy: unless-stopped

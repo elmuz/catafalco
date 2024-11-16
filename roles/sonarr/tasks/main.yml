@@ -15,12 +15,9 @@
     group: "{{ guid }}"
     mode: "0755"
 
-- name: Create a docker network
-  community.docker.docker_network:
-    name: arr_network
-    connected:
-      - "{{ swag_container_name }}"
-    appends: true
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
 
 - name: Make sure that Sonarr container is created and running
   docker_container:
@@ -28,7 +25,7 @@
     image: ghcr.io/linuxserver/sonarr
     pull: true
     networks:
-      - name: arr_network
+      - name: "{{ sonarr_network_name }}"
     state: started
     env:
       PUID: "{{ guid }}"

@@ -20,7 +20,7 @@
     image: onlyoffice/documentserver:8.1
     pull: true
     networks:
-      - name: nextcloud_network
+      - name: "{{ nextcloud_network_name }}"
     state: started
     env:
       JWT_ENABLED: "true"

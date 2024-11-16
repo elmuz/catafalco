@@ -1,5 +1,6 @@
 ---
 sonarr_container_name: sonarr
+sonarr_network_name: arr_network
 sonarr_subdomain: sonarr
 sonarr_dashboard_url: https://{{ sonarr_subdomain }}.{{ site_url }}
 sonarr_dashboard_name: Sonarr

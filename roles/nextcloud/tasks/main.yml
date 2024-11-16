@@ -21,12 +21,9 @@
     group: "{{ guid }}"
     mode: "0644"
 
-- name: Create a docker network
-  community.docker.docker_network:
-    name: nextcloud_network
-    connected:
-      - "{{ swag_container_name }}"
-    appends: true
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
 
 - name: Make sure the MariaDB container is created and running
   community.docker.docker_container:
@@ -35,7 +32,7 @@
     pull: true
     state: started
     networks:
-      - name: nextcloud_network
+      - name: "{{ nextcloud_network_name }}"
     env:
       "PUID": "{{ guid }}"
       "PGID": "{{ guid }}"
@@ -76,7 +73,7 @@
     pull: true
     state: started
     networks:
-      - name: nextcloud_network
+      - name: "{{ nextcloud_network_name }}"
     env:
       "PUID": "{{ guid }}"
       "PGID": "{{ guid }}"

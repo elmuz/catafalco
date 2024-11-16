@@ -185,6 +185,7 @@
       tags:
         - uptime_kuma
         - monitoring
+        - containers
 
     #
     # ServArr
@@ -312,3 +313,4 @@
     - role: vaultwarden
       tags:
         - vaultwarden
+        - containers

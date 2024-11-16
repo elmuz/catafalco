@@ -1,5 +1,6 @@
 ---
 invidious_container_name: invidious
+invidious_network_name: invidious_network
 invidious_subdomain: invidious
 invidious_dashboard_url: https://{{ invidious_subdomain }}.{{ site_url }}
 invidious_dashboard_name: Invidious

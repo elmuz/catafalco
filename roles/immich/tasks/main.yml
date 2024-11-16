@@ -35,6 +35,10 @@
     group: "{{ username }}"
     mode: "0644"
 
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure Immich containers are running
   community.docker.docker_compose_v2:
     project_src: "{{ docker_dir }}/{{ immich_container_name }}"

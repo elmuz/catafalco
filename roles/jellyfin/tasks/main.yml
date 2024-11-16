@@ -14,13 +14,25 @@
       - intel-gpu-tools
     state: present
 
+- name: Create the Jellyfin folder
+  file:
+    path: "{{ docker_dir }}/{{ jellyfin_container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
 - name: Make sure that Jellyfin container is created and running
   docker_container:
     name: "{{ jellyfin_container_name }}"
     image: ghcr.io/linuxserver/jellyfin:latest
     pull: true
     networks:
-      - name: swag_network
+      - name: "{{ jellyfin_network_name }}"
     exposed_ports:
       - 8096
     privileged: true
