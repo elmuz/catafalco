@@ -1,0 +1,10 @@
+---
+seafile_container_name: seafile
+seafile_network_name: seafile_network
+seafile_subdomain: seafile
+seafile_dashboard_url: https://{{ seafile_subdomain }}.{{ site_url }}
+seafile_dashboard_name: Seafile
+seafile_homer:
+  name: "{{ seafile_dashboard_name }}"
+  category: services
+seafile_onlyoffice_host: onlyoffice

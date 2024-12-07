@@ -1,0 +1,87 @@
+---
+- name: Create the necessary Seafile folder
+  file:
+    path: "{{ docker_dir }}/{{ seafile_container_name }}/{{ item }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+  loop:
+    - "db-data"
+    - "seafile-data"
+    - "seadoc-data"
+    - "notification-data"
+
+- name: Copy compose.yml and .env
+  ansible.builtin.template:
+    src: "{{ item[0] }}"
+    dest: "{{ docker_dir }}/{{ seafile_container_name }}/{{ item[1] }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+  loop:
+    - ["compose.yml.j2", "seafile-server.yml"]
+    - [".env.j2", ".env"]
+
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
+- name: Create and start services
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_dir }}/{{ seafile_container_name }}"
+    files:
+      - seafile-server.yml
+
+- name: Pause for 20 seconds and let Seafile creating configuration files
+  ansible.builtin.pause:
+    seconds: 20
+
+- name: Fix CSRF
+  become: true
+  ansible.builtin.lineinfile:
+    path: "{{ docker_dir }}/{{ seafile_container_name }}/seafile-data/seafile/conf/seahub_settings.py"
+    search_string: "CSRF_TRUSTED_ORIGINS = "
+    line: "CSRF_TRUSTED_ORIGINS = ['{{ seafile_dashboard_url }}']"
+
+- name: Allow connections from 0.0.0.0
+  become: true
+  ansible.builtin.lineinfile:
+    path: "{{ docker_dir }}/{{ seafile_container_name }}/seafile-data/seafile/conf/gunicorn.conf.py"
+    search_string: "bind = "
+    line: "bind = '0.0.0.0:8000'"
+
+- name: Install OnlyOffice for document integration
+  when: '"onlyoffice" in containers'
+  block:
+    - name: Set OnlyOffice to run on the same network of Seafile
+      ansible.builtin.set_fact:
+        onlyoffice_network_name: "{{ seafile_network_name }}"
+    - name: Include OnlyOffice role
+      ansible.builtin.include_role:
+        name: onlyoffice
+    - name: Edit Seahub configuration for OnlyOffice
+      ansible.builtin.lineinfile:
+        path: "{{ docker_dir }}/{{ seafile_container_name }}/seafile-data/seafile/conf/seahub_settings.py"
+        search_string: "{{ item[0] }} = "
+        line: "{{ item[0] }} = {{ item[1] }}"
+      loop:
+        - ["ENABLE_ONLYOFFICE", "True"]
+        - ["ONLYOFFICE_APIJS_URL", "'http://onlyoffice/web-apps/apps/api/documents/api.js'"]
+        - ["ONLYOFFICE_FILE_EXTENSION", "('doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'odt', 'fodt', 'odp', 'fodp', 'ods', 'fods', 'csv', 'ppsx', 'pps')"]
+        - ["ONLYOFFICE_JWT_SECRET", "'{{ onlyoffice_jwt_secret }}'"]
+
+- name: Restart Seafile container to apply above changes
+  community.docker.docker_container:
+    name: "{{ seafile_container_name }}"
+    state: started
+    restart: true
+
+- name: Install the SWAG config files
+  template:
+    src: "templates/{{ seafile_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ seafile_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
