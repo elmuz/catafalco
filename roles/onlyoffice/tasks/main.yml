@@ -17,10 +17,10 @@
 - name: Make sure that ONLYOFFICE container is created and running
   docker_container:
     name: "{{ onlyoffice_container_name }}"
-    image: onlyoffice/documentserver:8.1
+    image: onlyoffice/documentserver:8.2
     pull: true
     networks:
-      - name: "{{ nextcloud_network_name }}"
+      - name: "{{ onlyoffice_network_name }}"
     state: started
     env:
       JWT_ENABLED: "true"

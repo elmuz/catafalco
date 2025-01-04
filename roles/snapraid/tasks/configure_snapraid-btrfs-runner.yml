@@ -1,0 +1,64 @@
+---
+- name: Clone snapraid-btrfs-runner repository # noqa latest
+  ansible.builtin.git:
+    repo: https://github.com/fmoledina/snapraid-btrfs-runner.git
+    dest: "{{ snapraid_snapraid_btfs_runner_dir }}"
+    update: true
+
+- name: Copy and configure snapraid-btrfs-runner.conf
+  ansible.builtin.template:
+    src: snapraid-btrfs-runner.j2
+    dest: "{{ snapraid_snapraid_btfs_runner_dir }}/snapraid-btrfs-runner.conf"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Create logging directory in case it's missing
+  ansible.builtin.file:
+    path: "{{ snapraid_logging_file | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create snapraid-btrfs-runner service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/snapraid-btrfs-runner.service
+    content: |
+      [Unit]
+      Description=Executor for snapraid-btrfs-runner
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/python3 {{ snapraid_snapraid_btfs_runner_dir }}/snapraid-btrfs-runner.py \
+        -c {{ snapraid_snapraid_btfs_runner_dir }}/snapraid-btrfs-runner.conf {% if snapraid_runner_healthchecks_io_uuid %}\
+        && curl -fsS -m 10 --retry 5 -o /dev/null {{ snapraid_healthchecks_io_host }}/ping/{{ snapraid_runner_healthchecks_io_uuid }}{% endif %}
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Create snapraid-btrfs-runner timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/snapraid-btrfs-runner.timer
+    content: |
+      [Unit]
+      Description=Run snapraid-btrfs-runner every Sunday at 03:00
+
+      [Timer]
+      OnCalendar=Sun 03:00:00
+      RandomizedDelaySec=30m
+
+      [Install]
+      WantedBy=timers.target
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart snapraid-btrfs-runner timer
+
+- name: Enable and start snapraid-btrfs-runner timer
+  ansible.builtin.systemd:
+    name: snapraid-btrfs-runner.timer
+    enabled: true
+    state: started

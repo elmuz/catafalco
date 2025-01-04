@@ -10,7 +10,7 @@
   package:
     name:
       - vainfo
-      - intel-media-va-driver-non-free
+      - intel-media-va-driver
       - intel-gpu-tools
     state: present
 
@@ -40,8 +40,9 @@
       - /dev/dri/card0:/dev/dri/card0
       - /dev/dri/renderD128:/dev/dri/renderD128
     state: started
-    healthcheck:  # it doesn't work :-(
+    healthcheck:
       "test": ["CMD", "curl", "--fail", "http://{{ jellyfin_container_name }}:8096/health"]
+      interval: 5m
       retries: 3
       start_period: 30s
     env:
@@ -53,7 +54,7 @@
       JELLYFIN_PublishedServerUrl: "https://jellyfin.{{ site_url }}"
       DOCKER_MODS: linuxserver/mods:jellyfin-opencl-intel
     groups:
-      - 109
+      - 105
     volumes:
       - "{{ docker_dir }}/{{ jellyfin_container_name }}:/config"
       - "{{ mergerfs_root }}/Media/Transcodes:/config/data/transcodes"

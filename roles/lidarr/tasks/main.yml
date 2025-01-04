@@ -6,7 +6,7 @@
 
 - name: Make sure that `shntool` and `cuetools` packages are installed
   become: true
-  package:
+  ansible.builtin.package:
     name:
       - shntool
       - flac
@@ -14,9 +14,17 @@
     state: present
 
 - name: Create the necessary Lidarr folder
-  file:
+  ansible.builtin.file:
     path: "{{ docker_dir }}/{{ lidarr_container_name }}"
     state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Copy the ReplayGain script
+  ansible.builtin.copy:
+    src: replaygain.sh
+    dest: "{{ docker_dir }}/{{ lidarr_container_name }}/replaygain.sh"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0755"
@@ -37,6 +45,8 @@
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"
       TZ: "{{ timezone }}"
+      DOCKER_MODS: "linuxserver/mods:universal-package-install"
+      INSTALL_PACKAGES: "rsgain"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - "{{ docker_dir }}/{{ lidarr_container_name }}:/config"

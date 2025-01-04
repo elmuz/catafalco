@@ -5,5 +5,5 @@ firefox_subdomain: firefox
 firefox_dashboard_url: https://{{ firefox_subdomain }}.{{ site_url }}
 firefox_dashboard_name: Firefox
 firefox_homer:
-  name: "{{ invidious_dashboard_name }}"
+  name: "{{ firefox_dashboard_name }}"
   category: services

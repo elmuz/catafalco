@@ -61,6 +61,7 @@
       ansible.builtin.set_fact:
         swag_container_volumes: "{{ swag_container_volumes + [docker_dir + '/' + swag_container_name + '/tunnelconfig.yml:/config/tunnelconfig.yml'] }}"
 
+# docker exec swag python3 /app/auto-uptime-kuma.py
 - name: Add optional 'Auto Uptime Kuma' Docker mod and ENV vars
   when: "'uptime_kuma' in containers"
   block:
@@ -192,7 +193,7 @@
   ansible.builtin.include_role:
     name: "{{ item }}"
     tasks_from: network
-  loop: "{{ containers }}"
+  loop: "{{ containers | reject('equalto', 'socket_proxy') | reject('equalto', 'watchtower') }}"
 
 - name: Pause for 10 seconds and let SWAG creating configuration files
   ansible.builtin.pause:

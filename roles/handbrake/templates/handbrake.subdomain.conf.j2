@@ -6,6 +6,8 @@ server {
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
+        add_header Access-Control-Allow-Origin *;
+
         set $upstream_app {{ handbrake_container_name }};
         set $upstream_port 5800;
         set $upstream_proto http;

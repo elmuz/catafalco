@@ -1,6 +1,6 @@
 ---
 - name: Create the icons folder
-  file:
+  ansible.builtin.file:
     path: "{{ docker_dir }}/homer/tools/homer-icons"
     state: directory
     mode: "0755"
@@ -8,7 +8,7 @@
     group: "{{ guid }}"
 
 - name: Copy the icons
-  copy:
+  ansible.builtin.copy:
     src: files/icons/{{ item['logo'] | basename }}
     dest: "{{ docker_dir }}/homer/tools/homer-icons"
     owner: "{{ guid }}"
@@ -18,7 +18,7 @@
   loop: "{{ dashboard_apps }}"
 
 - name: Copy the icons for other dashboard elements
-  copy:
+  ansible.builtin.copy:
     src: files/icons/{{ item }}
     dest: "{{ docker_dir }}/homer/tools/homer-icons"
     owner: "{{ guid }}"
@@ -30,7 +30,7 @@
     - linuxserver.png
 
 - name: Copy the custom stylesheet
-  copy:
+  ansible.builtin.copy:
     src: files/custom.css
     dest: "{{ docker_dir }}/homer"
     owner: "{{ guid }}"
@@ -38,9 +38,11 @@
     mode: "0644"
 
 - name: Generate the Homer config file
-  template:
+  ansible.builtin.template:
     src: config.yml.j2
     dest: "{{ docker_dir }}/homer/config.yml"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
+  vars:
+    colors: "{{ lookup('vars', colorscheme | lower + '_colors') }}"

@@ -1,0 +1,45 @@
+server {
+{% include "roles/swag/templates/nginx/common.j2" %}
+
+    server_name {{ dawarich_subdomain }}.*;
+
+	brotli on;
+	brotli_comp_level 6;
+	brotli_types
+		text/css
+		text/plain
+		text/xml
+		text/x-component
+		text/javascript
+		application/x-javascript
+		application/javascript
+		application/json
+		application/manifest+json
+		application/vnd.api+json
+		application/xml
+		application/xhtml+xml
+		application/rss+xml
+		application/atom+xml
+		application/vnd.ms-fontobject
+		application/x-font-ttf
+		application/x-font-opentype
+		application/x-font-truetype
+		image/svg+xml
+		image/x-icon
+		image/vnd.microsoft.icon
+		font/ttf
+		font/eot
+		font/otf
+		font/opentype;
+
+    location / {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        add_header Access-Control-Allow-Origin *;
+
+        set $upstream_app {{ dawarich_container_name }}_app;
+        set $upstream_port 3000;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+}

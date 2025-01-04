@@ -1,0 +1,65 @@
+---
+- name: Create the slskd folder
+  file:
+    path: "{{ docker_dir }}/{{ slskd_container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create the slskd incomplete downloads folder
+  file:
+    path: "{{ mergerfs_root }}/Downloads/slskd_incomplete"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
+- name: Make sure that slskd container is created and running
+  docker_container:
+    name: "{{ slskd_container_name }}"
+    image: slskd/slskd:latest
+    pull: true
+    networks:
+      - name: "{{ slskd_network_name }}"
+    exposed_ports:
+      - 5030
+      - 5031
+      - 50300
+    state: started
+    env:
+      SLSKD_USERNAME: "{{ username }}"
+      SLSKD_PASSWORD: "{{ slskd_web_password }}"
+      SLSKD_SLSK_USERNAME: "{{ slskd_username }}"
+      SLSKD_SLSK_PASSWORD: "{{ slskd_password }}"
+      SLSKD_REMOTE_CONFIGURATION: "true"
+      SLSKD_SLSK_PROXY_ENABLED: "true"
+      SLSKD_SLSK_PROXY_ADDRESS: "{{ deluge_container_name }}"
+      SLSKD_SLSK_PROXY_PORT: "9118"
+      SLSKD_DOWNLOADS_DIR: "/downloads"
+      SLSKD_INCOMPLETE_DIR: "/incomplete"
+      SLSKD_SHARED_DIR: "/music"
+    user: "{{ guid }}:{{ guid }}"
+    volumes:
+      - "{{ docker_dir }}/{{ slskd_container_name }}:/app"
+      - "{{ mergerfs_root }}/Downloads:/downloads"
+      - "{{ mergerfs_root }}/Downloads/slskd_incomplete:/incomplete"
+      - "{{ mergerfs_root }}/Media/Music:/music:ro"
+      - /etc/localtime:/etc/localtime:ro
+    restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ slskd_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ slskd_dashboard_url }}"
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ slskd_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ slskd_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"

@@ -37,6 +37,8 @@
       - "{{ docker_dir }}/{{ invidious_container_name }}/db/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh"
     healthcheck:
       test: [CMD-SHELL, pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB]
+      interval: 5m
+      start_period: 30s
 
 - name: Make sure that inv_sig_helper container is created and running
   community.docker.docker_container:
@@ -88,7 +90,7 @@
     restart_policy: unless-stopped
     healthcheck:
       test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/comments/jNQXAC9IVRw || exit 1
-      interval: 30s
+      interval: 5m
       timeout: 5s
       retries: 2
     log_driver: json-file

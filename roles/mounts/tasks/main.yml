@@ -3,10 +3,10 @@
   mount:
     name: "{{ item.path }}"
     src: "{{ item.src }}"
-    fstype: xfs
+    fstype: btrfs
     state: mounted
     passno: "2"
-  with_items: "{{ disks }}"
+  with_items: "{{ data_disks }}"
   when: disks[0] is defined
 
 - name: Mount the cache drives
@@ -24,7 +24,7 @@
   mount:
     name: "{{ item.path }}"
     src: "{{ item.src }}"
-    fstype: xfs
+    fstype: ext4
     state: mounted
     passno: "2"
   with_items: "{{ parity_disks }}"

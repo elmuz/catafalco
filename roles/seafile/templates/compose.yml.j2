@@ -1,69 +1,90 @@
+version: '3.8'
 services:
-  db:
-    image: ${SEAFILE_DB_IMAGE:-mariadb:10.11}
-    container_name: {{ seafile_container_name }}-db
-    environment:
-      - MYSQL_ROOT_PASSWORD=${INIT_SEAFILE_MYSQL_ROOT_PASSWORD:?Variable is not set or empty}
-      - MYSQL_LOG_CONSOLE=true
-      - MARIADB_AUTO_UPGRADE=1
+  seafile-server:
+    image: ggogel/seafile-server:11.0.12
+    container_name: {{ seafile_container_name }}
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - "{{ docker_dir }}/{{ seafile_container_name }}/db-data:/var/lib/mysql"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "/usr/local/bin/healthcheck.sh",
-          "--connect",
-          "--mariadbupgrade",
-          "--innodb_initialized",
-        ]
-      interval: 20s
-      start_period: 30s
-      timeout: 5s
-      retries: 10
-
-  memcached:
-    image: ${SEAFILE_MEMCACHED_IMAGE:-memcached:1.6.29}
-    container_name: {{ seafile_container_name }}-memcached
-    entrypoint: memcached -m 256
-
-  seafile:
-    image: ${SEAFILE_IMAGE:-seafileltd/seafile-mc:12.0-latest}
-    container_name: "{{ seafile_container_name }}"
-    cpus: 0.5
-    volumes:
-      - ${SEAFILE_VOLUME:-/opt/seafile-data}:/shared
+      - {{ docker_dir }}/{{ seafile_container_name }}/seafile-data:/shared
     environment:
-      - DB_HOST=${SEAFILE_MYSQL_DB_HOST:-db}
-      - DB_PORT=${SEAFILE_MYSQL_DB_PORT:-3306}
-      - DB_ROOT_PASSWD=${INIT_SEAFILE_MYSQL_ROOT_PASSWORD:-}
-      - DB_PASSWORD=${SEAFILE_MYSQL_DB_PASSWORD:?Variable is not set or empty}
-      - SEAFILE_MYSQL_DB_CCNET_DB_NAME=${SEAFILE_MYSQL_DB_CCNET_DB_NAME:-ccnet_db}
-      - SEAFILE_MYSQL_DB_SEAFILE_DB_NAME=${SEAFILE_MYSQL_DB_SEAFILE_DB_NAME:-seafile_db}
-      - SEAFILE_MYSQL_DB_SEAHUB_DB_NAME=${SEAFILE_MYSQL_DB_SEAHUB_DB_NAME:-seahub_db}
-      - TIME_ZONE=${TIME_ZONE:-Etc/UTC}
-      - INIT_SEAFILE_ADMIN_EMAIL=${INIT_SEAFILE_ADMIN_EMAIL:-me@example.com}
-      - INIT_SEAFILE_ADMIN_PASSWORD=${INIT_SEAFILE_ADMIN_PASSWORD:-asecret}
-      - SEAFILE_SERVER_HOSTNAME=${SEAFILE_SERVER_HOSTNAME:?Variable is not set or empty}
-      - SEAFILE_SERVER_PROTOCOL=${SEAFILE_SERVER_PROTOCOL:-http}
-      - SITE_ROOT=${SITE_ROOT:-/}
-      - NON_ROOT=${NON_ROOT:-false}
-      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY:?Variable is not set or empty}
-      - ENABLE_SEADOC=${ENABLE_SEADOC:-false}
-      - SEADOC_SERVER_URL=${SEADOC_SERVER_URL:-http://example.example.com/sdoc-server}
-    expose:
-      - "8000"
-      - "8082"
-    labels:
-      swag.uptime-kuma.enabled: "true"
-      swag.uptime-kuma.monitor.name: "{{ seafile_dashboard_name }}"
-      swag.uptime-kuma.monitor.url: "{{ seafile_dashboard_url }}"
+      - DB_HOST=db
+      - DB_ROOT_PASSWD={{ seafile_db_root_password }}
+      - TIME_ZONE={{ timezone }}
+      - HTTPS=true
+      - SEAFILE_URL={{ seafile_subdomain }}.{{ site_url }}
     depends_on:
-      - db
-      - memcached
+      seafile-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8082"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  seahub:
+    image: ggogel/seahub:11.0.12
+    container_name: seahub
+    volumes:
+      - {{ docker_dir }}/{{ seafile_container_name }}/seafile-data:/shared
+      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-data/avatars:/seahub-data/avatars
+      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-data/custom:/seahub-data/custom
+    environment:
+      - SEAFILE_ADMIN_EMAIL={{ email }}
+      - SEAFILE_ADMIN_PASSWORD={{ seafile_admin_password }}
+    depends_on:
+      seafile-db:
+        condition: service_healthy
+      seafile-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  seahub-media:
+    image: ggogel/seahub-media:11.0.12
+    container_name: seahub-media
+    volumes:
+      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-data/avatars:/usr/share/caddy/media/avatars
+      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-data/custom:/usr/share/caddy/media/custom
+    restart: unless-stopped
+
+  seafile-db:
+    image: mariadb:10.11.9
+    container_name: seafile-db
+    environment:
+      - MYSQL_ROOT_PASSWORD={{ seafile_db_root_password }}
+      - MYSQL_LOG_CONSOLE=true
+      - MARIADB_AUTO_UPGRADE=true
+    volumes:
+      - {{ docker_dir }}/{{ seafile_container_name }}/db-data:/var/lib/mysql
+    networks:
+      default:
+        aliases:
+          - db
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  seafile-memcached:
+    image: memcached:1.6.32
+    container_name: seafile-memcached
+    entrypoint: memcached -m 1024
+    networks:
+      default:
+        aliases:
+          - memcached
+    restart: unless-stopped
+
+  seafile-caddy:
+    image: ggogel/seafile-caddy:2.8.4
+    container_name: seafile-caddy
+    expose:
+      - "80"
+    restart: unless-stopped
 
 networks:
   default:
     name: "{{ seafile_network_name }}"
-    external: true

@@ -1,0 +1,7 @@
+---
+- name: Create a docker network
+  community.docker.docker_network:
+    name: "{{ slskd_network_name }}"
+    connected:
+      - "{{ swag_container_name }}"
+    appends: true

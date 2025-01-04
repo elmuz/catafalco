@@ -1,3 +1,5 @@
+# When running as plugin of SWAG container, monitored services can be refreshed with
+# `docker exec swag python3 /app/auto-uptime-kuma.py`
 ---
 - name: Install Uptime Kuma config
   file:

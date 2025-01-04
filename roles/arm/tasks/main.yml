@@ -42,8 +42,8 @@
       - name: "{{ arm_network_name }}"
     privileged: true
     devices:
-      - /dev/sr0:/dev/sr0
-      - /dev/sg4:/dev/sg4
+      - /dev/sr0
+      - /dev/sg4
     state: started
     env:
       ARM_UID: "{{ guid }}"
@@ -58,6 +58,8 @@
       - "{{ mergerfs_root }}/Downloads/arm_music:/home/arm/Music"
       - /etc/localtime:/etc/localtime:ro
     restart_policy: unless-stopped
+    healthcheck:
+      interval: 5m
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ arm_dashboard_name }}"

@@ -3,5 +3,8 @@
   community.docker.docker_network:
     name: "{{ wud_network_name }}"
     connected:
-      - "{{ swag_container_name }}"
-    appends: true  # not necessary
+      - "{{ item }}"
+    appends: true
+  loop:
+    - "{{ swag_container_name }}"
+    - "{{ socket_proxy_container_name }}"

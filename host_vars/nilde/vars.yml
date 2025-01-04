@@ -21,6 +21,7 @@ containers:
   - authelia
   - nextcloud
   - onlyoffice
+  - seafile
 
 site_url: catafal.co
 

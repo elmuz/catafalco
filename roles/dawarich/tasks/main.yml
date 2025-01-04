@@ -1,0 +1,42 @@
+---
+- name: Create the necessary Dawarich folder
+  file:
+    path: "{{ docker_dir }}/{{ dawarich_container_name }}/{{ item }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+  loop:
+    - db_data
+    - gem_cache_app
+    - gem_cache_sidekiq
+    - shared_data
+    - public
+    - watched
+
+- name: Copy the necessary Dawarich files (compose)
+  ansible.builtin.template:
+    src: templates/compose.yml.j2
+    dest: "{{ docker_dir }}/{{ dawarich_container_name }}/compose.yml"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
+- name: Make sure Dawarich containers are running
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_dir }}/{{ dawarich_container_name }}"
+    state: present
+    remove_orphans: true
+    remove_volumes: true
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ dawarich_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ dawarich_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"

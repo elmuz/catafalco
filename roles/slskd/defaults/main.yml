@@ -1,0 +1,9 @@
+---
+slskd_container_name: slskd
+slskd_network_name: arr_network
+slskd_subdomain: slskd
+slskd_dashboard_url: https://{{ slskd_subdomain }}.{{ site_url }}
+slskd_dashboard_name: slskd
+slskd_homer:
+  name: "{{ slskd_dashboard_name }}"
+  category: servarr

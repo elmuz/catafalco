@@ -36,3 +36,6 @@
     - role: onlyoffice
       tags:
         - onlyoffice
+    - role: seafile
+      tags:
+        - seafile

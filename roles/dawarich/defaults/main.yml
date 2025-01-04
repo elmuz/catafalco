@@ -1,0 +1,9 @@
+---
+dawarich_container_name: dawarich
+dawarich_network_name: dawarich_network
+dawarich_subdomain: dawarich
+dawarich_dashboard_url: https://{{ dawarich_subdomain }}.{{ site_url }}
+dawarich_dashboard_name: DaWarIch
+dawarich_homer:
+  name: "{{ dawarich_dashboard_name }}"
+  category: services

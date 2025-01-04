@@ -1,0 +1,17 @@
+---
+- name: Ensure directories for `snapraid.content` files exist
+  ansible.builtin.file:
+    path: "{{ item | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ snapraid_content_files }}"
+
+- name: Generate SnapRAID configuration
+  ansible.builtin.template:
+    src: snapraid.j2
+    dest: "{{ snapraid_snapraid_config }}"
+    owner: root
+    group: root
+    mode: "0644"

@@ -15,6 +15,6 @@
   include_tasks: powersaving.yml
   when: enable_powersaving | default(False)
 
-- name: Fix netplan
-  include_tasks: netplan.yml
-  when: netplan_config is defined
+# - name: Fix netplan
+#   include_tasks: netplan.yml
+#   when: netplan_config is defined

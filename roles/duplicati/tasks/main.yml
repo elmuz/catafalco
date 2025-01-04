@@ -15,7 +15,7 @@
 - name: Make sure that Duplicati container is created and running
   community.docker.docker_container:
     name: "{{ duplicati_container_name }}"
-    image: ghcr.io/linuxserver/duplicati
+    image: ghcr.io/linuxserver/duplicati:v2.0.8.1-2.0.8.1_beta_2024-05-07-ls224
     pull: true
     networks:
       - name: "{{ duplicati_network_name }}"
@@ -24,6 +24,8 @@
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"
       TZ: "{{ timezone }}"
+      SETTINGS_ENCRYPTION_KEY: "{{ duplicati_settings_encryption_key }}"
+      DUPLICATI__WEBSERVICE_PASSWORD: "{{ duplicati_webservice_password }}"
     volumes:
       - "{{ docker_dir }}/{{ duplicati_container_name }}/config:/config"
       - "{{ mergerfs_root }}/Documents:/source/Documents:ro"

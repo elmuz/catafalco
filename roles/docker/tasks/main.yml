@@ -23,6 +23,7 @@
 - name: Install Docker (Debian)
   when: ansible_facts['distribution'] == 'Debian'
   block:
+    # NOTE: this is deprecated, use /etc/apt/trusted.gpg.d instead (see official doc)
     - name: Add Docker GPG apt Key
       apt_key:
         url: https://download.docker.com/linux/debian/gpg

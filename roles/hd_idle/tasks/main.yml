@@ -17,21 +17,26 @@
         group: root
         mode: "0755"
 
-    - name: Install github3 module
-      pip:
-        name: github3.py
-
-    - name: Get the latest release version
-      github_release:
-        user: adelolmo
-        repo: hd-idle
-        action: latest_release
-      register: release
+#    - name: Install github3 module
+#      become: false
+#      pip:
+#        name: github3.py
+#
+#    - name: Get the latest release version
+#      become: false
+#      github_release:
+#        user: adelolmo
+#        repo: hd-idle
+#        action: latest_release
+#      register: release
 
     - name: Grab the latest amd64 deb package
       get_url:
         url: https://github.com/adelolmo/hd-idle/releases/download/{{ release['tag'] }}/hd-idle_{{ release['tag'] | regex_replace('^v', '') }}_amd64.deb
         dest: /tmp/hd-idle
+      vars:
+        release:
+          tag: v1.21
 
     - name: Install the deb package
       shell:

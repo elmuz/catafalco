@@ -3,19 +3,26 @@
 # 2. Ensure the token is valid
 # 3. Ensure configuration file is chmod 644
 
-- name: Add InfluxDB repository key
-  ansible.builtin.apt_key:
-    url: https://repos.influxdata.com/influxdata-archive_compat.key
-    state: present
+# If using Mosquitto as MQTT broker, note that by default it only listens to localhost.
+# You can change this by adding next two lines in `/etc/mosquitto/mosquitto.conf`:
+#  ```
+#  allow_anonymous true
+#  listener 1883
+#  ```
 
-- name: Add specified repository into sources list
-  apt_repository:
-    repo: deb https://repos.influxdata.com/ubuntu {{ version }} stable
-    state: present
-    filename: influxdb
+- name: Add InfluxDB repository key
+  ansible.builtin.deb822_repository:
+    name: influxdb
+    enabled: true
+    types: deb
+    uris: https://repos.influxdata.com/debian
+    suites: stable
+    components: main
+    signed_by: https://repos.influxdata.com/influxdata-archive.key
+    mode: '0644'
 
 - name: Update repositories cache and install telegraf package
-  apt:
+  ansible.builtin.apt:
     name: telegraf
     state: latest
     update_cache: true
@@ -31,9 +38,17 @@
     state: present
 
 - name: Copy the main telegraf config
-  template:
-    src: templates/telegraf.conf.j2
+  ansible.builtin.copy:
+    src: telegraf.conf
     dest: /etc/telegraf/telegraf.conf
+    owner: root
+    group: root
+    mode: 644
+
+- name: Copy the main telegraf config
+  ansible.builtin.template:
+    src: telegraf.j2
+    dest: /etc/default/telegraf
     owner: root
     group: root
     mode: 644
@@ -45,31 +60,6 @@
       - docker
       - sudo # this is required for SMART
     append: true
-
-- name: Update telegraf configuration file (1)
-  replace:
-    path: /etc/telegraf/telegraf.conf
-    regexp: \$INFLUX_URL
-    replace: http://127.0.0.1:8086
-#    replace: "https://influxdb.{{ host_local }}"
-
-- name: Update telegraf configuration file (2)
-  replace:
-    path: /etc/telegraf/telegraf.conf
-    regexp: \$INFLUX_TOKEN
-    replace: "{{ influxdb_token }}"
-
-- name: Update telegraf configuration file (3)
-  replace:
-    path: /etc/telegraf/telegraf.conf
-    regexp: \$INFLUX_ORG
-    replace: "{{ influxdb_org }}"
-
-- name: Update telegraf configuration file (3)
-  replace:
-    path: /etc/telegraf/telegraf.conf
-    regexp: \$INFLUX_BUCKET
-    replace: "{{ influxdb_bucket }}"
 
 - name: Restart telegraf unit
   systemd:
