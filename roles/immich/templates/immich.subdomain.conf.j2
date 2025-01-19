@@ -7,6 +7,8 @@ server {
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
+        add_header Access-Control-Allow-Origin *;
+
         set $upstream_app {{ immich_container_name }}_server;
         set $upstream_port 2283;
         set $upstream_proto http;
@@ -16,6 +18,21 @@ server {
     location ~ (/immich)?/api {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
+        if ($request_method = 'OPTIONS') {
+          add_header 'Access-Control-Allow-Origin' 'https://{{ site_url }}' always;
+          add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+          add_header 'Access-Control-Allow-Headers' 'X-Api-Key, User-Agent, Content-Type' always;
+          add_header 'Access-Control-Max-Age' 1728000;
+          add_header 'Content-Type' 'text/plain charset=UTF-8';
+          add_header 'Content-Length' 0;
+          return 204;
+        }
+        if ($request_method = 'GET') {
+          add_header 'Access-Control-Allow-Origin' 'https://{{ site_url }}' always;
+          add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+          add_header 'Access-Control-Allow-Headers' 'X-Api-Key, User-Agent, Content-Type' always;
+          add_header 'Access-Control-Max-Age' 1728000;
+        }
         set $upstream_app {{ immich_container_name }}_server;
         set $upstream_port 2283;
         set $upstream_proto http;

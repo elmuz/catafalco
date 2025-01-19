@@ -1,17 +1,15 @@
-## Version 2021/05/18
 server {
 {% include "roles/swag/templates/nginx/common.j2" %}
 
-    server_name {{ seafile_subdomain }}.*;
+    server_name {{ onlyoffice_subdomain }}.*;
 
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        if ($http_origin ~* "^https?://({{ site_url }})$") {
-            add_header 'Access-Control-Allow-Origin' "$http_origin";
-        }
-
-        set $upstream_app {{ seafile_container_name }}-caddy;
+{% if "onlyoffice_document_server_domain" is defined %}
+        add_header X-Frame-Options "ALLOW-FROM {{ onlyoffice_document_server_domain }}";
+{% endif %}
+        set $upstream_app {{ onlyoffice_container_name }};
         set $upstream_port 80;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;

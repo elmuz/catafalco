@@ -9,9 +9,8 @@
   loop:
     - "db-data"
     - "seafile-data"
-    - "seahub-data"
-    - "seadoc-data"
-    - "notification-data"
+    - "seahub-avatars"
+    - "seahub-custom"
 
 - name: Copy compose.yml and .env
   ansible.builtin.template:
@@ -22,8 +21,6 @@
     mode: "0644"
   loop:
     - ["compose.yml.j2", "seafile-server.yml"]
-#    - [".env.j2", ".env"]
-
 
 - name: Create docker network
   ansible.builtin.include_tasks:
@@ -39,12 +36,15 @@
   ansible.builtin.pause:
     seconds: 20
 
-# - name: Fix CSRF
-#  become: true
-#  ansible.builtin.lineinfile:
-#    path: "{{ docker_dir }}/{{ seafile_container_name }}/seafile-data/seafile/conf/seahub_settings.py"
-#    search_string: "CSRF_TRUSTED_ORIGINS = "
-#    line: "CSRF_TRUSTED_ORIGINS = ['{{ seafile_dashboard_url }}']"
+- name: Fix CSRF  # Not sure why it shows as http://https://seafile.mydomain.com
+  become: true
+  ansible.builtin.lineinfile:
+    path: "{{ docker_dir }}/{{ seafile_container_name }}/seafile-data/seafile/conf/seahub_settings.py"
+    search_string: "{{ item[0] }}"
+    line: "{{ item[1] }}"
+  loop:
+    - ["SERVICE_URL = ", "SERVICE_URL = '{{ seafile_dashboard_url }}'"]
+    - ["CSRF_TRUSTED_ORIGINS = ", "CSRF_TRUSTED_ORIGINS = ['{{ seafile_dashboard_url }}']"]
 
 # - name: Allow connections from 0.0.0.0
 #  become: true
@@ -53,7 +53,7 @@
 #    search_string: "bind = "
 #    line: "bind = '0.0.0.0:8000'"
 
-- name: Install OnlyOffice for document integration
+- name: Install ONLYOFFICE for document integration
   when: '"onlyoffice" in containers'
   block:
     - name: Include OnlyOffice role
@@ -61,6 +61,7 @@
         name: onlyoffice
       vars:
         onlyoffice_network_name: "{{ seafile_network_name }}"
+        onlyoffice_document_server_domain: "https://{{ seafile_subdomain }}.{{ site_url }}"
     - name: Edit Seahub configuration for OnlyOffice
       ansible.builtin.lineinfile:
         path: "{{ docker_dir }}/{{ seafile_container_name }}/seafile-data/seafile/conf/seahub_settings.py"
@@ -68,7 +69,7 @@
         line: "{{ item[0] }} = {{ item[1] }}"
       loop:
         - ["ENABLE_ONLYOFFICE", "True"]
-        - ["ONLYOFFICE_APIJS_URL", "'http://onlyoffice/web-apps/apps/api/documents/api.js'"]
+        - ["ONLYOFFICE_APIJS_URL", "'https://onlyoffice.{{ site_url }}/web-apps/apps/api/documents/api.js'"]
         - ["ONLYOFFICE_FILE_EXTENSION", "('doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'odt', 'fodt', 'odp', 'fodp', 'ods', 'fods', 'csv', 'ppsx', 'pps')"]
         - ["ONLYOFFICE_EDIT_FILE_EXTENSION", "('docx', 'pptx', 'xlsx')"]
         - ["ONLYOFFICE_JWT_SECRET", "'{{ onlyoffice_jwt_secret }}'"]

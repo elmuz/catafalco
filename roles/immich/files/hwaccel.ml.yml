@@ -29,8 +29,8 @@ services:
                 - gpu
 
   openvino:
-    device_cgroup_rules:
-      - c 189:* rmw
+    group_add:
+      - "105"
     devices:
       - /dev/dri:/dev/dri
     volumes:

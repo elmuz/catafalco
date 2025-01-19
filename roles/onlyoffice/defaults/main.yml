@@ -1,4 +1,4 @@
 ---
 onlyoffice_container_name: onlyoffice
 onlyoffice_network_name: onlyoffice_network
-onlyoffice_subfolder: editors
+onlyoffice_subdomain: onlyoffice

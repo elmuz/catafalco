@@ -1,7 +1,6 @@
-version: '3.8'
 services:
   seafile-server:
-    image: ggogel/seafile-server:11.0.12
+    image: ggogel/seafile-server:11.0.13
     container_name: {{ seafile_container_name }}
     volumes:
       - {{ docker_dir }}/{{ seafile_container_name }}/seafile-data:/shared
@@ -23,12 +22,12 @@ services:
     restart: unless-stopped
 
   seahub:
-    image: ggogel/seahub:11.0.12
+    image: ggogel/seahub:11.0.13
     container_name: seahub
     volumes:
       - {{ docker_dir }}/{{ seafile_container_name }}/seafile-data:/shared
-      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-data/avatars:/seahub-data/avatars
-      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-data/custom:/seahub-data/custom
+      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-avatars:/shared/seafile/seahub-data/avatars
+      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-custom:/shared/seafile/seahub-data/custom
     environment:
       - SEAFILE_ADMIN_EMAIL={{ email }}
       - SEAFILE_ADMIN_PASSWORD={{ seafile_admin_password }}
@@ -40,15 +39,15 @@ services:
     restart: unless-stopped
 
   seahub-media:
-    image: ggogel/seahub-media:11.0.12
+    image: ggogel/seahub-media:11.0.13
     container_name: seahub-media
     volumes:
-      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-data/avatars:/usr/share/caddy/media/avatars
-      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-data/custom:/usr/share/caddy/media/custom
+      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-avatars:/usr/share/caddy/media/avatars
+      - {{ docker_dir }}/{{ seafile_container_name }}/seahub-custom:/usr/share/caddy/media/custom
     restart: unless-stopped
 
   seafile-db:
-    image: mariadb:10.11.9
+    image: mariadb:10.11.10
     container_name: seafile-db
     environment:
       - MYSQL_ROOT_PASSWORD={{ seafile_db_root_password }}
@@ -69,7 +68,7 @@ services:
     restart: unless-stopped
 
   seafile-memcached:
-    image: memcached:1.6.32
+    image: memcached:1.6.34
     container_name: seafile-memcached
     entrypoint: memcached -m 1024
     networks:
@@ -88,3 +87,4 @@ services:
 networks:
   default:
     name: "{{ seafile_network_name }}"
+    external: true

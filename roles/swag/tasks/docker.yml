@@ -193,7 +193,7 @@
   ansible.builtin.include_role:
     name: "{{ item }}"
     tasks_from: network
-  loop: "{{ containers | reject('equalto', 'socket_proxy') | reject('equalto', 'watchtower') }}"
+  loop: "{{ containers | reject('equalto', 'socket_proxy') | reject('equalto', 'watchtower') }} | reject('equalto', 'onlyoffice')"
 
 - name: Pause for 10 seconds and let SWAG creating configuration files
   ansible.builtin.pause:

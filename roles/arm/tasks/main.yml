@@ -5,9 +5,17 @@
 # Notes:
 # Run `lsscsi -g`, identify optical device and mount both sr/sg
 ---
-- name: Create the necessary ARM folder
+- name: Create the necessary ARM folders (1)
   file:
     path: "{{ docker_dir }}/{{ arm_container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create the necessary ARM folders (2)
+  file:
+    path: "{{ docker_dir }}/{{ arm_container_name }}/css"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -21,8 +29,16 @@
     group: "{{ guid }}"
     mode: "0644"
 
+- name: Copy ARM theme CSS
+  ansible.builtin.copy:
+    src: bootstrap.min.css
+    dest: "{{ docker_dir }}/{{ arm_container_name }}/css/bootstrap.min.css"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
 - name: Copy HandBrake custom presets
-  copy:
+  ansible.builtin.copy:
     src: roles/{{ arm_container_name }}/files/handbrake-presets/HQ-576p-x264-crf20.json
     dest: "{{ docker_dir }}/{{ arm_container_name }}/config/HQ-576p-x264-crf20.json"
     owner: "{{ guid }}"
@@ -52,8 +68,9 @@
     volumes:
       - "{{ docker_dir }}/{{ arm_container_name }}/config:/etc/arm/config"
       - "{{ docker_dir }}/{{ arm_container_name }}/db:/home/arm/db"
-      - "{{ cache_root }}/Downloads/arm_raw:/home/arm/media/raw"
-      - "{{ cache_root }}/Downloads/arm_transcode:/home/arm/media/transcode"
+      - "{{ docker_dir }}/{{ arm_container_name }}/css:/opt/arm/arm/ui/static/css"
+      - "{{ mergerfs_root }}/Downloads/arm_raw:/home/arm/media/raw"
+      - "{{ mergerfs_root }}/Downloads/arm_transcode:/home/arm/media/transcode"
       - "{{ mergerfs_root }}/Downloads/arm_completed:/home/arm/media/completed"
       - "{{ mergerfs_root }}/Downloads/arm_music:/home/arm/Music"
       - /etc/localtime:/etc/localtime:ro

@@ -33,3 +33,11 @@
       - "{{ docker_dir }}/onlyoffice/DocumentServer/lib:/var/lib/onlyoffice"
       - "{{ docker_dir }}/onlyoffice/DocumentServer/logs:/var/log/onlyoffice"
     restart_policy: unless-stopped
+
+- name: Install the SWAG config files
+  template:
+    src: "templates/{{ onlyoffice_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ onlyoffice_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"

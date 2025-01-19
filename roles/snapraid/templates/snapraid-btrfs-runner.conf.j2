@@ -23,3 +23,6 @@ maxsize = {{ snapraid_logging_maxsize }}
 enabled = {{ snapraid_scrub_enabled | lower }}
 plan = {{ snapraid_scrub_plan }}
 older-than = {{ snapraid_scrub_older_than }}
+
+[healthchecks]
+url = {{ snapraid_healthchecks_io_host }}/ping/{{ snapraid_runner_healthchecks_io_uuid }}
