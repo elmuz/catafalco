@@ -1,0 +1,9 @@
+---
+actual_budget_container_name: actual_budget
+actual_budget_network_name: actual_budget_network
+actual_budget_subdomain: actual
+actual_budget_dashboard_url: https://{{ actual_budget_subdomain }}.{{ site_url }}
+actual_budget_dashboard_name: "Actual Budget"
+actual_budget_homer:
+  name: "{{ actual_budget_dashboard_name }}"
+  category: services

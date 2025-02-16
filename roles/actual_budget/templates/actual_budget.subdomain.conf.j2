@@ -1,0 +1,17 @@
+## Version 2024/07/16
+server {
+{% include "roles/swag/templates/nginx/common.j2" %}
+
+    server_name {{ actual_budget_subdomain }}.*;
+
+    location / {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        add_header Access-Control-Allow-Origin *;
+
+        set $upstream_app {{ actual_budget_container_name }};
+        set $upstream_port 5006;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+}

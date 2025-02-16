@@ -74,7 +74,7 @@ services:
       # See here for details https://github.com/bastienwirtz/homer/issues/478#issuecomment-1192372131
       - name: "PiHole"
         logo: /assets/tools/homer-icons/pihole.png
-        url: "http://192.168.1.2/admin"
+        url: "http://{{ pihole_address }}/admin"
         apikey: "{{ homer_api_keys['PiHole'] }}"
         type: "PiHole"
         target: "_blank"

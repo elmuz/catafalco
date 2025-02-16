@@ -22,7 +22,7 @@
 - name: Make sure that InfluxDB container is created and running
   community.docker.docker_container:
     name: "{{ influxdb_container_name }}"
-    image: influxdb
+    image: influxdb:2
     pull: true
     networks:
       - name: "{{ influxdb_network_name }}"
@@ -33,7 +33,7 @@
       DOCKER_INFLUXDB_INIT_PASSWORD: "{{ influxdb_pass }}"
       DOCKER_INFLUXDB_INIT_ORG: "{{ influxdb_org }}"
       DOCKER_INFLUXDB_INIT_BUCKET: "{{ influxdb_bucket }}"
-      DOCKER_INFLUXDB_INIT_RETENTION: 4w
+      DOCKER_INFLUXDB_INIT_RETENTION: 2ew
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "{{ influxdb_token }}"
     volumes:
       - "{{ docker_dir }}/{{ influxdb_container_name }}/data:/var/lib/influxdb2"

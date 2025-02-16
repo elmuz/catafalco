@@ -284,6 +284,12 @@
     #
     # Services
     #
+    - role: actual_budget
+      become: false
+      tags:
+        - actual
+        - containers
+
     - role: duplicati
       become: false
       tags:

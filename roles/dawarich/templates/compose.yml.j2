@@ -21,21 +21,21 @@ services:
       timeout: 10s
 
   dawarich_db:
-    image: postgres:14.2-alpine
+    image: postgis/postgis:17-3.5-alpine
     shm_size: 1G
     container_name: dawarich_db
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data_pg_17:/var/lib/postgresql/data
       - shared_data:/var/shared
     networks:
       - dawarich_network
     environment:
       POSTGRES_USER: "{{ dawarich_postgres_username }}"
       POSTGRES_PASSWORD: "{{ dawarich_postgres_password }}"
-    restart: unless-stopped
+    restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U {{ dawarich_postgres_username }} -d dawarich_database" ]
-      interval: 5m
+      test: [ "CMD-SHELL", "pg_isready -U {{ dawarich_postgres_username }} -d dawarich_development" ]
+      interval: 10s
       retries: 5
       start_period: 30s
       timeout: 10s
@@ -61,7 +61,7 @@ services:
       DATABASE_HOST: dawarich_db
       DATABASE_USERNAME: "{{ dawarich_postgres_username }}"
       DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
-      DATABASE_NAME: dawarich_database
+      DATABASE_NAME: dawarich_development
       MIN_MINUTES_SPENT_IN_CITY: 60
       APPLICATION_HOSTS: "{{ dawarich_subdomain }}.{{ site_url }},127.0.0.1"
       TIME_ZONE: "{{ timezone }}"
@@ -118,7 +118,7 @@ services:
       DATABASE_HOST: dawarich_db
       DATABASE_USERNAME: "{{ dawarich_postgres_username }}"
       DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
-      DATABASE_NAME: dawarich_database
+      DATABASE_NAME: dawarich_development
       APPLICATION_HOSTS: "{{ dawarich_subdomain }}.{{ site_url }},127.0.0.1"
       BACKGROUND_PROCESSING_CONCURRENCY: 10
       APPLICATION_PROTOCOL: http
@@ -154,7 +154,7 @@ services:
           memory: '4G'    # Limit memory usage to 4GB
 
 volumes:
-{% for item in ['db_data', 'shared_data', 'public', 'watched'] %}
+{% for item in ['shared_data', 'public', 'watched', 'db_data_pg_17'] %}
   {{ item }}:
     driver: local
     driver_opts:

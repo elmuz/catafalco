@@ -45,7 +45,7 @@
       STRICT_PORT_FORWARD: "no"
       ENABLE_PRIVOXY: "yes"
       ENABLE_SOCKS: "yes"
-      LAN_NETWORK: 172.18.0.0/16,{{ lan_network }}
+      LAN_NETWORK: 172.18.0.0/16
       NAME_SERVERS: 9.9.9.9,149.112.112.112
       DELUGE_DAEMON_LOG_LEVEL: info
       DELUGE_WEB_LOG_LEVEL: info

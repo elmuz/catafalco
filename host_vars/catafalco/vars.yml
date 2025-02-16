@@ -5,12 +5,10 @@ timezone: Europe/Rome
 dot_nameservers: [185.95.218.42@853#dns.digitale-gesellschaft.ch, 94.140.15.140@853#dns-unfiltered.adguard.com]
 ntp_timezone: "{{ timezone }}"
 locale: en_US.UTF-8
-lan_network: 192.168.1.0/24
+lan_network: 192.168.178.0/24
 site_url: "{{ host_local }}"
-
-netplan_config: files/netplan/ethernet.yaml
-
-dns_nameservers: [192.168.1.2, 9.9.9.9, 149.112.112.112]
+pihole_address: 192.168.178.2
+dns_nameservers: ["{{ pihole_address }}", 9.9.9.9, 149.112.112.112]
 # User
 username: funkysloth
 guid: "1000"

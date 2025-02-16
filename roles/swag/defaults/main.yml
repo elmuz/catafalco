@@ -27,7 +27,8 @@ swag_container_env_vars:
   DNSPLUGIN: cloudflare
   EMAIL: "{{ cloudflare_email }}"
   PROPAGATION: "60"
-  DOCKER_MODS: "linuxserver/mods:swag-dashboard|linuxserver/mods:swag-auto-reload"
+  SWAG_AUTORELOAD: "true"
+  DOCKER_MODS: "linuxserver/mods:swag-dashboard"
 
 swag_container_ports:
   - 443:443

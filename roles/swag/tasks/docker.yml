@@ -189,11 +189,11 @@
     volumes: "{{ swag_container_volumes }}"
     restart_policy: unless-stopped
 
-- name: Attach Swag to the network of {{ item }}
+- name: Attach Swag to the network of each container
   ansible.builtin.include_role:
     name: "{{ item }}"
     tasks_from: network
-  loop: "{{ containers | reject('equalto', 'socket_proxy') | reject('equalto', 'watchtower') }} | reject('equalto', 'onlyoffice')"
+  loop: "{{ containers | reject('equalto', 'socket_proxy') | reject('equalto', 'watchtower') | reject('equalto', 'onlyoffice') }}"
 
 - name: Pause for 10 seconds and let SWAG creating configuration files
   ansible.builtin.pause:
