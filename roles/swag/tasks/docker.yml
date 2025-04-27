@@ -1,6 +1,6 @@
 ---
 - name: Create the necessary SWAG folder
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ guid }}"
@@ -11,12 +11,19 @@
     - "{{ swag_volume_fail2ban }}"
 
 - name: Install the SWAG dashboard config file
-  template:
+  ansible.builtin.template:
     src: nginx/proxy-confs/dashboard.subdomain.conf.j2
     dest: "{{ swag_volume_nginx_proxy_confs }}/dashboard.subdomain.conf"
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
+
+- name: Create a docker network
+  community.docker.docker_network:
+    name: "{{ swag_network_name }}"
+    connected:
+      - "{{ swag_container_name }}"
+    appends: true
 
 - name: Add optional 'Cloudflare tunnel' Docker mod and ENV vars
   when: swag_cloudflare_tunnel_enable | default(False)
@@ -176,7 +183,7 @@
 - name: Make sure that SWAG container is created and running
   community.docker.docker_container:
     name: "{{ swag_container_name }}"
-    image: ghcr.io/linuxserver/swag:latest
+    image: lscr.io/linuxserver/swag:latest
     pull: true
     networks:
       - name: "{{ swag_network_name }}"
@@ -212,6 +219,34 @@
     - ["#add_header Strict-Transport-Security", "add_header Strict-Transport-Security"]
   notify:
     - Restart SWAG
+
+- name: Custom error page
+  block:
+    - name: Create the necessary SWAG folder
+      ansible.builtin.file:
+        path: "{{ swag_volume_nginx }}/pages"
+        state: directory
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: "0750"
+    - name: Copy the custom 403/404 error page
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "{{ swag_volume_nginx }}/pages/{{ item }}"
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: "0644"
+      loop:
+        - 403.html
+        - 404.html
+        - 5xx.html
+    - name: Copy the error config
+      ansible.builtin.copy:
+        src: errors.conf
+        dest: "{{ swag_volume_nginx }}/errors.conf"
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: "0644"
 
 - name: Update Maxmind configuration
   become: true

@@ -12,6 +12,7 @@
     - gem_cache_sidekiq
     - shared_data
     - public
+    - storage
     - watched
 
 - name: Copy the necessary Dawarich files (compose)

@@ -12,13 +12,15 @@
   hosts: nilde
   become: true
   roles:
-    - role: docker
-      tags:
-        - docker
-
     - role: geerlingguy.ntp
       tags:
         - ntp
+    - role: system
+      tags:
+        - system
+    - role: docker
+      tags:
+        - docker
 
 - name: Install services
   hosts: nilde
@@ -30,12 +32,7 @@
     - role: authelia
       tags:
         - authelia
-    - role: nextcloud
-      tags:
-        - nextcloud
-    - role: onlyoffice
-      tags:
-        - onlyoffice
     - role: seafile
       tags:
         - seafile
+        - containers

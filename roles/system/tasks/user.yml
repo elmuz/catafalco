@@ -73,6 +73,7 @@
   changed_when: chown_status.stdout != ""
 
 - name: Create additional users (no login)
+  when: samba_users is defined
   become: true
   user:
     name: "{{ item.name }}"
@@ -82,6 +83,5 @@
     state: present
     append: true
     shell: /sbin/nologin
-  with_items: "{{ samba_users }}"
-  when: samba_users is defined
+  loop: "{{ samba_users }}"
   no_log: true

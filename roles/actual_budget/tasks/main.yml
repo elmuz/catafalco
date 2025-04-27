@@ -25,6 +25,12 @@
     volumes:
       - "{{ docker_dir }}/{{ actual_budget_container_name }}:/data"
     restart_policy: unless-stopped
+    healthcheck:
+      "test": ["CMD-SHELL", "node src/scripts/health-check.js"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ actual_budget_dashboard_name }}"

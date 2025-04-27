@@ -46,6 +46,7 @@ services:
     volumes:
       - public:/var/app/public
       - watched:/var/app/tmp/imports/watched
+      - storage:/var/app/storage
     networks:
       - dawarich_network
     expose:
@@ -70,7 +71,7 @@ services:
       REVERSE_GEOCODING_ENABLED: true
       PHOTON_API_HOST: photon.komoot.io
       PHOTON_API_USE_HTTPS: true
-      ENABLE_TELEMETRY: false
+      SELF_HOSTED: true
     logging:
       driver: "json-file"
       options:
@@ -105,6 +106,7 @@ services:
     volumes:
       - public:/var/app/public
       - watched:/var/app/tmp/imports/watched
+      - storage:/var/app/storage
     networks:
       - dawarich_network
     stdin_open: true
@@ -154,7 +156,7 @@ services:
           memory: '4G'    # Limit memory usage to 4GB
 
 volumes:
-{% for item in ['shared_data', 'public', 'watched', 'db_data_pg_17'] %}
+{% for item in ['shared_data', 'public', 'watched', 'db_data_pg_17', 'storage'] %}
   {{ item }}:
     driver: local
     driver_opts:

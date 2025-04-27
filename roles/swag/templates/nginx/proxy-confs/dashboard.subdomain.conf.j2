@@ -12,8 +12,8 @@ server {
     # enable for ldap auth (requires ldap-location.conf in the location block)
     #include /config/nginx/ldap-server.conf;
 
-    # enable for Authelia (requires authelia-location.conf in the location block)
 {% if "authelia" in containers %}
+    # enable for Authelia (requires authelia-location.conf in the location block)
     include /config/nginx/authelia-server.conf;
 {% endif %}
 
@@ -28,8 +28,8 @@ server {
         # enable for ldap auth (requires ldap-server.conf in the server block)
         #include /config/nginx/ldap-location.conf;
 
-        # enable for Authelia (requires authelia-server.conf in the server block)
 {% if "authelia" in containers %}
+        # enable for Authelia (requires authelia-server.conf in the server block)
         include /config/nginx/authelia-location.conf;
 {% endif %}
 
