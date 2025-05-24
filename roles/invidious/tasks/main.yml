@@ -36,14 +36,14 @@
       - "{{ docker_dir }}/{{ invidious_container_name }}/db/sql:/config/sql"
       - "{{ docker_dir }}/{{ invidious_container_name }}/db/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh"
     healthcheck:
-      test: [CMD-SHELL, pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB]
+      test: [CMD-SHELL, pg_isready -U funkysloth -d invidious]
       interval: 5m
       start_period: 30s
 
-- name: Make sure that inv_sig_helper container is created and running
+- name: Make sure that Invidious companion container is created and running
   community.docker.docker_container:
-    name: inv_sig_helper
-    image: quay.io/invidious/inv-sig-helper:latest
+    name: "{{ invidious_container_name }}-companion"
+    image: quay.io/invidious/invidious-companion:latest
     pull: true
     cap_drop:
       - all
@@ -51,9 +51,9 @@
     security_opts:
       - no-new-privileges:true
     init: true
-    command: ["--tcp", "0.0.0.0:12999"]
     env:
-      RUST_log: info
+      SERVER_SECRET_KEY: "{{ invidious_companion_key }}"
+      SERVER_BASE_URL: "{{ invidious_dashboard_url }}"
     networks:
       - name: "{{ invidious_network_name }}"
     state: started
@@ -62,7 +62,7 @@
 - name: Make sure that Invidious container is created and running
   community.docker.docker_container:
     name: "{{ invidious_container_name }}"
-    image: quay.io/invidious/invidious:latest
+    image: quay.io/invidious/invidious:master
     pull: true
     env:
       INVIDIOUS_CONFIG: |
@@ -73,7 +73,9 @@
           host: invidious-db
           port: 5432
         check_tables: true
-        signature_server: inv_sig_helper:12999
+        invidious_companion:
+          - private_url: "http://{{ invidious_container_name }}-companion:8282"
+            public_url: "{{ invidious_dashboard_url }}"
         visitor_data: {{ invidious_visitor_data }}
         po_token: {{ invidious_po_token }}
         https_only: true
@@ -81,6 +83,7 @@
         external_port: 443
         use_pubsub_feeds: true
         statistics_enabled: false
+        invidious_companion_key: {{ invidious_companion_key }}
         hmac_key: {{ invidious_hmac }}
     networks:
       - name: "{{ invidious_network_name }}"
@@ -89,7 +92,7 @@
     state: started
     restart_policy: unless-stopped
     healthcheck:
-      test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/comments/jNQXAC9IVRw || exit 1
+      test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/trending || exit 1
       interval: 5m
       timeout: 5s
       retries: 2

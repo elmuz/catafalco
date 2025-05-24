@@ -7,14 +7,37 @@
 # in jellyfin settings, under "Advanced/Networking" add subdomain.mydomain.tld as a known proxy
 
 server {
-    {% include "roles/swag/templates/nginx/common.j2" %}
+{% include "roles/swag/templates/nginx/common.j2" %}
 
     server_name {{ jellyfin_subdomain }}.*;
 
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        set $upstream_app {{ jellyfin_container_name }};
+
+        # Handle OPTIONS requests for CORS preflight
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' 'https://{{ site_url }}';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-Emby-Authorization,x-emby-token';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204; # Respond to OPTIONS here and stop processing
+        }
+
+        # Remove any CORS headers sent by the backend first
+        proxy_hide_header Access-Control-Allow-Origin;
+        proxy_hide_header Access-Control-Allow-Methods;
+        proxy_hide_header Access-Control-Allow-Headers;
+
+        # These headers are for the actual request response,
+        # allowing origins and methods for non-preflight requests (GET, POST, etc.)
+        add_header 'Access-Control-Allow-Origin' 'https://{{ site_url }}';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE'; # Still good practice to include
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-Emby-Authorization,x-emby-token';
+
+        set $upstream_app jellyfin;
         set $upstream_port 8096;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;

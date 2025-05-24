@@ -7,7 +7,7 @@ ntp_timezone: "{{ timezone }}"
 locale: en_US.UTF-8
 lan_network: 192.168.178.0/24
 site_url: "{{ host_local }}"
-pihole_address: 192.168.178.2
+pihole_address: di.en.es
 dns_nameservers: ["{{ pihole_address }}", 9.9.9.9, 149.112.112.112]
 # User
 username: funkysloth

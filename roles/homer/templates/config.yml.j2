@@ -74,9 +74,10 @@ services:
       # See here for details https://github.com/bastienwirtz/homer/issues/478#issuecomment-1192372131
       - name: "PiHole"
         logo: /assets/tools/homer-icons/pihole.png
-        url: "http://{{ pihole_address }}/admin"
+        url: "https://{{ pihole_address }}"
         apikey: "{{ homer_api_keys['PiHole'] }}"
         type: "PiHole"
+        apiVersion: 6
         target: "_blank"
 
 # Switch to explicit media items because they're too much customized.

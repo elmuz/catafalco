@@ -334,3 +334,9 @@
       tags:
         - seafile
         - containers
+
+    - role: radicale
+      tags:
+        - radicale
+        - calendar
+        - containers
