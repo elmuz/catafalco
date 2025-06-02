@@ -9,6 +9,7 @@
 #      import_tasks: tasks/ssh_juggle_port.yml
 #      tags:
 #        - port
+
     - name: Set SSH correctly before executing other roles
       import_tasks: tasks/ssh.yml
       tags:
@@ -43,11 +44,6 @@
     - role: geerlingguy.security
       tags:
         - security
-
-    - role: linux-system-roles.cockpit
-      tags:
-        - cockpit
-      when: enable_cockpit | default(False)
 
     #
     # Filesystems
@@ -109,18 +105,6 @@
       tags:
         - swag
         - containers
-
-#    - role: caddy
-#      become: false
-#      tags:
-#        - caddy
-#        - containers
-#
-#    - role: traefik
-#      become: false
-#      tags:
-#        - traefik
-#        - containers
 
     #
     # Homer

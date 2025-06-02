@@ -1,9 +1,10 @@
 ---
 - name: Install required system packages
-  ansible.builtin.apt:
-    name: mergerfs
-    state: present
-    update_cache: true
+  ansible.builtin.package:
+    name:
+      - fuse
+      - mergerfs
+    state: latest
 
 - name: Install the uncaching script
   ansible.builtin.template:

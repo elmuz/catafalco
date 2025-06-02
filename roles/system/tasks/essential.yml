@@ -26,6 +26,11 @@
         mode: "0644"
       tags: mirrors
 
+- name: Set the timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+  when: timezone is defined
+
 - name: Generate the locale (Debian and Ubuntu)
   when: ansible_os_family == 'Debian'
   locale_gen:

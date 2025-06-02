@@ -8,7 +8,7 @@ locale: en_US.UTF-8
 lan_network: 192.168.178.0/24
 site_url: "{{ host_local }}"
 pihole_address: di.en.es
-dns_nameservers: ["{{ pihole_address }}", 9.9.9.9, 149.112.112.112]
+dns_nameservers: [192.168.178.2, 9.9.9.9, 149.112.112.112]
 # User
 username: funkysloth
 guid: "1000"
@@ -16,7 +16,6 @@ shell: /usr/bin/zsh
 
 # File systems, partitions and mounts
 docker_dir: /var/opt/docker
-boot_drive_serial: PBEEEBB21101806811 # Patriot Burst El
 
 # Hard disk
 spindown_time: 600 # in seconds
@@ -248,20 +247,19 @@ samba_shares:
 #
 enable_mergerfs: true
 
-mergerfs_root: /mnt/storage
+mounts_root_location: /mnt
+mergerfs_root: "{{ mounts_root_location }}/storage"
 cache_root: "{{ mergerfs_root }}_cache"
 
 data_disks:
-  - { path: /mnt/data1, src: /dev/disk/by-label/Data1, content: true }
-  - { path: /mnt/data2, src: /dev/disk/by-label/Data2, content: true }
-#  - { path: /mnt/data3, src: /dev/disk/by-label/Data3, content: true }
-#  - { path: /mnt/data, src: /dev/disk/by-label/STORAGE, content: true }
+  - { data_disk_id: 1, label: Data1, path: "{{ mounts_root_location }}/data1", content: true }
+  - { data_disk_id: 2, label: Data2, path: "{{ mounts_root_location }}/data2", content: true }
 
 cache_disks:
-  - { path: /mnt/cache1, src: /dev/disk/by-label/Cache1, content: true }
+  - { cache_disk_id: 1, path: "{{ mounts_root_location }}/cache1", label: Cache1, content: true }
 
 parity_disks:
-  - { path: /mnt/parity1, src: /dev/disk/by-label/Parity1, content: true }
+  - { parity_disk_id: 1, path: "{{ mounts_root_location }}/parity1", label: Parity1, content: true }
 
 # SnapRAID
 snapraid_force_install: true

@@ -166,7 +166,7 @@
         name: "{{ item }}"
         tasks_from: fail2ban
       loop: "{{ fail2ban_services | default([]) }}"
-    - name: Add CF token to 'jail.local'
+    - name: Add options to 'jail.local'
       ansible.builtin.lineinfile:
         path: "{{ swag_volume_fail2ban }}/jail.local"
         regexp: "{{ item[0] }}"

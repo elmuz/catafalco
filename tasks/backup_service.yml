@@ -1,0 +1,51 @@
+# This task configures a cron job for a specific service using the generic backup script.
+# Expected variables:
+# - service_name (string, mandatory): For cron job name, log file.
+# - cron_schedule (string, mandatory): Cron schedule string.
+# - backup_cli_args (dict, mandatory):
+#   - source_paths (string, mandatory): Space-separated list of source paths.
+#   - destination_path (string, mandatory): Single destination path for this service's backup.
+#   - container_names_str (string, optional): Space-separated list of container names.
+
+- name: Ensure log directory exists
+  ansible.builtin.file:
+    path: /var/log/backups
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+
+- name: Deploy generic backup script
+  ansible.builtin.copy:
+    src: generic_backup.sh
+    dest: /usr/local/bin/generic_backup.sh
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+
+- name: "Add cron job for {{ service_name }}"
+  ansible.builtin.cron:
+    name: "Backup {{ service_name }}"
+    user: root
+    job: >-
+      /usr/local/bin/generic_backup.sh
+      --sources "{{ backup_cli_args.source_paths }}"
+      --dest "{{ backup_cli_args.destination_path }}"
+      {% if backup_cli_args.container_names_str is defined and backup_cli_args.container_names_str | trim != "" %}
+      --containers "{{ backup_cli_args.container_names_str }}"
+      {% endif %}
+      >> /var/log/backups/{{ service_name }}_backup.log 2>&1
+    minute: "{{ cron_schedule.split(' ')[0] }}"
+    hour: "{{ cron_schedule.split(' ')[1] }}"
+    day: "{{ cron_schedule.split(' ')[2] }}"
+    month: "{{ cron_schedule.split(' ')[3] }}"
+    weekday: "{{ cron_schedule.split(' ')[4] }}"
+    state: present
+  become: true
+  when:
+    - cron_schedule is defined and cron_schedule | trim != ""
+    - backup_cli_args is defined
+    - backup_cli_args.source_paths is defined and backup_cli_args.source_paths | trim != ""
+    - backup_cli_args.destination_path is defined and backup_cli_args.destination_path | trim != ""

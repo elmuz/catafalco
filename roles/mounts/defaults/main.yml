@@ -1,0 +1,2 @@
+mounts_root_location: /mnt
+mounts_use_subvolumes: true

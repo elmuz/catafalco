@@ -1,54 +1,88 @@
 ---
-- name: Mount the data drives
-  mount:
-    name: "{{ item.path }}"
-    src: "{{ item.src }}"
+- name: Install required system packages
+  ansible.builtin.package:
+    name:
+      - btrfs-progs
+    state: latest
+
+- name: Create the 'data' subvolumes
+  community.general.btrfs_subvolume:
+    name: "data"
+    filesystem_label: "{{ item.label }}"
+  loop: "{{ data_disks }}"
+  when:
+    - mounts_use_subvolumes
+    - data_disks[0] is defined
+
+- name: Mount the data drives (optionally with subvolumes)
+  ansible.posix.mount:
+    path: "{{ item.path }}"
+    src: "LABEL={{ item.label }}"
     fstype: btrfs
+    opts: "{{ 'subvol=/data' if mounts_use_subvolumes else 'defaults' }}"
     state: mounted
-    passno: "2"
-  with_items: "{{ data_disks }}"
-  when: disks[0] is defined
+  loop: "{{ data_disks }}"
+  when: data_disks[0] is defined
+
+- name: Create the 'content' subvolumes
+  community.general.btrfs_subvolume:
+    name: "content"
+    filesystem_label: "Data{{ item.data_disk_id }}"
+  loop: "{{ data_disks }}"
+  when:
+    - mounts_use_subvolumes
+    - data_disks[0] is defined
+
+- name: Mount the content subvolumes
+  ansible.posix.mount:
+    path: "{{ mounts_root_location }}/snapraid-content/disk{{ item.data_disk_id }}"
+    src: "LABEL={{ item.label }}"
+    fstype: btrfs
+    opts: subvol=/content
+    state: mounted
+  loop: "{{ data_disks }}"
+  when:
+    - mounts_use_subvolumes
+    - snapraid_data_disks is defined
 
 - name: Mount the cache drives
   mount:
     name: "{{ item.path }}"
-    src: "{{ item.src }}"
+    src: "LABEL={{ item.label }}"
     fstype: ext4
     state: mounted
     opts: defaults,discard
-    passno: "2"
-  with_items: "{{ cache_disks }}"
+  loop: "{{ cache_disks }}"
   when: cache_disks[0] is defined
 
 - name: Mount the parity drives
   mount:
     name: "{{ item.path }}"
-    src: "{{ item.src }}"
+    src: "LABEL={{ item.label }}"
     fstype: ext4
     state: mounted
-    passno: "2"
-  with_items: "{{ parity_disks }}"
+  loop: "{{ parity_disks }}"
   when: parity_disks[0] is defined
 
-- name: Mount the mergerfs cached array
+- name: Mount the MergerFS cached array
   mount:
     name: "{{ mergerfs_root }}"
     src: /mnt/cache*:/mnt/data*
     opts: defaults,category.create=lfs,dropcacheonclose=1,allow_other,use_ino,moveonenospc=1,minfreespace=50G,fsname=mergerfs
     fstype: fuse.mergerfs
     state: mounted
-  when: disks[0] is defined
+  when: data_disks[0] is defined
 
-- name: Mount the mergerfs array
+- name: Mount the MergerFS array
   mount:
     name: "{{ mergerfs_root }}_slow"
     src: /mnt/data*
     opts: defaults,category.create=mfs,dropcacheonclose=1,allow_other,use_ino,moveonenospc=1,minfreespace=500G,fsname=mergerfs_slow
     fstype: fuse.mergerfs
     state: mounted
-  when: disks[0] is defined
+  when: data_disks[0] is defined
 
-- name: Mount the mergerfs cache-only array
+- name: Mount the MergerFS cache-only array
   mount:
     name: "{{ cache_root }}"
     src: /mnt/cache*
@@ -56,13 +90,3 @@
     fstype: fuse.mergerfs
     state: mounted
   when: cache_disks[0] is defined
-
-# - name: Mount the Time Machine drive
-#   mount:
-#     name: "{{ timemachine_root }}"
-#     src: "{{ timemachine_drive }}"
-#     fstype: ext4
-#     opts: defaults,discard
-#     state: mounted
-#     passno: "2"
-#   when: enable_timemachine | default(False)
