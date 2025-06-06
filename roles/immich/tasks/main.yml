@@ -1,19 +1,15 @@
 ---
-- name: Create the necessary Immich folders (models)
+- name: Create the necessary Immich folders
   ansible.builtin.file:
-    path: "{{ docker_dir }}/{{ immich_container_name }}/models/"
+    path: "{{ docker_dir }}/{{ immich_container_name }}/{{ item }}/"
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: "0755"
-
-- name: Create the necessary Immich folders (upload)
-  ansible.builtin.file:
-    path: "{{ docker_dir }}/{{ immich_container_name }}/upload/"
-    state: directory
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    mode: "0755"
+  loop:
+    - upload
+    - models
+    - backup
 
 - name: Copy the necessary Immich files (compose)
   ansible.builtin.template:
@@ -53,3 +49,28 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
+
+- name: Add cron job for the database backup
+  ansible.builtin.cron:
+    name: Dump Immich database
+    user: root
+    job: >-
+      docker exec -t immich-postgres pg_dumpall --clean --if-exists --username=postgres |
+      gzip > "{{ docker_dir }}/{{ immich_container_name }}/backup/latest.sql.gz"
+    minute: 50
+    hour: 4
+    day: "*"
+    month: "*"
+    weekday: "*"
+    state: present
+  become: true
+
+- name: Setup backup cron job
+  ansible.builtin.include_tasks: tasks/backup_service.yml
+  vars:
+    service_name: "{{ immich_container_name }}"
+    cron_schedule: "0 5 * * *"
+    backup_cli_args:
+      source_paths: "{{ docker_dir }}/{{ immich_container_name }}"
+      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+      container_names_str: "{{ immich_container_name }}-postgres"

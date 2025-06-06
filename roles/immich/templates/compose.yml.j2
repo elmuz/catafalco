@@ -64,7 +64,7 @@ services:
 
   redis:
     container_name: "{{ immich_container_name }}-redis"
-    image: docker.io/redis:6.2-alpine@sha256:eaba718fecd1196d88533de7ba49bf903ad33664a92debb24660a922ecd9cac8
+    image: docker.io/valkey/valkey:8-bookworm@sha256:ff21bc0f8194dc9c105b769aeabf9585fea6a8ed649c0781caeac5cb3c247884
     networks:
       "{{ immich_network_name }}":
         aliases:
@@ -76,7 +76,7 @@ services:
 
   database:
     container_name: "{{ immich_container_name }}-postgres"
-    image: ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.3.0-pgvectors0.2.0@sha256:fa4f6e0971f454cd95fec5a9aaed2ed93d8f46725cc6bc61e0698e97dba96da1
     networks:
       "{{ immich_network_name }}":
         aliases:
@@ -90,6 +90,7 @@ services:
       # DB_STORAGE_TYPE: 'HDD'
     volumes:
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
+      - {{ docker_dir }}/{{ immich_container_name }}/backup:/backups
     restart: unless-stopped
 
 volumes:

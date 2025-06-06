@@ -1,7 +1,7 @@
 ---
 - name: SSH Port Juggle | Try connecting via SSH
   wait_for_connection:
-    timeout: 5
+    timeout: 2
   ignore_errors: true
   register: _ssh_port_result
 
@@ -13,7 +13,7 @@
 
 - name: SSH Port Juggle | Try connecting again
   wait_for_connection:
-    timeout: 5
+    timeout: 2
   ignore_errors: true
   register: _ssh_port_default_result
   when:

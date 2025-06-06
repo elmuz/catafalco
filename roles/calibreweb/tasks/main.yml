@@ -91,4 +91,14 @@
     group: "{{ guid }}"
     mode: "0644"
 
+- name: Setup backup cron job
+  ansible.builtin.include_tasks: tasks/backup_service.yml
+  vars:
+    service_name: "{{ calibreweb_container_name }}"
+    cron_schedule: "0 5 * * *"
+    backup_cli_args:
+      source_paths: "{{ docker_dir }}/{{ calibreweb_container_name }}"
+      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+      container_names_str: "{{ calibreweb_container_name }}"
+
 # TODO: create ad-hoc Docker exec commands for user creation and server start

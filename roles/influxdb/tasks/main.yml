@@ -61,3 +61,13 @@
 #   --write-notificationRules --read-notificationEndpoints --write-notificationEndpoints --read-checks --write-checks --read-dbrp --write-dbrp
 #   --read-annotations --write-annotations --read-sources --write-sources --read-scrapers --write-scrapers --read-notebooks --write-notebooks --read-remotes
 #   --write-remotes --read-replications --write-replications
+
+- name: Setup backup cron job
+  ansible.builtin.include_tasks: tasks/backup_service.yml
+  vars:
+    service_name: "{{ influxdb_container_name }}"
+    cron_schedule: "0 5 * * *"
+    backup_cli_args:
+      source_paths: "{{ docker_dir }}/{{ influxdb_container_name }}"
+      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+      container_names_str: "{{ influxdb_container_name }}"

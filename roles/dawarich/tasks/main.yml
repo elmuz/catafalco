@@ -1,19 +1,21 @@
 ---
+- name: Required volumes
+  ansible.builtin.set_fact:
+    dawarich_volumes:
+      - shared_data
+      - public
+      - watched
+      - db_data_pg_17
+      - storage
+
 - name: Create the necessary Dawarich folder
-  file:
+  ansible.builtin.file:
     path: "{{ docker_dir }}/{{ dawarich_container_name }}/{{ item }}"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0755"
-  loop:
-    - db_data
-    - gem_cache_app
-    - gem_cache_sidekiq
-    - shared_data
-    - public
-    - storage
-    - watched
+  loop: "{{ dawarich_volumes }}"
 
 - name: Copy the necessary Dawarich files (compose)
   ansible.builtin.template:
@@ -41,3 +43,36 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
+
+- name: Create the necessary Dawarich folder
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ dawarich_container_name }}/backup"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Add cron job for the database backup
+  ansible.builtin.cron:
+    name: Dump Dawarich database
+    user: root
+    job: >-
+      docker exec -t dawarich_db pg_dumpall --clean --if-exists --username={{ dawarich_postgres_username }}
+      | gzip > {{ docker_dir }}/{{ dawarich_container_name }}/backup/latest.sql.gz"
+    minute: 50
+    hour: 4
+    day: "*"
+    month: "*"
+    weekday: "*"
+    state: present
+  become: true
+
+- name: Setup backup cron job
+  ansible.builtin.include_tasks: tasks/backup_service.yml
+  vars:
+    service_name: "{{ dawarich_container_name }}"
+    cron_schedule: "0 5 * * *"
+    backup_cli_args:
+      source_paths: "{{ docker_dir }}/{{ dawarich_container_name }}"
+      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+      container_names_str: "{{ dawarich_container_name }}_db {{ dawarich_container_name }}_app"

@@ -70,3 +70,13 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
+
+- name: Setup backup cron job
+  ansible.builtin.include_tasks: tasks/backup_service.yml
+  vars:
+    service_name: "{{ speedtest_tracker_container_name }}"
+    cron_schedule: "0 5 * * *"
+    backup_cli_args:
+      source_paths: "{{ docker_dir }}/{{ speedtest_tracker_container_name }}"
+      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+      container_names_str: "{{ speedtest_tracker_container_name }}-db {{ speedtest_tracker_container_name }}"

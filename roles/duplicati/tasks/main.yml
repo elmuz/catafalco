@@ -15,7 +15,7 @@
 - name: Make sure that Duplicati container is created and running
   community.docker.docker_container:
     name: "{{ duplicati_container_name }}"
-    image: ghcr.io/linuxserver/duplicati:v2.0.8.1-2.0.8.1_beta_2024-05-07-ls224
+    image: ghcr.io/linuxserver/duplicati:latest
     pull: true
     networks:
       - name: "{{ duplicati_network_name }}"
@@ -43,3 +43,13 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
+
+- name: Setup backup cron job
+  ansible.builtin.include_tasks: tasks/backup_service.yml
+  vars:
+    service_name: "{{ duplicati_container_name }}"
+    cron_schedule: "0 5 * * *"
+    backup_cli_args:
+      source_paths: "{{ docker_dir }}/{{ duplicati_container_name }}"
+      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+      container_names_str: "{{ duplicati_container_name }}"

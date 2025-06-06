@@ -50,7 +50,7 @@
     file: network.yml
 
 - name: Make sure that ARM container is created and running
-  docker_container:
+  ansible.builtin.docker_container:
     name: "{{ arm_container_name }}"
     image: automaticrippingmachine/automatic-ripping-machine:latest
     pull: true
@@ -89,3 +89,13 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
+
+- name: Setup backup cron job
+  ansible.builtin.include_tasks: tasks/backup_service.yml
+  vars:
+    service_name: "{{ arm_container_name }}"
+    cron_schedule: "0 5 * * *"
+    backup_cli_args:
+      source_paths: "{{ docker_dir }}/{{ arm_container_name }}"
+      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+      container_names_str: "{{ arm_container_name }}"

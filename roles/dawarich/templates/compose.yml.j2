@@ -4,26 +4,10 @@ networks:
     external: true
 
 services:
-  dawarich_redis:
-    image: redis:7.0-alpine
-    container_name: dawarich_redis
-    command: redis-server
-    networks:
-      - dawarich_network
-    volumes:
-      - shared_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-      interval: 5m
-      retries: 5
-      start_period: 30s
-      timeout: 10s
-
   dawarich_db:
     image: postgis/postgis:17-3.5-alpine
     shm_size: 1G
-    container_name: dawarich_db
+    container_name: "{{ dawarich_container_name }}_db"
     volumes:
       - db_data_pg_17:/var/lib/postgresql/data
       - shared_data:/var/shared
@@ -32,6 +16,7 @@ services:
     environment:
       POSTGRES_USER: "{{ dawarich_postgres_username }}"
       POSTGRES_PASSWORD: "{{ dawarich_postgres_password }}"
+      POSTGRES_DB: dawarich_production
     restart: always
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U {{ dawarich_postgres_username }} -d dawarich_development" ]
@@ -42,11 +27,12 @@ services:
 
   dawarich_app:
     image: freikin/dawarich:latest
-    container_name: dawarich_app
+    container_name: "{{ dawarich_container_name }}_app"
     volumes:
       - public:/var/app/public
       - watched:/var/app/tmp/imports/watched
       - storage:/var/app/storage
+      - db_data_pg_17:/dawarich_db_data
     networks:
       - dawarich_network
     expose:
@@ -58,11 +44,13 @@ services:
     restart: unless-stopped
     environment:
       RAILS_ENV: development
-      REDIS_URL: redis://dawarich_redis:6379/0
       DATABASE_HOST: dawarich_db
       DATABASE_USERNAME: "{{ dawarich_postgres_username }}"
       DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
-      DATABASE_NAME: dawarich_development
+      DATABASE_NAME: dawarich_production
+      QUEUE_DATABASE_PATH: /dawarich_db_data/dawarich_development_queue.sqlite3
+      CACHE_DATABASE_PATH: /dawarich_db_data/dawarich_development_cache.sqlite3
+      CABLE_DATABASE_PATH: /dawarich_db_data/dawarich_development_cable.sqlite3
       MIN_MINUTES_SPENT_IN_CITY: 60
       APPLICATION_HOSTS: "{{ dawarich_subdomain }}.{{ site_url }},127.0.0.1"
       TIME_ZONE: "{{ timezone }}"
@@ -87,9 +75,6 @@ services:
       dawarich_db:
         condition: service_healthy
         restart: true
-      dawarich_redis:
-        condition: service_healthy
-        restart: true
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ dawarich_dashboard_name }}"
@@ -99,61 +84,6 @@ services:
         limits:
           cpus: "0.50"
           memory: "4G"
-
-  dawarich_sidekiq:
-    image: freikin/dawarich:latest
-    container_name: dawarich_sidekiq
-    volumes:
-      - public:/var/app/public
-      - watched:/var/app/tmp/imports/watched
-      - storage:/var/app/storage
-    networks:
-      - dawarich_network
-    stdin_open: true
-    tty: true
-    entrypoint: sidekiq-entrypoint.sh
-    command: ['sidekiq']
-    restart: unless-stopped
-    environment:
-      RAILS_ENV: development
-      REDIS_URL: redis://dawarich_redis:6379/0
-      DATABASE_HOST: dawarich_db
-      DATABASE_USERNAME: "{{ dawarich_postgres_username }}"
-      DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
-      DATABASE_NAME: dawarich_development
-      APPLICATION_HOSTS: "{{ dawarich_subdomain }}.{{ site_url }},127.0.0.1"
-      BACKGROUND_PROCESSING_CONCURRENCY: 10
-      APPLICATION_PROTOCOL: http
-      DISTANCE_UNIT: km
-      REVERSE_GEOCODING_ENABLED: false
-      PHOTON_API_HOST: photon.komoot.io
-      PHOTON_API_USE_HTTPS: true
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "5"
-    healthcheck:
-      test: [ "CMD-SHELL", "bundle exec sidekiqmon processes | grep $${HOSTNAME}" ]
-      interval: 5m
-      retries: 5
-      start_period: 30s
-      timeout: 10s
-    depends_on:
-      dawarich_db:
-        condition: service_healthy
-        restart: true
-      dawarich_redis:
-        condition: service_healthy
-        restart: true
-      dawarich_app:
-        condition: service_healthy
-        restart: true
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'    # Limit CPU usage to 50% of one core
-          memory: '4G'    # Limit memory usage to 4GB
 
 volumes:
 {% for item in ['shared_data', 'public', 'watched', 'db_data_pg_17', 'storage'] %}
