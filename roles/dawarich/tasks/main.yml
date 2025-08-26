@@ -7,6 +7,7 @@
       - watched
       - db_data_pg_17
       - storage
+      - redis_data
 
 - name: Create the necessary Dawarich folder
   ansible.builtin.file:

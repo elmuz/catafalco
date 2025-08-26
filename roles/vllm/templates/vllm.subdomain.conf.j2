@@ -1,0 +1,28 @@
+server {
+    {% include "roles/swag/templates/nginx/common.j2" %}
+
+    server_name {{ vllm_subdomain }}.{{ site_url }};
+
+    location / {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        add_header Access-Control-Allow-Origin 'https://{{ site_url }}';
+
+        set $upstream_app {{ vllm_container_name }};
+        set $upstream_port 8000;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+
+    location /grafana {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+
+        # Redirect /grafana to the specific dashboard path
+        rewrite ^/grafana$ /grafana/d/{{ vllm_grafana_dashboard_uid }}/vllm redirect;
+        set $upstream_app {{ vllm_container_name }}-grafana;
+        set $upstream_port 3000;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+}

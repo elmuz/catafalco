@@ -1,11 +1,14 @@
 ---
 - name: Create the necessary Navidrome folder
   file:
-    path: "{{ docker_dir }}/{{ navidrome_container_name }}/data"
+    path: "{{ docker_dir }}/{{ navidrome_container_name }}/{{ item }}"
     state: directory
     owner: "{{ username }}"
     group: "{{ username }}"
     mode: "0755"
+  loop:
+    - data
+    - backup
 
 - name: Create docker network
   ansible.builtin.include_tasks:
@@ -21,13 +24,18 @@
     state: started
     user: "{{ guid }}:{{ guid }}"
     env:
-      ND_SCANSCHEDULE: 1h
-      ND_LOGLEVEL: info
-      ND_SESSIONTIMEOUT: 24h
       ND_DEFAULTTHEME: Nord
+      ND_SCANNER_PURGEMISSING: always
+      ND_SCANSCHEDULE: 1h
+      ND_SESSIONTIMEOUT: 24h
+      ND_LOGLEVEL: info
       ND_HTTPSECURITYHEADERS_CUSTOMFRAMEOPTIONSVALUE: SAMEORIGIN
+      ND_BACKUP_PATH: /backup
+      ND_BACKUP_SCHEDULE: "0 0 * * 0"
+      ND_BACKUP_COUNT: "4"
     volumes:
       - "{{ docker_dir }}/{{ navidrome_container_name }}/data:/data"
+      - "{{ docker_dir }}/{{ navidrome_container_name }}/backup:/backup"
       - "{{ mergerfs_root }}/Media/Music:/music:ro"
     restart_policy: unless-stopped
     labels:
@@ -52,3 +60,7 @@
       source_paths: "{{ docker_dir }}/{{ navidrome_container_name }}"
       destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
       container_names_str: "{{ navidrome_container_name }}"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: replaygain_check.yml

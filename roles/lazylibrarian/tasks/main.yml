@@ -1,0 +1,52 @@
+---
+- name: Create the necessary LazyLibrarian folder
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ lazylibrarian_container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
+- name: Make sure that LazyLibrarian container is created and running
+  docker_container:
+    name: "{{ lazylibrarian_container_name }}"
+    image: lscr.io/linuxserver/lazylibrarian
+    pull: true
+    networks:
+      - name: "{{ lazylibrarian_network_name }}"
+    state: started
+    env:
+      PUID: "{{ guid }}"
+      PGID: "{{ guid }}"
+      TZ: "{{ timezone }}"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - "{{ docker_dir }}/{{ lazylibrarian_container_name }}:/config"
+      - "{{ mergerfs_root }}:/storage"
+    restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ lazylibrarian_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ lazylibrarian_dashboard_url }}"
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ lazylibrarian_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ lazylibrarian_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Setup backup cron job
+  ansible.builtin.include_tasks: tasks/backup_service.yml
+  vars:
+    service_name: "{{ lazylibrarian_container_name }}"
+    cron_schedule: "0 5 * * *"
+    backup_cli_args:
+      source_paths: "{{ docker_dir }}/{{ lazylibrarian_container_name }}"
+      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+      container_names_str: "{{ lazylibrarian_container_name }}"

@@ -1,0 +1,9 @@
+---
+lazylibrarian_container_name: lazylibrarian
+lazylibrarian_network_name: arr_network
+lazylibrarian_subdomain: lazylibrarian
+lazylibrarian_dashboard_url: https://{{ lazylibrarian_subdomain }}.{{ site_url }}
+lazylibrarian_dashboard_name: LazyLibrarian
+lazylibrarian_homer:
+  name: "{{ lazylibrarian_dashboard_name }}"
+  category: servarr

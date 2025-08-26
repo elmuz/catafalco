@@ -1,0 +1,63 @@
+---
+- name: Create the Grafana data directory
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ vllm_container_name }}/grafana/{{ item }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+  loop:
+    - data
+    - dashboards
+    - provisioning/dashboards
+    - provisioning/datasources
+
+- name: Copy dashboards.yml
+  ansible.builtin.template:
+    src: templates/grafana/dashboards.yml.j2
+    dest: "{{ docker_dir }}/{{ vllm_container_name }}/grafana/provisioning/dashboards/dashboards.yml"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Copy datasource.yml
+  ansible.builtin.template:
+    src: templates/grafana/datasource.yml.j2
+    dest: "{{ docker_dir }}/{{ vllm_container_name }}/grafana/provisioning/datasources/datasource.yml"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Copy vLLM dashboard
+  ansible.builtin.template:
+    src: templates/grafana/vllm_dashboard.json.j2
+    dest: "{{ docker_dir }}/{{ vllm_container_name }}/grafana/dashboards/vllm_dashboard.json"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Make sure that Grafana container is created and running
+  docker_container:
+    name: "{{ vllm_container_name }}-grafana"
+    image: grafana/grafana:latest
+    pull: true
+    user: "{{ guid }}"
+    networks:
+      - name: "{{ vllm_network_name }}"
+    state: started
+    env:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_SERVER_ROOT_URL: "{{ vllm_grafana_url }}"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      # Mount the datasource and dashboard provisioning configurations
+      - "{{ docker_dir }}/{{ vllm_container_name }}/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro"
+      - "{{ docker_dir }}/{{ vllm_container_name }}/grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro"
+      # Mount the actual dashboard JSON file into the path specified in dashboards.yml
+      - "{{ docker_dir }}/{{ vllm_container_name }}/grafana/dashboards/vllm_dashboard.json:/etc/grafana/provisioning/dashboards/vllm_dashboard.json:ro"
+      # Persistent volume for Grafana data
+      - "{{ docker_dir }}/{{ vllm_container_name }}/grafana/data:/var/lib/grafana"
+    restart_policy: unless-stopped
+

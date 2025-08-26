@@ -5,10 +5,10 @@
   hosts: catafalco
   gather_facts: false
   pre_tasks:
-#    - name: Juggle with SSH with default and custom port
-#      import_tasks: tasks/ssh_juggle_port.yml
-#      tags:
-#        - port
+    #    - name: Juggle with SSH with default and custom port
+    #      import_tasks: tasks/ssh_juggle_port.yml
+    #      tags:
+    #        - port
 
     - name: Set SSH correctly before executing other roles
       import_tasks: tasks/ssh.yml
@@ -192,17 +192,17 @@
         - servarr
         - containers
 
+    - role: lazylibrarian
+      become: false
+      tags:
+        - lazylibrarian
+        - servarr
+        - containers
+
     - role: lidarr
       become: false
       tags:
         - lidarr
-        - servarr
-        - containers
-
-    - role: readarr
-      become: false
-      tags:
-        - readarr
         - servarr
         - containers
 
@@ -324,3 +324,18 @@
         - radicale
         - calendar
         - containers
+
+    - role: redlib
+      tags:
+        - redlib
+        - containers
+
+    - role: vllm
+      tags:
+        - llm
+        - vllm
+
+    - role: openwebui
+      tags:
+        - llm
+        - openwebui

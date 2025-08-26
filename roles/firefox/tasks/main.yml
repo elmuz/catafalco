@@ -14,7 +14,7 @@
 - name: Make sure that Firefox container is created and running
   community.docker.docker_container:
     name: "{{ firefox_container_name }}"
-    image: lscr.io/linuxserver/mullvad-browser:latest
+    image: lscr.io/linuxserver/firefox:latest
     pull: true
     capabilities:
       - net_admin

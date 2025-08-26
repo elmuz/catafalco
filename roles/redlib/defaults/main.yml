@@ -1,0 +1,9 @@
+---
+redlib_container_name: redlib
+redlib_network_name: redlib_network
+redlib_subdomain: redlib
+redlib_dashboard_url: https://{{ redlib_subdomain }}.{{ site_url }}
+redlib_dashboard_name: redlib
+redlib_homer:
+  name: "{{ redlib_dashboard_name }}"
+  category: services

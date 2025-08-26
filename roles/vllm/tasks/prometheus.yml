@@ -1,0 +1,30 @@
+---
+- name: Create the Prometheus data directory
+  file:
+    path: "{{ docker_dir }}/{{ vllm_container_name }}/prometheus/data"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Install the Prometheus config file
+  ansible.builtin.template:
+    src: templates/prometheus/prometheus.yml.j2
+    dest: "{{ docker_dir }}/{{ vllm_container_name }}/prometheus/prometheus.yml"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Make sure that Prometheus container is created and running
+  docker_container:
+    name: "{{ vllm_container_name }}-prometheus"
+    image: prom/prometheus:latest
+    pull: true
+    user: "{{ guid }}"
+    networks:
+      - name: "{{ vllm_network_name }}"
+    state: started
+    volumes:
+      - "{{ docker_dir }}/{{ vllm_container_name }}/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "{{ docker_dir }}/{{ vllm_container_name }}/prometheus/data:/prometheus"
+    restart_policy: unless-stopped

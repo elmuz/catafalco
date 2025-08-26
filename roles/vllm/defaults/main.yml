@@ -1,0 +1,9 @@
+---
+vllm_container_name: vllm
+vllm_network_name: vllm
+vllm_subdomain: vllm
+vllm_server_url: https://{{ vllm_subdomain }}.{{ site_url }}
+vllm_default_model: "RedHatAI/Qwen3-8B-quantized.w4a16"
+vllm_grafana_url: https://{{ vllm_subdomain }}.{{ site_url }}/grafana
+vllm_prometheus_datasource_uid: PBFA97CFB590B2093
+vllm_grafana_dashboard_uid: "b281712d-8bff-41ef-9f3f-71ad43c05e9b"

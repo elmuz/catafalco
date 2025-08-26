@@ -1,0 +1,9 @@
+---
+openwebui_container_name: openwebui
+openwebui_network_name: openwebui
+openwebui_subdomain: chat
+openwebui_dashboard_url: https://{{ openwebui_subdomain }}.{{ site_url }}
+openwebui_dashboard_name: openwebui
+openwebui_homer:
+  name: "{{ openwebui_dashboard_name }}"
+  category: services

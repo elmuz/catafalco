@@ -2,7 +2,11 @@
 # General variables
 hostname: "{{ inventory_hostname }}"
 timezone: Europe/Rome
-dot_nameservers: [185.95.218.42@853#dns.digitale-gesellschaft.ch, 94.140.15.140@853#dns-unfiltered.adguard.com]
+dot_nameservers:
+  [
+    185.95.218.42@853#dns.digitale-gesellschaft.ch,
+    94.140.15.140@853#dns-unfiltered.adguard.com,
+  ]
 ntp_timezone: "{{ timezone }}"
 locale: en_US.UTF-8
 lan_network: 192.168.178.0/24
@@ -107,11 +111,13 @@ containers:
   - influxdb
   - invidious
   - jellyfin
+  - lazylibrarian
   - lidarr
   - navidrome
+  - openwebui
   - prowlarr
   - radarr
-  - readarr
+  - redlib
   - slskd
   - socket_proxy
   - sonarr
@@ -220,16 +226,16 @@ samba_shares:
     valid_users: "@sambashare"
     write_list: "{{ username }} sara"
 
-#  - name: Music
-#    guest_ok: false
-#    public: false
-#    read_only: false
-#    writable: true
-#    browsable: true
-#    owner: "{{ username }}"
-#    path: "{{ mergerfs_root }}/Music"
-#    valid_users: "@sambashare"
-#    write_list: "{{ username }} sara"
+  #  - name: Music
+  #    guest_ok: false
+  #    public: false
+  #    read_only: false
+  #    writable: true
+  #    browsable: true
+  #    owner: "{{ username }}"
+  #    path: "{{ mergerfs_root }}/Music"
+  #    valid_users: "@sambashare"
+  #    write_list: "{{ username }} sara"
 
   - name: Media
     guest_ok: false
@@ -252,14 +258,34 @@ mergerfs_root: "{{ mounts_root_location }}/storage"
 cache_root: "{{ mergerfs_root }}_cache"
 
 data_disks:
-  - { data_disk_id: 1, label: Data1, path: "{{ mounts_root_location }}/data1", content: true }
-  - { data_disk_id: 2, label: Data2, path: "{{ mounts_root_location }}/data2", content: true }
+  - {
+      data_disk_id: 1,
+      label: Data1,
+      path: "{{ mounts_root_location }}/data1",
+      content: true,
+    }
+  - {
+      data_disk_id: 2,
+      label: Data2,
+      path: "{{ mounts_root_location }}/data2",
+      content: true,
+    }
 
 cache_disks:
-  - { cache_disk_id: 1, path: "{{ mounts_root_location }}/cache1", label: Cache1, content: true }
+  - {
+      cache_disk_id: 1,
+      path: "{{ mounts_root_location }}/cache1",
+      label: Cache1,
+      content: true,
+    }
 
 parity_disks:
-  - { parity_disk_id: 1, path: "{{ mounts_root_location }}/parity1", label: Parity1, content: true }
+  - {
+      parity_disk_id: 1,
+      path: "{{ mounts_root_location }}/parity1",
+      label: Parity1,
+      content: true,
+    }
 
 # SnapRAID
 snapraid_force_install: true
@@ -286,7 +312,6 @@ snapraid_content_files:
   - /var/local/snapraid/snapraid.content
   - /mnt/snapraid-content/disk1/snapraid.content
   - /mnt/snapraid-content/disk2/snapraid.content
-
 
 #
 # SMART error reporting

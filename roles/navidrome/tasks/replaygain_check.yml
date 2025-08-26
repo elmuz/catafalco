@@ -1,0 +1,31 @@
+---
+- name: Create the necessary Navidrome folder
+  file:
+    path: "{{ docker_dir }}/{{ navidrome_container_name }}/replaygain"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+- name: Copy the ReplayGain scraper script
+  ansible.builtin.copy:
+    src: scraper.py
+    dest: "{{ docker_dir }}/{{ navidrome_container_name }}/replaygain/scraper.py"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Add cron job for the database backup
+  ansible.builtin.cron:
+    name: Check missing ReplayGain metadata
+    job: >-
+      python '{{ docker_dir }}/{{ navidrome_container_name }}/replaygain/scraper.py' {{ navidrome_dashboard_url }}
+      -u {{ navidrome_user }} -t {{ navidrome_hashed_password }}
+      -s {{ navidrome_salt }} -r {{ docker_dir }}/{{ navidrome_container_name }}/replaygain/report.txt
+      -l {{ docker_dir }}/{{ navidrome_container_name }}/replaygain/error.log
+    minute: 0
+    hour: 3
+    day: "*"
+    month: "*"
+    weekday: 3
+    state: present

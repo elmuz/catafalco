@@ -16,7 +16,7 @@ snapraid_snapraid_touch: false
 snapraid_snapraid_deletethreshold: 150
 
 # snapraid-btrfs-runner settings
-snapraid_snapraid_btfs_runner_dir: /usr/local/share/snapraid-btrfs-runner
+snapraid_snapraid_btrfs_runner_dir: /usr/local/share/snapraid-btrfs-runner
 snapraid_snapraid_btrfs_pool: false
 snapraid_snapraid_btrfs_cleanup: true
 
