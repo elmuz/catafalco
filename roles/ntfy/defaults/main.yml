@@ -1,0 +1,6 @@
+---
+ntfy_container_name: ntfy
+ntfy_network_name: ntfy_network
+ntfy_subdomain: push
+ntfy_url: https://{{ ntfy_subdomain }}.{{ site_url }}
+ntfy_dashboard_name: ntfy

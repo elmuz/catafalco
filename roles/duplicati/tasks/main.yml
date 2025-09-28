@@ -2,7 +2,7 @@
 ---
 - name: Create the Duplicati folder
   file:
-    path: "{{ docker_dir }}/{{ duplicati_container_name }}/config"
+    path: "{{ docker_dir }}/{{ duplicati_container_name }}/config/crontabs"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -11,6 +11,14 @@
 - name: Create docker network
   ansible.builtin.include_tasks:
     file: network.yml
+
+- name: Copy the crontab file
+  ansible.builtin.template:
+    src: "templates/crontab-abc.j2"
+    dest: "{{ docker_dir }}/{{ duplicati_container_name }}/config/crontabs/abc"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
 
 - name: Make sure that Duplicati container is created and running
   community.docker.docker_container:
@@ -26,6 +34,8 @@
       TZ: "{{ timezone }}"
       SETTINGS_ENCRYPTION_KEY: "{{ duplicati_settings_encryption_key }}"
       DUPLICATI__WEBSERVICE_PASSWORD: "{{ duplicati_webservice_password }}"
+      DOCKER_MODS: linuxserver/mods:universal-package-install|linuxserver/mods:universal-cron
+      INSTALL_PACKAGES: sqlite3
     volumes:
       - "{{ docker_dir }}/{{ duplicati_container_name }}/config:/config"
       - "{{ mergerfs_root }}/Documents:/source/Documents:ro"
@@ -37,7 +47,7 @@
       swag.uptime-kuma.monitor.url: "{{ duplicati_dashboard_url }}"
 
 - name: Install the SWAG config files
-  template:
+  ansible.builtin.template:
     src: "templates/{{ duplicati_container_name }}.subdomain.conf.j2"
     dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ duplicati_container_name }}.subdomain.conf"
     owner: "{{ guid }}"

@@ -5,7 +5,7 @@
       - shared_data
       - public
       - watched
-      - db_data_pg_17
+      - db_data
       - storage
       - redis_data
 
@@ -59,7 +59,7 @@
     user: root
     job: >-
       docker exec -t dawarich_db pg_dumpall --clean --if-exists --username={{ dawarich_postgres_username }}
-      | gzip > {{ docker_dir }}/{{ dawarich_container_name }}/backup/latest.sql.gz"
+      | gzip > "{{ docker_dir }}/{{ dawarich_container_name }}/backup/latest.sql.gz"
     minute: 50
     hour: 4
     day: "*"

@@ -1,0 +1,16 @@
+- name: Install NTP service
+  ansible.builtin.apt:
+    name: ntpsec
+    state: present
+    force: true
+    update_cache: true
+  become: true
+
+# You must create /var/log/ntpsec (owned by ntpsec:ntpsec) to enable logging.
+- name: Enable logging
+  ansible.builtin.file:
+    path: /var/log/ntpsec
+    state: directory
+    owner: ntpsec
+    group: ntpsec
+    mode: "0755"

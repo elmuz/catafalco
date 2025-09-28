@@ -60,4 +60,7 @@
       # Persistent volume for Grafana data
       - "{{ docker_dir }}/{{ vllm_container_name }}/grafana/data:/var/lib/grafana"
     restart_policy: unless-stopped
-
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: vLLM (Grafana)
+      swag.uptime-kuma.monitor.url: "{{ vllm_grafana_url }}"

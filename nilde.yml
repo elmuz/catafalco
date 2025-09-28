@@ -36,3 +36,11 @@
       tags:
         - seafile
         - containers
+    - role: ntfy
+      tags:
+        - ntfy
+        - containers
+    - role: watchtower
+      tags:
+        - watchtower
+        - containers

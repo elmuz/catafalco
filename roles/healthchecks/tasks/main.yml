@@ -1,6 +1,6 @@
 ---
 - name: Create the necessary Healthchecks folder
-  file:
+  ansible.builtin.file:
     path: "{{ docker_dir }}/{{ healthchecks_container_name }}/config"
     state: directory
     owner: "{{ guid }}"

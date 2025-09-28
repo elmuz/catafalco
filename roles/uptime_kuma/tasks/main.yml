@@ -20,7 +20,7 @@
     pull: true
     networks:
       - name: "{{ uptime_kuma_network_name }}"
-    dns_servers: "{{ dns_nameservers }}"
+#    dns_servers: "{{ dns_nameservers }}"
     state: started
     env:
       PUID: "{{ guid }}"

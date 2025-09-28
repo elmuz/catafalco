@@ -7,10 +7,10 @@ nut_mode: netserver
 nut_services:
   - nut-monitor
   - nut-server
-  - nut-driver@epyc-ion
+  - nut-driver@powerwalker
 nut_ups:
-  - name: epyc-ion
+  - name: powerwalker
     driver: usbhid-ups
     device: auto
-    description: Epyc ION UPS
+    description: PowerWalker VI 500 R1U
 nut_upsd_extra: LISTEN 0.0.0.0 3493

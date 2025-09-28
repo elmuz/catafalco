@@ -11,7 +11,7 @@ services:
     networks:
       - dawarich_network
     volumes:
-      - redis_data:/data
+      - {{ docker_dir }}/{{ dawarich_container_name }}/redis_data:/data
     restart: always
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
@@ -25,8 +25,7 @@ services:
     shm_size: 1G
     container_name: "{{ dawarich_container_name }}_db"
     volumes:
-      - db_data_pg_17:/var/lib/postgresql/data
-      - shared_data:/var/shared
+      - {{ docker_dir }}/{{ dawarich_container_name }}/db_data:/var/lib/postgresql/data
     networks:
       - dawarich_network
     environment:
@@ -41,15 +40,14 @@ services:
       start_period: 30s
       timeout: 10s
 
-
   dawarich_app:
-    image: freikin/dawarich:0.30.7
+    image: freikin/dawarich:{{ dawarich_version }}
     container_name: "{{ dawarich_container_name }}_app"
     volumes:
-      - public:/var/app/public
-      - watched:/var/app/tmp/imports/watched
-      - storage:/var/app/storage
-      - db_data_pg_17:/dawarich_db_data
+      - {{ docker_dir }}/{{ dawarich_container_name }}/public:/var/app/public
+      - {{ docker_dir }}/{{ dawarich_container_name }}/watched:/var/app/tmp/imports/watched
+      - {{ docker_dir }}/{{ dawarich_container_name }}/storage:/var/app/storage
+      - {{ docker_dir }}/{{ dawarich_container_name }}/db_data:/dawarich_db_data
     networks:
       - dawarich_network
     expose:
@@ -68,14 +66,14 @@ services:
       DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
       DATABASE_NAME: dawarich_production
       MIN_MINUTES_SPENT_IN_CITY: 60
-      SECRET_KEY_BASE: "{{ dawarich_secret_key_base }}"
       APPLICATION_HOSTS: "{{ dawarich_subdomain }}.{{ site_url }},127.0.0.1"
       TIME_ZONE: "{{ timezone }}"
       APPLICATION_PROTOCOL: http
       DISTANCE_UNIT: km
-      REVERSE_GEOCODING_ENABLED: true
-      STORE_GEODATA: true
-      SELF_HOSTED: true
+      REVERSE_GEOCODING_ENABLED: "true"
+      SECRET_KEY_BASE: "{{ dawarich_secret_key_base }}"
+      SELF_HOSTED: "true"
+      STORE_GEODATA: "true"
     logging:
       driver: "json-file"
       options:
@@ -105,12 +103,12 @@ services:
           memory: "4G"
 
   dawarich_sidekiq:
-    image: freikin/dawarich:0.30.7
+    image: freikin/dawarich:{{ dawarich_version }}
     container_name: dawarich_sidekiq
     volumes:
-      - public:/var/app/public
-      - watched:/var/app/tmp/imports/watched
-      - storage:/var/app/storage
+      - {{ docker_dir }}/{{ dawarich_container_name }}/public:/var/app/public
+      - {{ docker_dir }}/{{ dawarich_container_name }}/watched:/var/app/tmp/imports/watched
+      - {{ docker_dir }}/{{ dawarich_container_name }}/storage:/var/app/storage
     networks:
       - dawarich_network
     stdin_open: true
@@ -132,7 +130,7 @@ services:
       PROMETHEUS_EXPORTER_ENABLED: false
       PROMETHEUS_EXPORTER_HOST: dawarich_app
       PROMETHEUS_EXPORTER_PORT: 9394
-      SELF_HOSTED: true
+      SELF_HOSTED: "true"
       SECRET_KEY_BASE: 1234567890
       RAILS_LOG_TO_STDOUT: "true"
       STORE_GEODATA: "true"
@@ -158,12 +156,12 @@ services:
         condition: service_healthy
         restart: true
 
-volumes:
-{% for item in ['shared_data', 'public', 'watched', 'db_data_pg_17', 'storage', 'redis_data'] %}
-  {{ item }}:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: "{{ docker_dir }}/{{ dawarich_container_name }}/{{ item }}"
-{% endfor %}
+#volumes:
+#{% for item in ['shared_data', 'public', 'watched', 'db_data_pg_17', 'storage', 'redis_data'] %}
+#  {{ item }}:
+#    driver: local
+#    driver_opts:
+#      o: bind
+#      type: none
+#      device: "{{ docker_dir }}/{{ dawarich_container_name }}/{{ item }}"
+#{% endfor %}

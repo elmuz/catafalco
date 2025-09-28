@@ -126,7 +126,7 @@
       swag.uptime-kuma.monitor.url: "{{ invidious_dashboard_url }}"
 
 - name: Install the SWAG config files
-  template:
+  ansible.builtin.template:
     src: "templates/{{ invidious_container_name }}.subdomain.conf.j2"
     dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ invidious_container_name }}.subdomain.conf"
     owner: "{{ guid }}"

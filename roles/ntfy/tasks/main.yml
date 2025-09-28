@@ -1,0 +1,76 @@
+---
+- name: Create the necessary ntfy folder
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ ntfy_container_name }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0750"
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
+- name: Configure few ntfy env variables for Docker container
+  ansible.builtin.set_fact:
+    ntfy_auth_users: >-
+      {% set users = [] -%}
+      {% for u in ntfy_users -%}
+        {% set _ = users.append(u.name ~ ':' ~ (u.password | password_hash('bcrypt')) ~ ':' ~ u.role) -%}
+      {% endfor -%}
+      {{ users | join(',') | trim }}
+    ntfy_auth_tokens: >-
+      {% set tokens = [] -%}
+      {% for u in ntfy_users if u.token is defined -%}
+        {% set _ = tokens.append(u.name ~ ':' ~ u.token) -%}
+      {% endfor -%}
+      {{ tokens | join(',') | trim }}
+    ntfy_auth_access: >-
+      {% set access = [] -%}
+      {% for u in ntfy_users if u.topics is defined and u.role != 'admin' -%}
+        {% set _ = access.append(u.name ~ ':' ~ u.topics) -%}
+      {% endfor -%}
+      {{ access | join(',') | trim }}
+
+- name: Make sure that ntfy container is created and running
+  community.docker.docker_container:
+    name: "{{ ntfy_container_name }}"
+    command:
+      - serve
+    image: binwiederhier/ntfy
+    pull: true
+    networks:
+      - name: "{{ ntfy_network_name }}"
+    state: started
+    user: "{{ guid }}:{{ guid }}"
+    env:
+      NTFY_BASE_URL: "{{ ntfy_url }}"
+      NTFY_BEHIND_PROXY: "1"
+      NTFY_AUTH_FILE: '/var/lib/ntfy/user.db'
+      NTFY_AUTH_DEFAULT_ACCESS: 'deny-all'
+      NTFY_AUTH_USERS: "{{ ntfy_auth_users }}"
+      NTFY_AUTH_ACCESS: "{{ ntfy_auth_access }}"
+      NTFY_AUTH_TOKENS: "{{ ntfy_auth_tokens }}"
+      NTFY_WEB_ROOT: "disable"
+      TZ: "{{ timezone }}"
+    volumes:
+      - "{{ docker_dir }}/{{ ntfy_container_name }}:/var/lib/ntfy"
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ ntfy_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ ntfy_url }}"
+    restart_policy: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --tries=1 http://localhost:80/v1/health -O - | grep -Eo '\"healthy\"\\s*:\\s*true' || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ ntfy_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ ntfy_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"

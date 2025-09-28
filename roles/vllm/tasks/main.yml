@@ -11,7 +11,7 @@
   ansible.builtin.include_tasks:
     file: network.yml
 
-- name: Make sure that vLLM container is created and running
+- name: Ensure that vLLM container is created and running
   community.docker.docker_container:
     name: "{{ vllm_container_name }}"
     image: docker.io/vllm/vllm-openai:latest
@@ -29,6 +29,8 @@
       - /etc/localtime:/etc/localtime:ro
     command: >
       --model "{{ vllm_default_model }}"
+      --gpu-memory-utilization 0.85
+      --enable-sleep-mode
     ipc_mode: host
     device_requests:
       - driver: nvidia

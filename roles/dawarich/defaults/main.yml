@@ -7,3 +7,4 @@ dawarich_dashboard_name: DaWarIch
 dawarich_homer:
   name: "{{ dawarich_dashboard_name }}"
   category: services
+dawarich_version: 0.32.0

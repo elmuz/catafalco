@@ -103,7 +103,6 @@ containers:
   - dawarich
   - deluge
   - duplicati
-  - firefox
   - handbrake
   - healthchecks
   - homer
@@ -124,7 +123,6 @@ containers:
   - speedtest_tracker
   - stirling_pdf
   - uptime_kuma
-  - vaultwarden
   - watchtower
   - wud
 
@@ -152,6 +150,7 @@ cockpit_config:
 #
 enable_samba: true
 samba_server_string: "{{ hostname }}"
+samba_enable_netbios: false
 
 # --> Moved to hidden vars
 # samba_users:
