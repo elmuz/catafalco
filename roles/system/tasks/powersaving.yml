@@ -1,37 +1,54 @@
 ---
-- name: Install the powersaving packages
-  package:
-    name:
-      - powertop
-      - linux-tools-{{ ansible_kernel }}
+- name: Install the Powertop packages
+  ansible.builtin.apt:
+    name: powertop
     state: latest
 
-- name: Install the systemd services
-  copy:
+- name: Install the powertop systemd services
+  ansible.builtin.copy:
     src: "{{ item }}"
     dest: /etc/systemd/system/{{ item | basename }}
     owner: root
     group: root
     mode: "0755"
-  notify:
-    - systemd reload
-  with_fileglob:
-    - files/powersaving/*.service
-    - files/powersaving/*.timer
+  loop:
+    - powersaving/powertop.service
+    - powersaving/powertop.timer
 
-- name: Start and enable the systemd services
-  systemd:
+- name: Start and enable the powertop systemd services
+  ansible.builtin.systemd:
+    name: powertop.timer
     state: started
     enabled: true
-    name: "{{ item }}"
-  with_items:
-    - powertop.timer
-    - cpupower-min.timer
+    daemon_reload: true
 
-# - name: Shut down every day (apart from Sunday) at 1:30 AM
-#   cron:
-#     name: Power off at night to save energy
-#     minute: "30"
-#     hour: "1"
-#     weekday: 1-6
-#     job: poweroff
+- name: Install and configure cpupower
+  when: min_cpu_frequency is defined and max_cpu_frequency is defined
+  block:
+    - name: Install the cpupower packages
+      ansible.builtin.apt:
+        name: "{{ 'linux-tools-generic' if ansible_distribution == 'Ubuntu' else 'linux-cpupower' }}"
+        state: latest
+
+    - name: Install the cpupower systemd services (1)
+      ansible.builtin.copy:
+        src: "powersaving/cpupower-min.timer"
+        dest: /etc/systemd/system/cpupower-min.timer
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install the cpupower systemd services (2)
+      ansible.builtin.template:
+        src: "cpupower-min.service.j2"
+        dest: /etc/systemd/system/cpupower-min.service
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Start and enable the cpupower systemd services
+      ansible.builtin.systemd:
+        name: cpupower-min.timer
+        state: started
+        enabled: true
+        daemon_reload: true

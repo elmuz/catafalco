@@ -1,0 +1,10 @@
+system_extra_packages:
+  - git
+  - htop
+  - iotop
+  - iperf3
+  - ncdu
+  - neovim
+  - powertop
+  - rsync
+  - stow

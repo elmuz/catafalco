@@ -1,9 +1,15 @@
 ---
-- name: Essential
-  include_tasks: essential.yml
+- name: Localization
+  include_tasks: localization.yml
 
-- name: Purge snap
-  include_tasks: yeet_snaps.yml
+- name: Network configuration
+  include_tasks: networking.yml
+
+- name: Time synchronization
+  include_tasks: timesync.yml
+
+- name: Repo/Packages
+  include_tasks: packages.yml
 
 - name: Prepare users
   include_tasks: user.yml

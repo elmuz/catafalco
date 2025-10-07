@@ -1,0 +1,13 @@
+[Match]
+Name={{ system_primary_interface }}
+
+[Network]
+DHCP=ipv4
+# Accept DNS servers from DHCP
+DNS=
+# Fallback DNS will be configured in resolved.conf
+
+[DHCP]
+# Use DNS servers provided by DHCP
+UseDNS=true
+SendHostname=true

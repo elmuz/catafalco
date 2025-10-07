@@ -1,0 +1,80 @@
+---
+- name: Ubuntu specific tasks
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  block:
+    - name: Remove cloud-config to avoid boot delay
+      ansible.builtin.apt:
+        name: cloud-config
+        state: absent
+
+    - name: Make sure iSCSId and Open-iSCSId services are disabled
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      with_items:
+        - iscsid
+        - open-iscsi
+
+    - name: Install the apt mirror list
+      ansible.builtin.template:
+        src: sources.list.j2
+        dest: /etc/apt/sources.list
+        owner: root
+        group: root
+        mode: "0644"
+      tags: mirrors
+
+    - name: Retrieve installed packages
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Remove snap functionality
+      when: "'snapd' in ansible_facts.packages"
+      block:
+        - name: Unmount the core* snaps
+          ansible.builtin.mount:
+            name: /snap/core*
+            state: unmounted
+
+        - name: Remove the pre-installed snaps
+          community.general.snap:
+            name: "*"
+            state: absent
+
+        - name: Remove the snap package from apt
+          ansible.builtin.apt:
+            package: snapd
+            state: absent
+            purge: true
+
+        - name: Remove the snap folders
+          ansible.builtin.file:
+            name: "{{ item }}"
+            state: absent
+          with_items:
+            - /home/{{ username }}/snap
+            - /var/snap
+            - /var/lib/snap
+
+- name: Update and upgrade apt packages (Debian and Ubuntu)
+  when: ansible_os_family == 'Debian'
+  ansible.builtin.apt:
+    upgrade: true
+    autoremove: true
+    update_cache: true
+
+- name: Check if reboot required
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: system_reboot_required_file
+
+- name: Reboot if required
+  ansible.builtin.reboot:
+    msg: Rebooting due to a kernel update
+  when: system_reboot_required_file.stat.exists
+
+- name: Install extra packages
+  ansible.builtin.package:
+    name: "{{ system_extra_packages }}"
+    state: present

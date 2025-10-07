@@ -1,0 +1,33 @@
+---
+- name: Ensure conflicting time sync services are stopped and disabled
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - systemd-timesyncd
+    - ntp
+    - ntpd
+    - ntpsec
+  ignore_errors: true  # in case the service doesn't exist
+
+- name: Install chrony
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: absent
+    autoremove: true
+  loop:
+    - ntp
+    - ntpsec
+
+- name: Install chrony
+  ansible.builtin.apt:
+    name: chrony
+    state: present
+    update_cache: true
+
+- name: Ensure chrony is enabled and started
+  ansible.builtin.service:
+    name: chrony
+    state: started
+    enabled: true

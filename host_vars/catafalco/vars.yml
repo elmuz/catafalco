@@ -22,27 +22,6 @@ docker_dir: /var/opt/docker
 
 colorscheme: nord
 
-# Packages
-extra_packages:
-  - iperf3
-  - speedtest-cli
-  - htop
-  - powertop
-  - git
-  - lm-sensors
-  - mosquitto
-  - neofetch
-  - neovim
-  - nvme-cli
-  - rsync
-  - iotop
-  - ncdu
-  - python3-pip
-  - reptyr
-  - stow
-  - tmux
-  - zsh
-
 #
 # Apt mirrors
 #

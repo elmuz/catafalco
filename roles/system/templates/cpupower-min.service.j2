@@ -6,7 +6,7 @@ After=hybrid-sleep.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/cpupower frequency-set -d 800Mhz -u 3.7Ghz -g powersave
+ExecStart=/usr/bin/cpupower frequency-set --min {{ min_cpu_frequency }} --max {{ max_cpu_frequency }} --governor powersave
 
 [Install]
 WantedBy=multi-user.target

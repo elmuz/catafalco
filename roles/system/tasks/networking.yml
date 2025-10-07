@@ -1,0 +1,50 @@
+---
+- name: Set the hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Replace the hostname entry with our own
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    insertafter: ^127\.0\.0\.1 *localhost
+    line: 127.0.1.1 {{ inventory_hostname }}
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Detect primary network interface
+  ansible.builtin.set_fact:
+    system_primary_interface: "{{ ansible_default_ipv4.interface }}"
+
+- name: Configure systemd-networkd for DHCP on primary interface
+  ansible.builtin.template:
+    src: "interface.network.j2"
+    dest: "/etc/systemd/network/10-{{ system_primary_interface }}.network"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Remove any existing Netplan configuration files
+  ansible.builtin.file:
+    path: /etc/netplan
+    state: absent
+
+- name: Enable and start systemd-networkd
+  ansible.builtin.systemd:
+    name: systemd-networkd
+    enabled: true
+    state: started
+
+- name: Configure systemd-resolved for DNS
+  ansible.builtin.template:
+    src: resolved.conf.j2
+    dest: /etc/systemd/resolved.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start systemd-resolved
+  systemd:
+    name: systemd-resolved
+    enabled: true
+    state: started
