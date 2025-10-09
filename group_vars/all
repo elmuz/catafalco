@@ -1,4 +1,6 @@
 ---
+timezone: Europe/Rome
+
 nord_color_palette:
   - "#2E3440"
   - "#323946"

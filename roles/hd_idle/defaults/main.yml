@@ -1,0 +1,2 @@
+hd_idle_log_file: /var/log/hd-idle.log
+hd_idle_spindown_time: 600  # in seconds

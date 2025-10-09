@@ -33,13 +33,13 @@
 
 - name: Generate the locale (Debian and Ubuntu)
   when: ansible_os_family == 'Debian'
-  locale_gen:
+  community.general.locale_gen:
     name: "{{ locale }}"
     state: present
 
 - name: Update and upgrade apt packages (Debian and Ubuntu)
   when: ansible_os_family == 'Debian'
-  apt:
+  ansible.builtin.apt:
     upgrade: true
     autoremove: true
     update_cache: true
@@ -67,7 +67,7 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     insertafter: ^127\.0\.0\.1 *localhost
-    line: 127.0.0.1 {{ inventory_hostname }}
+    line: 127.0.1.1 {{ inventory_hostname }}
     owner: root
     group: root
     mode: "0644"

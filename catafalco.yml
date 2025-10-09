@@ -52,31 +52,31 @@
       become: true
       tags:
         - mergerfs
-      when: enable_nas_stuff | default(False)
+      when: enable_nas_stuff | default(false)
 
     - role: mounts
       become: true
       tags:
         - mounts
-      when: enable_nas_stuff | default(False)
+      when: enable_nas_stuff | default(false)
 
     - role: hd_idle
       become: true
       tags:
         - hd-idle
-      when: enable_nas_stuff | default(False)
+      when: enable_nas_stuff | default(false)
 
     - role: stuvusit.smartd
       become: true
       tags:
         - smartd
-      when: enable_nas_stuff | default(False)
+      when: enable_nas_stuff | default(false)
 
     - role: snapraid
       become: true
       tags:
         - snapraid
-      when: enable_nas_stuff | default(False)
+      when: enable_nas_stuff | default(false)
 
     #
     # Samba
@@ -85,7 +85,7 @@
       become: true
       tags:
         - samba
-      when: enable_nas_stuff | default(False)
+      when: enable_nas_stuff | default(false)
 
     #
     # Docker

@@ -8,7 +8,6 @@ import syslog
 import subprocess
 import time
 from datetime import datetime
-from pathlib import Path
 
 import click
 from influxdb_client import InfluxDBClient, Point, WriteOptions
@@ -43,15 +42,11 @@ def get_disk_power_state(device_path: str) -> int:
         # or              "/dev/sda:\n drive state is:  standby"
         # or              "/dev/sda:\n drive state is:  unknown"
         if "active" in output or "idle" in output:
-            return 0 # Active/Idle
+            return 1 # Active/Idle
         elif "standby" in output or "sleep" in output:
-            return 1 # Sleeping
+            return 0 # Sleeping
         else: # Includes "unknown" or any unexpected output
-            syslog.syslog(
-                syslog.LOG_WARNING,
-                f"hdparm unknown state for {device_path}: '{output}'"
-            )
-            return 1 # Treat unknown as sleeping
+            return 1 # Treat unknown as active
 
     except subprocess.TimeoutExpired:
         syslog.syslog(
@@ -62,7 +57,7 @@ def get_disk_power_state(device_path: str) -> int:
     except FileNotFoundError:
         syslog.syslog(
             syslog.LOG_ERR,
-            f"hdparm command not found. Is 'hdparm' installed?"
+            "hdparm command not found. Is 'hdparm' installed?"
         )
         raise # Re-raise to stop script if hdparm is missing
     except Exception as e:

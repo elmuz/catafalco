@@ -17,18 +17,18 @@
         group: root
         mode: "0755"
 
-#    - name: Install github3 module
-#      become: false
-#      pip:
-#        name: github3.py
-#
-#    - name: Get the latest release version
-#      become: false
-#      github_release:
-#        user: adelolmo
-#        repo: hd-idle
-#        action: latest_release
-#      register: release
+    #    - name: Install github3 module
+    #      become: false
+    #      pip:
+    #        name: github3.py
+    #
+    #    - name: Get the latest release version
+    #      become: false
+    #      github_release:
+    #        user: adelolmo
+    #        repo: hd-idle
+    #        action: latest_release
+    #      register: release
 
     - name: Grab the latest amd64 deb package
       get_url:
@@ -51,8 +51,47 @@
     mode: "0644"
 
 - name: Make sure that hd-idle is started and enabled on boot
-  systemd:
+  ansible.builtin.systemd:
     name: hd-idle
     state: started
     enabled: true
     masked: false
+
+- name: Install the hd-idle parser for InfluxDB
+  when: '"influxdb" in containers | default(false)'
+  block:
+    - name: Install `uv`
+      ansible.builtin.shell:
+        cmd: curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL="/usr/local/bin" UV_NO_MODIFY_PATH=1 sh
+
+    - name: Fix `uv`/`uvx` ownership and perms
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /usr/local/bin/uv
+        - /usr/local/bin/uvx
+
+    - name: Copy the script
+      ansible.builtin.copy:
+        src: hd_idle_parser.py
+        dest: /usr/local/bin/hd_idle_parser.py
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Add the script to crontab
+      ansible.builtin.cron:
+        name: "hd-idle parser"
+        user: root
+        job: >-
+          /usr/local/bin/hd_idle_parser.py
+          --influx-server https://{{ influxdb_subdomain }}.{{ host_local }}
+          --influx-token {{ influxdb_token }}
+          --influx-org {{ influxdb_org }}
+          --influx-bucket {{ influxdb_bucket }}
+          {{ hd_idle_log_file }}
+        minute: "*/5"
+        state: present

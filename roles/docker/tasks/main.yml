@@ -91,21 +91,21 @@
 
 - name: Handle persistent data
   become: false
-  when: enable_containers | default(False)
+  when: enable_containers | default(false)
   block:
     - name: Check if the persistent data folder exists on the remote machine
       stat:
         path: "{{ docker_dir }}"
-      register: persistent_data
-      when: enable_containers | default(False)
+      register: docker_persistent_data
+      when: enable_containers | default(false)
 
     - name: Check if the persistent data folder is empty
       find:
         paths:
           - "{{ docker_dir }}/"
         recurse: true
-      register: persistent_data_find
-      when: enable_containers | default(False)
+      register: docker_persistent_data_find
+      when: enable_containers | default(false)
 
 #    - name: Check if the docker backup exists
 #      stat:
@@ -122,7 +122,7 @@
         group: "{{ guid }}"
         mode: "0755"
         recurse: true
-      when: not persistent_data.stat.exists
+      when: not docker_persistent_data.stat.exists
 
     #  - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
     #    synchronize:
@@ -131,7 +131,7 @@
     #      delete: true
     #      recursive: yes
     #    delegate_to: "{{ inventory_hostname }}"
-    #    when: docker_backup_find.stat.exists and persistent_data_find.matched < 20 or not persistent_data.stat.exists
+    #    when: docker_backup_find.stat.exists and docker_persistent_data_find.matched < 20 or not docker_persistent_data.stat.exists
 
     - name: Chmod the data folder
       become: true

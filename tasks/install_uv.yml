@@ -1,0 +1,13 @@
+- name: Install `uv`
+  ansible.builtin.shell:
+    cmd: curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL="/usr/local/bin" UV_NO_MODIFY_PATH=1 sh
+
+- name: Fix permissions for `/usr/local/bin/uv`
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: '0755'
+    owner: root
+    group: root
+  loop:
+    - /usr/local/bin/uv
+    - /usr/local/bin/uvx

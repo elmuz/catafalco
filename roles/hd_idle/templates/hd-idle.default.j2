@@ -1,2 +1,16 @@
+{%- set command_parts = ["-i", "0"] -%}
+
+{# Process Parity Disks #}
+{%- for disk in parity_disks -%}
+  {%- set _ = command_parts.extend(["-a", "/dev/disk/by-label/" + disk.label, "-i", "180"]) -%}
+{%- endfor -%}
+
+{# Process Data Disks #}
+{%- for disk in data_disks -%}
+  {%- set _ = command_parts.extend(["-a", "/dev/disk/by-label/" + disk.label, "-i", "600"]) -%}
+{%- endfor -%}
+
+{%- set hd_idle_command = command_parts | join(" ") -%}
+
+HD_IDLE_OPTS="{{ hd_idle_command }} -l {{ hd_idle_log_file }}"
 START_HD_IDLE=true
-HD_IDLE_OPTS="-i {{ spindown_time }} -l /var/log/hd-idle.log"

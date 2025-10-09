@@ -1,0 +1,36 @@
+---
+- name: Set SSH correctly before executing other roles
+  hosts: pihole
+  pre_tasks:
+    - name: Set SSH correctly before executing other roles
+      import_tasks: tasks/ssh.yml
+      tags:
+        - port
+
+    - name: Install NTP/chrony
+      package:
+        name: "{{ 'chrony' if ansible_os_family == 'RedHat' else 'ntp' }}"
+
+    - name: Configure timezone
+      timezone:
+        name: "UTC"  # or your preferred timezone
+
+    - name: Enable and start time service
+      service:
+        name: "{{ 'chronyd' if ansible_os_family == 'RedHat' else 'ntp' }}"
+        enabled: yes
+        state: started
+
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+#  roles:
+#    - role: geerlingguy.ntp
+#      tags:
+#        - ntp
+#    - role: zsh
+#      tags:
+#        - system
+#    - role: docker
+#      tags:
+#        - docker

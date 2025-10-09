@@ -1,0 +1,29 @@
+- name: Set a custom ZDOTDIR
+  ansible.builtin.lineinfile:
+    path: /etc/zsh/zshenv
+    line: "export ZDOTDIR=$HOME/.config/zsh"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Get user information from /etc/passwd
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ username }}"
+
+- name: Set user home directory
+  ansible.builtin.set_fact:
+    user_home: "{{ getent_passwd[username][5] }}"
+
+- name: Ensure the directory for ZSH dotfile exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.config/zsh"
+    state: directory
+    recurse: true
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0755"
+
+# Add .zshenv
+# Add .zshrc
+# Add ohmyzsh
