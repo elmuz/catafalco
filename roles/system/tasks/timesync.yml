@@ -11,7 +11,7 @@
     - ntpsec
   ignore_errors: true  # in case the service doesn't exist
 
-- name: Install chrony
+- name: Uninstall ntp and ntpsec packages if installed
   ansible.builtin.apt:
     name: "{{ item }}"
     state: absent

@@ -1,0 +1,2 @@
+nvidia_driver_packages:
+  - nvidia-driver-580

@@ -1,0 +1,3 @@
+docker_dir: /srv
+docker_install_nvidia_runtime: auto
+docker_volumes_backup: "{{ (mergerfs_root | default('/srv')) ~ '/docker-volumes-backup' }}"

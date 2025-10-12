@@ -1,12 +1,11 @@
 ---
 - name: Installing Zsh and git
-  package:
+  ansible.builtin.apt:
     name:
-      - zsh
       - git
-    state: latest
-  register: installation
-  become: true
+      - zsh
+    state: present
+    update_cache: true
 
 - name: Check if .zshrc exists
   stat:

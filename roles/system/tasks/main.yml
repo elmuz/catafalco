@@ -14,12 +14,12 @@
 - name: Prepare users
   include_tasks: user.yml
 
-- name: Prepare dotfiles (eg. oh-my-zsh)
-  include_tasks: dotfiles.yml
+- name: Prepare zsh and dotfiles (eg. oh-my-zsh)
+  include_tasks: zsh.yml
 
 - name: Set powersaving policies
   include_tasks: powersaving.yml
-  when: enable_powersaving | default(False)
+  when: system_enable_powersaving
 
 # - name: Fix netplan
 #   include_tasks: netplan.yml

@@ -5,6 +5,9 @@ system_extra_packages:
   - iperf3
   - ncdu
   - neovim
-  - powertop
   - rsync
   - stow
+
+system_sudo_group: sudo
+
+system_enable_powersaving: "{{ enable_powersaving | deafult(false) }}"

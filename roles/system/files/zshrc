@@ -1,0 +1,10 @@
+
+ZSH_THEME="afowler"
+
+plugins=(git docker)
+
+source $ZSH/oh-my-zsh.sh
+
+bindkey '^H' backward-kill-word
+
+alias wget=wget --hsts-file="$XDG_CACHE_HOME/wget-hsts"

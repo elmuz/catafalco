@@ -1,0 +1,20 @@
+# Some XDG fixes
+export XDG_CONFIG_HOME="$HOME"/.config
+export XDG_CACHE_HOME="$HOME"/.cache
+export XDG_DATA_HOME="$HOME"/.local/share
+export XDG_STATE_HOME="$HOME"/.local/state
+
+# XDG System dirs
+export XDG_DATA_DIRS="${XDG_DATA_HOME}/flatpak/exports/share:/usr/local/share:/usr/share:/var/lib/flatpak/exports/share"
+export XDG_CONFIG_DIRS="/etc/xdg"
+
+export PATH=$HOME/bin:/usr/local/bin:$PATH
+
+# Oh my Zsh
+export ZSH="$XDG_DATA_HOME/oh-my-zsh"
+export ZSH_COMPDUMP=$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION
+
+# Default programs
+export EDITOR="nvim"
+export TERM="xterm-256color"
+export VISUAL="nvim"

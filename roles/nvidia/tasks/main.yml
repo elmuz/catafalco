@@ -1,0 +1,44 @@
+---
+- name: Add Nvidia respository
+  when: ansible_os_family == "Debian"
+  block:
+    - name: Add non-free repository
+      ansible.builtin.deb822_repository:
+        name: debian
+        types: deb
+        uris: http://deb.debian.org/debian
+        suites: "{{ ansible_lsb.codename }}"
+        components:
+          - main
+          - contrib
+          - non-free
+          - non-free-firmware
+      when: ansible_lsb.id == "Debian"
+
+    - name: Refresh package list
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Set Nvidia short name for debian-based distributions
+      ansible.builtin.set_fact:
+        nvidia_os_short_name: "{{ ansible_lsb.id | lower + ansible_lsb.release | replace('.', '') }}"
+
+    - name: Download the cuda keyring
+      ansible.builtin.get_url:
+        url: "https://developer.download.nvidia.com/compute/cuda/repos/{{ nvidia_os_short_name }}/{{ ansible_architecture }}/cuda-keyring_1.1-1_all.deb"
+        dest: /tmp
+        mode: "0644"
+
+    - name: Install the cuda keyring
+      ansible.builtin.apt:
+        deb: /tmp/cuda-keyring_1.1-1_all.deb
+
+    - name: Remove the cuda keyring
+      ansible.builtin.file:
+        path: /tmp/cuda-keyring_1.1-1_all.deb
+        state: absent
+
+- name: Install Nvidia driver
+  ansible.builtin.apt:
+    update_cache: true
+    name: "{{ nvidia_driver_packages[ansible_lsb.id] }}"

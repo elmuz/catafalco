@@ -1,128 +1,145 @@
----
-- name: Include OS-specific variables
-  include_vars: "{{ ansible_facts['os_family'] }}.yml"
+- name: Check if docker-ce is available in APT repos
+  ansible.builtin.command: apt-cache madison docker-ce 2> /dev/null
+  register: docker_madison
+  changed_when: false
+  failed_when: false
 
-- name: Install required system packages
-  package:
-    state: present
-    name: "{{ docker_deps }}"
+- name: Check if Docker sources are already defined
+  ansible.builtin.set_fact:
+    docker_actual_source_is_defined: "{{ docker_madison.stdout_lines | length > 0 }}"
 
-- name: Install Docker (Ubuntu)
-  when: ansible_facts['distribution'] == 'Ubuntu'
+- name: Check 'docker-ce' repo sources
+  when: docker_actual_source_is_defined
   block:
-    - name: Add Docker GPG apt Key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+    - name: Get Docker source
+      ansible.builtin.set_fact:
+        docker_actual_first_source: "{{ docker_madison.stdout_lines[0].split('|')[2] | trim }}"
+    - name: Fail if 'docker-ce' repo is not from Docker official
+      ansible.builtin.fail:
+        msg: "Unsupported Docker sources (not from https://download.docker.com)"
+      when: not docker_actual_first_source.startswith('https://download.docker.com')
 
-    - name: Add Docker Repository
-      apt_repository:
-        repo: deb https://download.docker.com/linux/ubuntu bionic stable
-        state: present
-
-- name: Install Docker (Debian)
-  when: ansible_facts['distribution'] == 'Debian'
+- name: Add Docker APT repository
+  become: true
+  when: not docker_actual_source_is_defined
   block:
-    # NOTE: this is deprecated, use /etc/apt/trusted.gpg.d instead (see official doc)
-    - name: Add Docker GPG apt Key
-      apt_key:
-        url: https://download.docker.com/linux/debian/gpg
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Add the repo
+      ansible.builtin.deb822_repository:
+        name: docker-ce # Name for the repository file (e.g., docker-ce.sources)
+        types: [deb]
+        uris: ["https://download.docker.com/linux/{{ ansible_distribution | lower }}"]
+        suites: ["{{ ansible_distribution_release }}"]
+        components: [stable]
+        signed_by: /etc/apt/keyrings/docker.asc
         state: present
+        enabled: true
 
-    - name: Add Docker Repository
-      apt_repository:
-        repo: deb https://download.docker.com/linux/debian bookworm stable
-        state: present
-
-    - name: Switch to iptables-legacy
-      community.general.alternatives:
-        name: iptables
-        path: /usr/sbin/iptables-legacy
-
-    - name: Switch to ip6tables-legacy
-      community.general.alternatives:
-        name: ip6tables
-        path: /usr/sbin/ip6tables-legacy
-
-    - name: Switch to pip3
-      community.general.alternatives:
-        name: pip
-        link: /usr/bin/pip
-        path: /usr/bin/pip3
-
-    - name: Switch to python3
-      community.general.alternatives:
-        name: python
-        link: /usr/bin/python
-        path: /usr/bin/python3
-
-- name: Update apt and install docker-ce
-  when: ansible_facts['os_family'] == 'Debian'
-  apt:
+- name: "Docker installation"
+  become: true
+  ansible.builtin.apt:
     update_cache: true
-    name: "{{ docker_packages }}"
-    state: present
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      - docker-compose
 
-- name: Ensure group docker exists
-  group:
-    name: docker
-    state: present
+- name: GPU detection
+  block:
+    - name: "GPU detection"
+      ansible.builtin.shell:
+        cmd: "set -o pipefail && lspci | grep -i 'nvidia' 2>&1 || true"
+        executable: /bin/bash
+      register: gpu_check
+      changed_when: false
 
-- name: Add user to group docker
-  user:
-    name: "{{ username }}"
-    groups:
-      - docker
-    append: true
+    - name: "Fact definition"
+      ansible.builtin.set_fact:
+        gpu_present: "{{ gpu_check.stdout != '' }}"
 
-- name: Update default network pools
-  ansible.builtin.copy:
-    src: daemon.json
+- name: Install Nvidia Container Toolkit
+  when:
+    - docker_install_nvidia_runtime == 'always' or (docker_install_nvidia_runtime == 'auto' and gpu_present)
+  block:
+    - name: Install Nvidia driver (if missing)
+      ansible.builtin.include_role:
+        name: nvidia
+
+    - name: Download and dearmor NVIDIA Container Toolkit GPG key
+      ansible.builtin.get_url:
+        url: https://nvidia.github.io/libnvidia-container/gpgkey
+        dest: /etc/apt/keyrings/nvidia-container-toolkit-keyring.asc
+        mode: '0644'
+
+    - name: Install curl
+      ansible.builtin.apt:
+        name: curl
+        state: present
+        update_cache: true
+
+    - name: Add NVIDIA Container Toolkit APT repository
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+          sed 's#deb https://#deb [signed-by=/etc/apt/keyrings/nvidia-container-toolkit-keyring.asc] https://#g' | \
+          tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+        executable: /bin/bash
+      changed_when: true
+
+    - name: Nvidia Container Toolkit installation"
+      ansible.builtin.apt:
+        update_cache: true
+        name:
+          - nvidia-container-toolkit
+
+- name: Add the daemon configuration
+  ansible.builtin.template:
+    src: daemon.json.j2
     dest: /etc/docker/daemon.json
-    owner: root
-    group: root
     mode: "0644"
-
-- name: Make sure Docker is running and enabled
-  ansible.builtin.service:
-    name: docker
-    state: restarted
-    enabled: true
+  notify:
+    - Restart Docker service
+    - Restart Docker socket
 
 - name: Handle persistent data
-  become: false
-  when: enable_containers | default(false)
   block:
     - name: Check if the persistent data folder exists on the remote machine
-      stat:
+      ansible.builtin.stat:
         path: "{{ docker_dir }}"
-      register: docker_persistent_data
+      register: persistent_data
       when: enable_containers | default(false)
 
     - name: Check if the persistent data folder is empty
-      find:
+      ansible.builtin.find:
         paths:
           - "{{ docker_dir }}/"
         recurse: true
-      register: docker_persistent_data_find
-      when: enable_containers | default(false)
+      register: persistent_data_find
 
-#    - name: Check if the docker backup exists
-#      stat:
-#        path: "{{ mergerfs_root }}/docker-volumes-backup"
-#      register: docker_backup_find
-#      when: enable_containers | default(False)
+    - name: Check if the docker backup exists
+      ansible.builtin.stat:
+        path: "{{ docker_volumes_backup }}"
+      register: docker_backup_find
 
     - name: Create the persistent data folder on the remote machine
-      become: true
-      file:
+      ansible.builtin.file:
         dest: "{{ docker_dir }}"
         state: directory
         owner: "{{ guid }}"
         group: "{{ guid }}"
         mode: "0755"
         recurse: true
-      when: not docker_persistent_data.stat.exists
+      when: not persistent_data.stat.exists
 
     #  - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
     #    synchronize:
@@ -131,13 +148,4 @@
     #      delete: true
     #      recursive: yes
     #    delegate_to: "{{ inventory_hostname }}"
-    #    when: docker_backup_find.stat.exists and docker_persistent_data_find.matched < 20 or not docker_persistent_data.stat.exists
-
-    - name: Chmod the data folder
-      become: true
-      file:
-        dest: "{{ docker_dir }}"
-        state: directory
-        owner: "{{ guid }}"
-        group: "{{ guid }}"
-        recurse: true
+    #    when: docker_backup_find.stat.exists and persistent_data_find.matched < 20 or not persistent_data.stat.exists

@@ -1,46 +1,27 @@
 ---
-- name: Set the name of a sudo group
-  ansible.builtin.set_fact:
-    sudo_group: sudo
+- name: Ensure exists group "{{ username }}"
+  ansible.builtin.group:
+    name: "{{ username }}"
+    state: present
 
 - name: Create a login user
   ansible.builtin.user:
     name: "{{ username }}"
     password: "{{ password | password_hash('sha512') }}"
     create_home: true
-    shell: "{{ shell }}"
+    shell: "{{ shell | default('/bin/bash') }}"
+    group: "{{ username }}"
     groups:
-      - "{{ sudo_group }}"
-      - users
+      - "{{ system_sudo_group }}"
     append: true
     state: present
-
-- name: Ensure exists group "{{ username }}"
-  ansible.builtin.group:
-    name: "{{ username }}"
-    state: present
-
-- name: Ensure group "sambashare" exists
-  when: enable_samba | default(false)
-  ansible.builtin.group:
-    name: sambashare
-    state: present
-
-- name: Append the samba group
-  when: enable_samba | default(false)
-  ansible.builtin.user:
-    name: "{{ username }}"
-    groups:
-      - sambashare
-    append: true
 
 - name: Allow 'sudo' group to have passwordless sudo
-  become: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/sudoers
     state: present
-    regexp: ^%{{ sudo_group }}
-    line: "%{{ sudo_group }} ALL=(ALL) NOPASSWD: ALL"
+    regexp: ^%{{ system_sudo_group }}
+    line: "%{{ system_sudo_group }} ALL=(ALL) NOPASSWD: ALL"
     validate: /usr/sbin/visudo -cf %s
 
 - name: Copy the public SSH key
@@ -49,23 +30,31 @@
     state: present
     key: "{{ lookup('file', ssh_public_key) }}"
 
-- name: Suppress login messages
-  ansible.builtin.file:
-    name: /home/{{ username }}/.hushlogin
-    mode: "0644"
-    state: touch
-    modification_time: preserve
-    access_time: preserve
+###### Samba: create group and add additional users ######
+- name: Ensure group "sambashare" exists
+  when: enable_samba | default(false)
+  block:
+    - name: Ensure group "sambashare" exists
+      ansible.builtin.group:
+        name: sambashare
+        state: present
 
-- name: Create additional users (no login)
-  when: samba_users is defined
-  ansible.builtin.user:
-    name: "{{ item.name }}"
-    groups: "{{ item.groups }}"
-    password: "{{ item.password | password_hash('sha512') }}"
-    update_password: on_create
-    state: present
-    append: true
-    shell: /sbin/nologin
-  loop: "{{ samba_users }}"
-  no_log: true
+    - name: Append the samba group to the default user
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups:
+          - sambashare
+        append: true
+
+    - name: Create additional users (no login)
+      when: samba_users is defined
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        groups: "{{ item.groups }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        update_password: on_create
+        state: present
+        append: true
+        shell: /sbin/nologin
+      loop: "{{ samba_users }}"
+      no_log: true
