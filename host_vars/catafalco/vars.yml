@@ -18,7 +18,7 @@ guid: "1000"
 shell: /usr/bin/zsh
 
 # File systems, partitions and mounts
-docker_dir: /var/opt/docker
+docker_dir: /srv
 
 colorscheme: nord
 
@@ -47,7 +47,6 @@ msmtp_accounts:
     password: "{{ email_password }}"
 
 msmtp_default_account: disroot
-
 msmtp_alias_default: "{{ email }}"
 
 #
@@ -57,9 +56,7 @@ security_ssh_port: 69
 
 security_sudoers_passwordless: ["{{ username }}"]
 security_autoupdate_reboot: "true"
-
 security_autoupdate_mail_to: "{{ email }}"
-
 security_autoupdate_mail_on_error: true
 
 #
@@ -139,6 +136,7 @@ samba_apple_extensions: false
 samba_mitigate_cve_2017_7494: false
 samba_server_max_protocol: SMB3
 samba_server_min_protocol: SMB3
+samba_manage_directories: false
 
 # Write permissions may conflict with UNIX permission. `{{ mergerfs_root }}/XXX`
 # folders have `{{ username }}:users` ownership, so a valid approach might be
@@ -217,28 +215,25 @@ samba_shares:
 enable_mergerfs: true
 
 mounts_root_location: /mnt
+mounts_snapraid_content_path: "{{ mounts_root_location }}/snapraid-content"
 mergerfs_root: "{{ mounts_root_location }}/storage"
 cache_root: "{{ mergerfs_root }}_cache"
 
 data_disks:
   - data_disk_id: 1
     label: Data1
-    path: "{{ mounts_root_location }}/data1"
     content: true
   - data_disk_id: 2
     label: Data2
-    path: "{{ mounts_root_location }}/data2"
     content: true
 
 cache_disks:
   - cache_disk_id: 1
-    path: "{{ mounts_root_location }}/cache1"
     label: Cache1
     content: true
 
 parity_disks:
   - parity_disk_id: 1
-    path: "{{ mounts_root_location }}/parity1"
     label: Parity1
     content: true
 
@@ -259,14 +254,14 @@ snapraid_runner_smtp_port: "{{ email_smtp_port }}"
 snapraid_runner_healthchecks_io_uuid: 92955207-2df3-4978-a1c6-4dcde12190e1
 snapraid_healthchecks_io_host: "{{ healthchecks_dashboard_url }}"
 
-snapraid_runner_delete_threshold: -1
+snapraid_deletethreshold: -1
 
 snapraid_runner_use_ssl: true
 
 snapraid_content_files:
   - /var/local/snapraid/snapraid.content
-  - /mnt/snapraid-content/disk1/snapraid.content
-  - /mnt/snapraid-content/disk2/snapraid.content
+  - "{{ mounts_snapraid_content_path }}/disk1/snapraid.content"
+  - "{{ mounts_snapraid_content_path }}/disk2/snapraid.content"
 
 #
 # SMART error reporting
@@ -279,3 +274,10 @@ enable_fail2ban: true
 
 # We have our own f2b rules
 security_fail2ban_enabled: false
+
+# MQTT
+mqtt_users:
+  - user: tasmota
+    password: "{{ tasmota_mqtt_password }}"
+  - user: telegraf
+    password: "{{ telegraf_mqtt_password }}"

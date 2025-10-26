@@ -1,0 +1,31 @@
+- name: Install Mosquitto
+  ansible.builtin.apt:
+    name: mosquitto
+    state: present
+    update_cache: true
+
+- name: Add configuration file
+  ansible.builtin.template:
+    src: mosquitto.conf.j2
+    dest: /etc/mosquitto/mosquitto.conf
+
+- name: Fix password file ownership/permissions
+  ansible.builtin.file:
+    path: "{{ mosquitto_password_file }}"
+    state: touch
+    owner: mosquitto
+    group: mosquitto
+    mode: '0600'
+
+- name: Create mosquitto users
+  when: mqtt_users is defined
+  ansible.builtin.command:
+    cmd: "mosquitto_passwd -b {{ mosquitto_password_file }} {{ item.user }} {{ item.password }}"
+  loop: "{{ mqtt_users }}"
+  no_log: true
+
+- name: Restart Mosquitto service
+  ansible.builtin.systemd:
+    name: mosquitto
+    state: restarted
+    enabled: true

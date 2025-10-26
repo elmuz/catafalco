@@ -23,7 +23,9 @@
 
 - name: Update repositories cache and install telegraf package
   ansible.builtin.apt:
-    name: telegraf
+    name:
+      - telegraf
+      - nvme-cli  # for SMART
     state: latest
     update_cache: true
 

@@ -1,0 +1,80 @@
+---
+- name: Ensure openSUSE Snapper repository key
+  ansible.builtin.get_url:
+    url: https://download.opensuse.org/repositories/filesystems:snapper/{{ ansible_distribution }}_{{ ansible_distribution_major_version }}/Release.key
+    dest: /etc/apt/trusted.gpg.d/opensuse_snapper.asc
+    owner: root
+    group: root
+    mode: "0644"
+  register: snapepr_apt_key
+
+- name: Add openSUSE Snapper repository
+  block:
+    - name: Install the required python3-debian
+      ansible.builtin.apt:
+        name: python3-debian
+        state: present
+    - name: Add openSUSE Snapper repository
+      ansible.builtin.deb822_repository:
+        name: opensuse_snapper
+        types: deb
+        uris:
+          - http://download.opensuse.org/repositories/filesystems:/snapper/{{ ansible_distribution }}_{{ ansible_distribution_major_version }}
+        suites: ['/']
+        components: ['']
+        architectures: amd64
+        signed_by: "{{ snapepr_apt_key.dest }}"
+
+#- name: Add openSUSE Snapper repository
+#  ansible.builtin.apt_repository:
+#    repo: >-
+#      deb [signed-by={{ snapepr_apt_key.dest }}]
+#      http://download.opensuse.org/repositories/filesystems:/snapper/{{ ansible_distribution }}_{{ ansible_distribution_major_version }}/ /
+#    filename: opensuse_snapper
+#    state: present
+
+- name: Pin openSUSE Snapper repository with higher priority
+  ansible.builtin.copy:
+    content: |
+      Package: snapper
+      Pin: origin download.opensuse.org
+      Pin-Priority: 1001
+    dest: /etc/apt/preferences.d/snapper
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install Snapper
+  ansible.builtin.apt:
+    name:
+      - snapper
+      - libsnapper
+    state: present
+    force: true
+    update_cache: true
+
+- name: Check Snapper version
+  block:
+    - name: Call 'sanpper --version'
+      ansible.builtin.command: snapper --version
+      register: snapper_version
+      changed_when: false
+      check_mode: false
+
+    - name: Display Snapper version
+      ansible.builtin.debug:
+        var: snapper_version.stdout
+
+- name: Set Snapper executable path
+  block:
+    - name: Call 'which snapper'
+      ansible.builtin.command: "which snapper"
+      register: which_snapper
+
+    - name: Set Snapper executable path for other roles
+      ansible.builtin.set_fact:
+        snapper_executable: "{{ which_snapper.stdout }}"
+
+    - name: Display Snapper executable path
+      ansible.builtin.debug:
+        var: snapper_executable

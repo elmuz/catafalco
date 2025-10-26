@@ -15,13 +15,18 @@
           - non-free-firmware
       when: ansible_lsb.id == "Debian"
 
-    - name: Refresh package list
+    - name: Refresh package list and install kernel headers
       ansible.builtin.apt:
+        name: "linux-headers-{{ ansible_kernel }}"
         update_cache: true
 
     - name: Set Nvidia short name for debian-based distributions
       ansible.builtin.set_fact:
         nvidia_os_short_name: "{{ ansible_lsb.id | lower + ansible_lsb.release | replace('.', '') }}"
+
+    - name: Replace 'debian13' with 'debian12' until Nvidia fixes
+      ansible.builtin.set_fact:
+        nvidia_os_short_name: "{{ 'debian12' if nvidia_os_short_name == 'debian13' else nvidia_os_short_name }}"
 
     - name: Download the cuda keyring
       ansible.builtin.get_url:

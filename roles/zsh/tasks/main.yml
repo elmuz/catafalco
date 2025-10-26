@@ -1,0 +1,67 @@
+---
+- name: Installing Zsh and git
+  become: true
+  ansible.builtin.apt:
+    name:
+      - curl
+      - git
+    state: present
+    update_cache: true
+
+- name: Set a custom ZDOTDIR
+  ansible.builtin.lineinfile:
+    path: /etc/zsh/zshenv
+    line: "export ZDOTDIR=$HOME/.config/zsh"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Ensure the directory for ZSH dotfile exists
+  become: false
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/zsh"
+    state: directory
+    recurse: true
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Copy the zshrc/zshenv file to the new location
+  become: false
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0644"
+  loop:
+    - src: "files/zshrc"
+      dest: "{{ ansible_env.HOME }}/.config/zsh/.zshrc"
+    - src: "files/zshenv"
+      dest: "{{ ansible_env.HOME }}/.config/zsh/.zshenv"
+
+- name: Create '$XDG_CACHE_HOME/zsh for 'zcompdump'
+  become: false
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.cache/zsh"
+    state: directory
+    mode: "0755"
+
+- name: Install Oh-my-zsh
+  become: false
+  block:
+    - name: Check if oh-my-zsh directory exists
+      stat:
+        path: "{{ ansible_env.HOME }}/.local/share/oh-my-zsh"
+      register: system_oh_my_zsh_dir
+
+    - name: Install Oh-my-zsh
+      ansible.builtin.shell: |
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
+      args:
+        executable: /bin/sh
+      environment:
+        HOME: "{{ ansible_env.HOME }}"
+        ZDOTDIR: "{{ ansible_env.HOME }}/.config/zsh"
+        ZSH: "{{ ansible_env.HOME }}/.local/share/oh-my-zsh"
+      when: not system_oh_my_zsh_dir.stat.exists or not system_oh_my_zsh_dir.stat.isdir

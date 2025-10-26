@@ -1,53 +1,46 @@
 ---
 # Taken from https://github.com/monstermuffin/muffins-awesome-nas-stack
-- name: Set default value for `update_needed`
-  ansible.builtin.set_fact:
-    update_needed: false
+- name: Get SnapRAID installed version (or '0' if not installed).
+  block:
+    - name: Check if SnapRAID is installed
+      ansible.builtin.command: snapraid --version
+      register: snapraid_installed_version_output
+      changed_when: false
+      ignore_errors: true
+      check_mode: false
 
-- name: Check if SnapRAID is installed
-  ansible.builtin.command: snapraid --version
-  register: installed_snapraid_version
-  changed_when: false
-  ignore_errors: true
-  check_mode: false
-
-- name: Set update_needed to true if SnapRAID is not installed
-  ansible.builtin.set_fact:
-    update_needed: true
-  when: installed_snapraid_version.rc != 0
+    - name: Set snapraid_installed_version
+      ansible.builtin.set_fact:
+        snapraid_installed_version: "{{ (snapraid_installed_version_output.stdout | regex_search('([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)', '\\1')) | first if snapraid_installed_version_output.rc == 0 else '0' }}"
 
 - name: Get latest release information from GitHub for SnapRAID
-  ansible.builtin.uri:
-    url: https://api.github.com/repos/amadvance/snapraid/releases/latest
-    return_content: true
-  register: snapraid_github_release_page
-  check_mode: false
+  block:
+    - name: Get GitHub latest release page
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/amadvance/snapraid/releases/latest
+        return_content: true
+      register: snapraid_github_release_page
+      check_mode: false
 
-- name: Set latest SnapRAID version fact
-  ansible.builtin.set_fact:
-    snapraid_latest_version: "{{ snapraid_github_release_page.json.tag_name | regex_replace('^v', '') }}"
-
-- name: Extract version number from installed SnapRAID version
-  ansible.builtin.set_fact:
-    installed_snapraid_version_number: "{{ installed_snapraid_version.stdout.split()[1] | regex_replace('^v', '') }}"
-  when: installed_snapraid_version.rc == 0
+    - name: Set latest SnapRAID version fact
+      ansible.builtin.set_fact:
+        snapraid_latest_version: "{{ snapraid_github_release_page.json.tag_name | regex_replace('^v', '') }}"
 
 - name: Compare installed SnapRAID version with the latest version
   ansible.builtin.set_fact:
-    update_needed: "{{ snapraid_latest_version != (installed_snapraid_version_number | default('0')) }}"
+    snapraid_update_needed: "{{ snapraid_latest_version != snapraid_installed_version }}"
 
-- name: Debug `installed_snapraid_version_number`
+- name: Debug `snapraid_installed_version`
   ansible.builtin.debug:
-    var: installed_snapraid_version_number
+    var: snapraid_installed_version
 
 - name: Debug snapraid_latest_version
   ansible.builtin.debug:
     var: snapraid_latest_version
 
-- name: Install/update snapraid
+- name: Install/update SnapRAID
   when:
-    - ansible_pkg_mgr == 'apt'
-    - update_needed
+    - snapraid_update_needed
   block:
     - name: Install required packages for SnapRAID installation
       ansible.builtin.apt:
@@ -57,12 +50,16 @@
         state: present
         update_cache: true
 
-    - name: Extract SnapRAID tarball from release URL
+    - name: Download SnapRAID tarball
+      ansible.builtin.get_url:
+        url: "https://github.com/amadvance/snapraid/releases/download/v{{ snapraid_latest_version }}/snapraid-{{ snapraid_latest_version }}.tar.gz"
+        dest: /tmp/snapraid-{{ snapraid_latest_version }}.tar.gz
+
+    - name: Extract SnapRAID tarball
       ansible.builtin.unarchive:
-        src: https://github.com/amadvance/snapraid/releases/download/v{{ snapraid_latest_version }}/snapraid-{{ snapraid_latest_version }}.tar.gz
+        src: /tmp/snapraid-{{ snapraid_latest_version }}.tar.gz
         dest: /tmp/
         remote_src: true
-      notify: Cleanup SnapRAID download
 
     - name: Configure SnapRAID
       ansible.builtin.command:
@@ -85,8 +82,16 @@
 
     - name: Set SnapRAID executable path (2)
       ansible.builtin.set_fact:
-        snapraid_snapraid_executable: "{{ which_snapraid.stdout }}"
+        snapraid_executable: "{{ which_snapraid.stdout }}"
 
     - name: Display SnapRAID executable path
       ansible.builtin.debug:
-        var: snapraid_snapraid_executable
+        var: snapraid_executable
+
+    - name: Cleanup SnapRAID download
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/snapraid-{{ snapraid_latest_version }}.tar.gz
+        - /tmp/snapraid-{{ snapraid_latest_version }}

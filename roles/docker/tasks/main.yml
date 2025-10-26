@@ -1,27 +1,5 @@
-- name: Check if docker-ce is available in APT repos
-  ansible.builtin.command: apt-cache madison docker-ce 2> /dev/null
-  register: docker_madison
-  changed_when: false
-  failed_when: false
-
-- name: Check if Docker sources are already defined
-  ansible.builtin.set_fact:
-    docker_actual_source_is_defined: "{{ docker_madison.stdout_lines | length > 0 }}"
-
-- name: Check 'docker-ce' repo sources
-  when: docker_actual_source_is_defined
-  block:
-    - name: Get Docker source
-      ansible.builtin.set_fact:
-        docker_actual_first_source: "{{ docker_madison.stdout_lines[0].split('|')[2] | trim }}"
-    - name: Fail if 'docker-ce' repo is not from Docker official
-      ansible.builtin.fail:
-        msg: "Unsupported Docker sources (not from https://download.docker.com)"
-      when: not docker_actual_first_source.startswith('https://download.docker.com')
-
 - name: Add Docker APT repository
   become: true
-  when: not docker_actual_source_is_defined
   block:
     - name: Download Docker GPG key
       ansible.builtin.get_url:
@@ -52,7 +30,13 @@
       - containerd.io
       - docker-buildx-plugin
       - docker-compose-plugin
-      - docker-compose
+      - python3-requests  # this is required for community.docker.docker_network module
+
+- name: Add "{{ ansible_user }}" to 'docker' group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: true
 
 - name: GPU detection
   block:
@@ -102,29 +86,13 @@
         name:
           - nvidia-container-toolkit
 
-- name: Add the daemon configuration
-  ansible.builtin.template:
-    src: daemon.json.j2
-    dest: /etc/docker/daemon.json
-    mode: "0644"
-  notify:
-    - Restart Docker service
-    - Restart Docker socket
-
 - name: Handle persistent data
   block:
     - name: Check if the persistent data folder exists on the remote machine
       ansible.builtin.stat:
         path: "{{ docker_dir }}"
-      register: persistent_data
+      register: docker_dir_info
       when: enable_containers | default(false)
-
-    - name: Check if the persistent data folder is empty
-      ansible.builtin.find:
-        paths:
-          - "{{ docker_dir }}/"
-        recurse: true
-      register: persistent_data_find
 
     - name: Check if the docker backup exists
       ansible.builtin.stat:
@@ -139,13 +107,59 @@
         group: "{{ guid }}"
         mode: "0755"
         recurse: true
-      when: not persistent_data.stat.exists
+      when: not docker_dir_info.stat.exists
 
-    #  - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
-    #    synchronize:
-    #      src: "{{ mergerfs_root }}/docker-volumes-backup"
-    #      dest: "{{ docker_dir }}/"
-    #      delete: true
-    #      recursive: yes
-    #    delegate_to: "{{ inventory_hostname }}"
-    #    when: docker_backup_find.stat.exists and persistent_data_find.matched < 20 or not persistent_data.stat.exists
+    - name: If 'containers' is defined, synchronize only backup of selected services
+      when: containers is defined
+      block:
+        - name: Find all backup directories
+          ansible.builtin.find:
+            paths: "{{ mergerfs_root }}/docker-volumes-backup/"
+            file_type: directory
+          register: all_backup_dirs
+
+        - name: Filter backup directories to active services
+          ansible.builtin.set_fact:
+            docker_services_with_backup: "{{ all_backup_dirs.files | map(attribute='path') | map('split', '/') | map('last') | select('in', containers)}}"
+
+        - name: Synchronize active service backup folders to {{ docker_dir }}
+          ansible.posix.synchronize:
+            src: "{{ mergerfs_root }}/docker-volumes-backup/{{ item }}"
+            dest: "{{ docker_dir }}/"
+            delete: true
+            recursive: true
+          loop: "{{ docker_services_with_backup }}"
+          delegate_to: "{{ inventory_hostname }}"
+          when:
+            - docker_restore_volumes_backup
+            - docker_services_with_backup | length > 0
+
+    - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
+      when:
+        - containers is not defined
+        - docker_restore_volumes_backup
+      ansible.posix.synchronize:
+        src: "{{ mergerfs_root }}/docker-volumes-backup/"
+        dest: "{{ docker_dir }}/"
+        delete: true
+        recursive: true
+      delegate_to: "{{ inventory_hostname }}"
+
+- name: Add the daemon configuration
+  ansible.builtin.template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+
+- name: Restart service and socket
+  block:
+  - name: Restart Docker service
+    ansible.builtin.systemd:
+      name: docker.service
+      state: restarted
+      enabled: true
+
+  - name: Restart Docker socket
+    ansible.builtin.systemd:
+      name: docker.socket
+      state: restarted

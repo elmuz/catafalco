@@ -3,11 +3,11 @@
 # DO NOT EDIT MANUALLY
 
 # Parity Disks
-parity {{ snapraid_parity_disks[0].path }}/snapraid.parity
+parity {{ mounts_root_location }}/parity{{ snapraid_parity_disks[0].parity_disk_id }}/snapraid.parity
 
 {% for i in range(2, 7) %}
 {% if i <= snapraid_parity_disks|length %}
-{{ i }}-parity {{ parity_mount_path }}/parity{{ '%02d' % i }}/snapraid.{{ i }}-parity
+{{ i }}-parity {{ parity_mount_path }}/parity{{ snapraid_parity_disks[i].parity_disk_id }}/snapraid.{{ snapraid_parity_disks[i].parity_disk_id }}-parity
 {% endif %}
 {% endfor %}
 
@@ -17,8 +17,8 @@ content {{ content_file }}
 {% endfor %}
 
 # Data Disks (btrfs data subvol)
-{% for i in range(1, snapraid_data_disks|length + 1) %}
-data d{{ i }} {{ snapraid_data_disks[i - 1].path }}/
+{% for i in range(snapraid_data_disks|length) %}
+data d{{ snapraid_data_disks[i].data_disk_id }} {{ mounts_root_location }}/data{{ snapraid_data_disks[i].data_disk_id }}/
 {% endfor %}
 
 # Excludes hidden files and directories

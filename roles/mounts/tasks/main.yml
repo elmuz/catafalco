@@ -1,9 +1,24 @@
 ---
+# For reference: https://wiki.selfhosted.show/tools/snapraid-btrfs/#drive-setup
+
 - name: Install required system packages
   ansible.builtin.package:
     name:
       - btrfs-progs
     state: latest
+
+# Disks need to be mounted in order to manipulate subvolumes.
+# These mount points will be unmounted at the end
+- name: Temporary mount the data disks
+  ansible.posix.mount:
+    path: "{{ mounts_root_location }}/dataroot{{ item.data_disk_id }}"
+    src: "LABEL={{ item.label }}"
+    fstype: btrfs
+    state: ephemeral  # do not write fstab
+  loop: "{{ snapraid_data_disks }}"
+  when:
+    - mounts_use_subvolumes
+    - snapraid_data_disks is defined
 
 - name: Create the 'data' subvolumes
   community.general.btrfs_subvolume:
@@ -16,7 +31,7 @@
 
 - name: Mount the data drives (optionally with subvolumes)
   ansible.posix.mount:
-    path: "{{ item.path }}"
+    path: "{{ mounts_root_location }}/data{{ item.data_disk_id }}"
     src: "LABEL={{ item.label }}"
     fstype: btrfs
     opts: "{{ 'subvol=/data' if mounts_use_subvolumes else 'defaults' }}"
@@ -24,30 +39,46 @@
   loop: "{{ data_disks }}"
   when: data_disks[0] is defined
 
-- name: Create the 'content' subvolumes
-  community.general.btrfs_subvolume:
-    name: "content"
-    filesystem_label: "Data{{ item.data_disk_id }}"
-  loop: "{{ data_disks }}"
-  when:
-    - mounts_use_subvolumes
-    - data_disks[0] is defined
-
-- name: Mount the content subvolumes
-  ansible.posix.mount:
-    path: "{{ mounts_root_location }}/snapraid-content/disk{{ item.data_disk_id }}"
-    src: "LABEL={{ item.label }}"
-    fstype: btrfs
-    opts: subvol=/content
-    state: mounted
-  loop: "{{ data_disks }}"
+- name: Create and mount the 'content' subvolumes
   when:
     - mounts_use_subvolumes
     - snapraid_data_disks is defined
+  block:
+    - name: Create the 'content' subvolumes
+      community.general.btrfs_subvolume:
+        name: "content"
+        filesystem_label: "{{ item.label }}"
+      loop: "{{ snapraid_data_disks | selectattr('content', 'equalto', true) | list }}"
+    - name: Mount the content subvolumes
+      ansible.posix.mount:
+        path: "{{ mounts_snapraid_content_path }}/disk{{ item.data_disk_id }}"
+        src: "LABEL={{ item.label }}"
+        fstype: btrfs
+        opts: subvol=/content
+        state: mounted
+      loop: "{{ snapraid_data_disks | selectattr('content', 'equalto', true) | list }}"
+
+- name: Unmount the data disks and delete ephemeral mount points
+  when:
+    - mounts_use_subvolumes
+    - snapraid_data_disks is defined
+  block:
+    - name: Umount the data disks
+      ansible.posix.mount:
+        path: "{{ mounts_root_location }}/dataroot{{ item.data_disk_id }}"
+        src: "LABEL={{ item.label }}"
+        fstype: btrfs
+        state: unmounted
+      loop: "{{ snapraid_data_disks }}"
+    - name: Delete ephemeral mount points
+      ansible.builtin.file:
+        path: "{{ mounts_root_location }}/dataroot{{ item.data_disk_id }}"
+        state: absent
+      loop: "{{ snapraid_data_disks }}"
 
 - name: Mount the cache drives
   mount:
-    name: "{{ item.path }}"
+    name: "{{ mounts_root_location }}/cache{{ item.cache_disk_id }}"
     src: "LABEL={{ item.label }}"
     fstype: ext4
     state: mounted
@@ -57,7 +88,7 @@
 
 - name: Mount the parity drives
   mount:
-    name: "{{ item.path }}"
+    name: "{{ mounts_root_location }}/parity{{ item.parity_disk_id }}"
     src: "LABEL={{ item.label }}"
     fstype: ext4
     state: mounted

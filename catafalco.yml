@@ -1,61 +1,65 @@
 ---
 # Tasks and roles for all hosts
 
-- name: Set SSH correctly before executing other roles
-  hosts: catafalco
-  gather_facts: false
-  pre_tasks:
-    #    - name: Juggle with SSH with default and custom port
-    #      import_tasks: tasks/ssh_juggle_port.yml
-    #      tags:
-    #        - port
-
-    - name: Set SSH correctly before executing other roles
-      import_tasks: tasks/ssh.yml
-      tags:
-        - port
-
-- name: Full list of roles
+#- name: Set SSH correctly before executing other roles
+#  hosts: catafalco
+#  gather_facts: false
+#  pre_tasks:
+#    #    - name: Juggle with SSH with default and custom port
+#    #      import_tasks: tasks/ssh_juggle_port.yml
+#    #      tags:
+#    #        - port
+#
+#    - name: Set SSH correctly before executing other roles
+#      import_tasks: tasks/ssh.yml
+#      tags:
+#        - port
+# Play 1: Bootstrap using 'su' to root
+# => ansible-playbook catafalco.yml --tag bootstrap -J -K --ask-pass -v
+- name: Bootstrap
   hosts: catafalco
   become: true
+  become_user: root
+  become_method: su
+  tags:
+    - bootstrap
+    - never
+
   roles:
-    #
-    # Basics
-    #
+    # This role - among other things - promote the user a sudoer.
+    # Before that, on fresh installs, only 'root' can be used (become_method: su)
     - role: system
+
+- name: Main playbook
+  hosts: catafalco
+  become: true
+  become_method: sudo
+
+  gather_facts: false
+  pre_tasks:
+    - name: Gather facts as normal user
+      setup:
+      become: false
+      tags: always
+
+  roles:
+    - role: zsh
       tags:
-        - system
+        - zsh
 
     - role: chriswayg.msmtp-mailer
       tags:
         - msmtp
 
-    - role: oefenweb.dns
-      tags:
-        - dns
-
-    - role: geerlingguy.ntp
-      tags:
-        - ntp
-
-    #
-    # Security
-    #
-    - role: geerlingguy.security
-      tags:
-        - security
-
     #
     # Filesystems
     #
     - role: mergerfs
-      become: true
       tags:
         - mergerfs
       when: enable_nas_stuff | default(false)
 
     - role: mounts
-      become: true
       tags:
         - mounts
       when: enable_nas_stuff | default(false)
@@ -94,9 +98,9 @@
       tags:
         - docker
 
-    ########################################
-    ############## Containers ##############
-    ########################################
+#    ########################################
+#    ############## Containers ##############
+#    ########################################
     #
     # Network
     #
@@ -156,6 +160,11 @@
         - telegraf
         - monitoring
 
+    - role: mosquitto
+      tags:
+        - mqtt
+        - mosquitto
+
     - role: nut
       tags:
         - ups
@@ -163,6 +172,7 @@
         - monitoring
 
     - role: uptime_kuma
+      become: false
       tags:
         - uptime_kuma
         - monitoring
@@ -304,38 +314,40 @@
         - rclone
         - backup-sync
 
-    - role: vaultwarden
-      tags:
-        - vaultwarden
-        - containers
+#    - role: vaultwarden
+#      tags:
+#        - vaultwarden
+#        - containers
 
     - role: dawarich
       tags:
         - dawarich
         - containers
 
-    - role: seafile
-      tags:
-        - seafile
-        - containers
+#    - role: seafile
+#      tags:
+#        - seafile
+#        - containers
 
-    - role: radicale
-      tags:
-        - radicale
-        - calendar
-        - containers
+#    - role: radicale
+#      tags:
+#        - radicale
+#        - calendar
+#        - containers
 
-    - role: redlib
-      tags:
-        - redlib
-        - containers
+#    - role: redlib
+#      tags:
+#        - redlib
+#        - containers
 
     - role: vllm
       tags:
         - llm
         - vllm
+        - containers
 
     - role: openwebui
       tags:
         - llm
         - openwebui
+        - containers

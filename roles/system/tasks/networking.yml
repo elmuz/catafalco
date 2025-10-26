@@ -35,6 +35,11 @@
     enabled: true
     state: started
 
+- name: Install systemd-resolved
+  ansible.builtin.package:
+    name: systemd-resolved
+    state: present
+
 - name: Configure systemd-resolved for DNS
   ansible.builtin.template:
     src: resolved.conf.j2
@@ -44,7 +49,7 @@
     mode: '0644'
 
 - name: Enable and start systemd-resolved
-  systemd:
+  ansible.builtin.systemd:
     name: systemd-resolved
     enabled: true
     state: started

@@ -2,7 +2,7 @@
 # `docker exec swag python3 /app/auto-uptime-kuma.py`
 ---
 - name: Install Uptime Kuma config
-  file:
+  ansible.builtin.file:
     path: "{{ docker_dir }}/{{ uptime_kuma_container_name }}/data"
     state: directory
     owner: "{{ guid }}"
@@ -16,11 +16,10 @@
 - name: Make sure that Uptime Kuma container is created and running
   community.docker.docker_container:
     name: "{{ uptime_kuma_container_name }}"
-    image: louislam/uptime-kuma:1
+    image: louislam/uptime-kuma:1.23.17
     pull: true
     networks:
       - name: "{{ uptime_kuma_network_name }}"
-#    dns_servers: "{{ dns_nameservers }}"
     state: started
     env:
       PUID: "{{ guid }}"

@@ -2,21 +2,21 @@
 - name: Clone snapraid-btrfs-runner repository # noqa latest
   ansible.builtin.git:
     repo: https://github.com/fmoledina/snapraid-btrfs-runner.git
-    dest: "{{ snapraid_snapraid_btrfs_runner_dir }}"
+    dest: "{{ snapraid_btrfs_runner_dir }}"
     update: true
     force: true
 
 - name: Copy and configure snapraid-btrfs-runner.conf
   ansible.builtin.template:
     src: snapraid-btrfs-runner.conf.j2
-    dest: "{{ snapraid_snapraid_btrfs_runner_dir }}/snapraid-btrfs-runner.conf"
+    dest: "{{ snapraid_btrfs_runner_dir }}/snapraid-btrfs-runner.conf"
     owner: root
     group: root
     mode: "0644"
 
 - name: Copy the updated runner, which includes Healthchecks logic
   ansible.builtin.copy:
-    dest: "{{ snapraid_snapraid_btrfs_runner_dir }}/snapraid-btrfs-runner.py"
+    dest: "{{ snapraid_btrfs_runner_dir }}/snapraid-btrfs-runner.py"
     src: snapraid-btrfs-runner.py
     owner: "{{ username }}"
     group: "{{ username }}"
@@ -39,8 +39,8 @@
 
       [Service]
       Type=oneshot
-      ExecStart=/usr/bin/python3 {{ snapraid_snapraid_btrfs_runner_dir }}/snapraid-btrfs-runner.py \
-        -c {{ snapraid_snapraid_btrfs_runner_dir }}/snapraid-btrfs-runner.conf
+      ExecStart=/usr/bin/python3 {{ snapraid_btrfs_runner_dir }}/snapraid-btrfs-runner.py \
+        -c {{ snapraid_btrfs_runner_dir }}/snapraid-btrfs-runner.conf
     owner: root
     group: root
     mode: "0644"
@@ -70,3 +70,15 @@
     name: snapraid-btrfs-runner.timer
     enabled: true
     state: started
+
+- name: Final verification of snapraid-btrfs
+  ansible.builtin.command:
+    cmd: "{{ snapraid_btrfs_executable }} list"
+  register: final_snapraid_btrfs_output
+  changed_when: false
+  ignore_errors: true
+  check_mode: false
+
+- name: Display final snapraid-btrfs output
+  ansible.builtin.debug:
+    var: final_snapraid_btrfs_output.stdout_lines

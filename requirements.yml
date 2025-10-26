@@ -12,4 +12,5 @@ roles:
   - name: simoncaron.nut
 
 collections:
+  - name: community.general
   - name: vladgh.samba

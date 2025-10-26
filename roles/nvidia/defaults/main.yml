@@ -1,2 +1,7 @@
 nvidia_driver_packages:
-  - nvidia-driver-580
+  Debian:
+    - nvidia-driver-cuda
+    - nvidia-kernel-open-dkms
+  Ubuntu:
+    - libnvidia-compute-580
+    - nvidia-dkms-580-open

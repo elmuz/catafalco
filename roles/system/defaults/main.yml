@@ -6,8 +6,11 @@ system_extra_packages:
   - ncdu
   - neovim
   - rsync
+  - sshpass
   - stow
+  - sudo
+  - zsh
 
 system_sudo_group: sudo
 
-system_enable_powersaving: "{{ enable_powersaving | deafult(false) }}"
+system_enable_powersaving: "{{ enable_powersaving | default(false) }}"

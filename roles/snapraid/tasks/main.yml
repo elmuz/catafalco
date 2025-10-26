@@ -4,8 +4,8 @@
     file: install_snapraid.yml
 
 - name: Install Snapper
-  ansible.builtin.include_tasks:
-    file: install_snapper.yml
+  ansible.builtin.include_role:
+    name: snapper
 
 - name: Snapraid-btrfs install
   ansible.builtin.include_tasks:
@@ -14,10 +14,6 @@
 - name: SnapRAID base config
   ansible.builtin.include_tasks:
     file: configure_snapraid.yml
-
-- name: Snapper configuration
-  ansible.builtin.include_tasks:
-    file: configure_snapper.yml
 
 - name: Configure snapraid-btrfs-runner
   ansible.builtin.include_tasks:

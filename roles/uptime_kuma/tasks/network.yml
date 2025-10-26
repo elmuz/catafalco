@@ -1,7 +1,11 @@
 ---
+- name: Get infos on Swag container
+  community.docker.docker_container_info:
+    name: "{{ swag_container_name  }}"
+  register: swag_info
+
 - name: Create a docker network
   community.docker.docker_network:
     name: "{{ uptime_kuma_network_name }}"
-    connected:
-      - "{{ swag_container_name }}"
-    appends: true  # not necessary
+    connected: "{{ [swag_container_name] if swag_info.exists else [] }}"
+    appends: true

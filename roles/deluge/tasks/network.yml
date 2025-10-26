@@ -4,4 +4,4 @@
     name: "{{ deluge_network_name }}"
     connected:
       - "{{ swag_container_name }}"
-    appends: true
+    appends: true  # not necessary

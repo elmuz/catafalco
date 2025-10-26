@@ -25,6 +25,8 @@
       - "{{ swag_container_name }}"
     appends: true
 
+
+
 - name: Add optional 'Cloudflare tunnel' Docker mod and ENV vars
   when: swag_cloudflare_tunnel_enable | default(False)
   block:
@@ -81,6 +83,9 @@
         connected:
           - "{{ socket_proxy_container_name }}"
         appends: true
+    - name: Launch UptimeKuma (if included) since Swag expects it online
+      ansible.builtin.include_role:
+        name: uptime_kuma
     - name: Append Docker mod
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS +

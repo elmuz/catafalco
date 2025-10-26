@@ -7,7 +7,7 @@ server {
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-ff
+
         # Remove upstream header to prevent duplication
         proxy_hide_header Access-Control-Allow-Origin;
 
