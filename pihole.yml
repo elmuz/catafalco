@@ -29,7 +29,107 @@
       ansible.builtin.hostname:
         name: "{{ inventory_hostname }}"
 
+    - name: Set static IP
+      block:
+        - name: Get active egress interface
+          ansible.builtin.command: ip route get 1.1.1.1
+          register: ip_route_out
+          changed_when: false
+
+        - name: Parse interface name from route output
+          ansible.builtin.set_fact:
+            discovered_interface: "{{ ip_route_out.stdout.split('dev')[1].split()[0] }}"
+          when: "'dev' in ip_route_out.stdout"
+
+        - name: Fail if interface not found
+          ansible.builtin.fail:
+            msg: "Could not determine active network interface."
+          when: discovered_interface is not defined
+
+        - name: Get IP address and prefix for {{ discovered_interface }}
+          ansible.builtin.shell: |
+            ip addr show dev {{ discovered_interface }} | awk '/inet / {print $2; exit}'
+          register: ip_addr_out
+          changed_when: false
+
+        - name: Parse IP and prefix
+          ansible.builtin.set_fact:
+            discovered_ip_cidr: "{{ ip_addr_out.stdout.strip() }}"
+          when: ip_addr_out.stdout | length > 0
+
+        - name: Fail if IP not found
+          ansible.builtin.fail:
+            msg: "No IPv4 address found on interface {{ discovered_interface }}"
+          when: discovered_ip_cidr is not defined or discovered_ip_cidr == ""
+
+        - name: Get default gateway via {{ discovered_interface }}
+          ansible.builtin.shell: |
+            ip route show dev {{ discovered_interface }} |
+            awk '/default via/ {print $3; exit}'
+          register: gateway_out
+          changed_when: false
+
+        - name: Parse gateway
+          ansible.builtin.set_fact:
+            discovered_gateway: "{{ gateway_out.stdout.strip() }}"
+          when: gateway_out.stdout | length > 0
+
+        - name: Fail if gateway missing
+          ansible.builtin.fail:
+            msg: "No gateway found for interface {{ discovered_interface }} — not suitable for static config."
+          when: discovered_gateway is not defined or discovered_gateway == ""
+
+        - name: Create Netplan config with static IP and forced DNS
+          ansible.builtin.copy:
+            content: |
+              # Static config for {{ discovered_interface }}
+              network:
+                version: 2
+                renderer: networkd
+                ethernets:
+                  {{ discovered_interface }}:
+                    match:
+                      name: "{{ discovered_interface }}"
+                    dhcp4: no
+                    dhcp6: no
+                    addresses:
+                      - {{ discovered_ip_cidr }}
+                    routes:
+                      - to: default
+                        via: {{ discovered_gateway }}
+                    nameservers:
+                      addresses: [9.9.9.9]
+                    ipv6-privacy: true
+            dest: "/etc/netplan/05-static-{{ discovered_interface }}.yaml"
+            owner: root
+            group: root
+            mode: '0600'
+
+        - name: Apply Netplan configuration
+          ansible.builtin.command: netplan apply
+          changed_when: true
+
   tasks:
-    - name: Install Pi-hole
-      ansible.builtin.shell:
-        cmd: curl -sSL https://install.pi-hole.net | bash
+    - name: Install git
+      ansible.builtin.package:
+        name: git
+        state: present
+        update_cache: true
+
+    - name: Clone Pi-hole repository
+      ansible.builtin.git:
+        repo: https://github.com/pi-hole/pi-hole.git
+        dest: /tmp/Pi-hole
+
+    - name: Execute basic-install.sh script
+      ansible.builtin.command:
+        argv:
+          - "/tmp/Pi-hole/automated install/basic-install.sh"
+          - --unattended
+      args:
+        chdir: /tmp/Pi-hole
+
+    - name: Delete cloned repository
+      ansible.builtin.file:
+        path: /tmp/Pi-hole
+        state: absent

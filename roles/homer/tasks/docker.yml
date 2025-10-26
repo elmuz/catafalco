@@ -27,7 +27,8 @@
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "Homer"
-      swag.uptime-kuma.monitor.url: "{{ site_url }}"
+      swag.uptime-kuma.monitor.url: "https://{{ site_url }}"
+      swag.uptime-kuma.monitor.maxretries: "2"
 
 - name: Install the Homer config files
   template:

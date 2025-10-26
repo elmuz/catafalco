@@ -57,7 +57,7 @@
     networks:
       - name: "{{ invidious_network_name }}"
     expose:
-      - "127.0.0.1:8282:8282"
+      - 8282
     state: started
     restart_policy: unless-stopped
 

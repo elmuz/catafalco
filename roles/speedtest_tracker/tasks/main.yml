@@ -32,7 +32,7 @@
       - "{{ docker_dir }}/{{ speedtest_tracker_container_name }}/data:/config"
 
 - name: Make sure that Speedtest tracker container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ speedtest_tracker_container_name }}"
     image: lscr.io/linuxserver/speedtest-tracker:latest
     pull: true
@@ -62,6 +62,7 @@
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ speedtest_tracker_dashboard_name }}"
       swag.uptime-kuma.monitor.url: "{{ speedtest_tracker_dashboard_url }}"
+      swag.uptime-kuma.monitor.maxretries: "2"
 
 - name: Install the SWAG config files
   template:

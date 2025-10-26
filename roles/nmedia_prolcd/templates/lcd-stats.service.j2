@@ -1,0 +1,17 @@
+[Unit]
+Description=LCD System Stats Display
+After=LCDd.service
+Requires=LCDd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/lcd-stats.py
+Restart=always
+RestartSec=5
+User=nobody
+Group=nogroup
+StandardOutput=journal
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

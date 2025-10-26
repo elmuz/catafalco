@@ -45,6 +45,7 @@
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ duplicati_dashboard_name }}"
       swag.uptime-kuma.monitor.url: "{{ duplicati_dashboard_url }}"
+      swag.uptime-kuma.monitor.maxretries: "2"
 
 - name: Install the SWAG config files
   ansible.builtin.template:

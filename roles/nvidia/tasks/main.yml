@@ -1,49 +1,77 @@
 ---
-- name: Add Nvidia respository
-  when: ansible_os_family == "Debian"
-  block:
-    - name: Add non-free repository
-      ansible.builtin.deb822_repository:
-        name: debian
-        types: deb
-        uris: http://deb.debian.org/debian
-        suites: "{{ ansible_lsb.codename }}"
-        components:
-          - main
-          - contrib
-          - non-free
-          - non-free-firmware
-      when: ansible_lsb.id == "Debian"
+- name: Assert that the OS is either Debian or Ubuntu
+  ansible.builtin.assert:
+    that: ansible_facts.os_family == "Debian"
 
-    - name: Refresh package list and install kernel headers
-      ansible.builtin.apt:
-        name: "linux-headers-{{ ansible_kernel }}"
-        update_cache: true
+- name: Add non-free repository
+  ansible.builtin.deb822_repository:
+    name: debian
+    types: deb
+    uris: [http://deb.debian.org/debian]
+    suites: "{{ ansible_facts.distribution_release }}"
+    components:
+      - main
+      - contrib
+  when: ansible_facts.lsb.id == "Debian"
 
-    - name: Set Nvidia short name for debian-based distributions
-      ansible.builtin.set_fact:
-        nvidia_os_short_name: "{{ ansible_lsb.id | lower + ansible_lsb.release | replace('.', '') }}"
+- name: Refresh package list and install kernel headers
+  ansible.builtin.apt:
+    name: "linux-headers-{{ ansible_facts.kernel }}"
+    update_cache: true
 
-    - name: Replace 'debian13' with 'debian12' until Nvidia fixes
-      ansible.builtin.set_fact:
-        nvidia_os_short_name: "{{ 'debian12' if nvidia_os_short_name == 'debian13' else nvidia_os_short_name }}"
+- name: Set Nvidia short name for debian-based distributions
+  ansible.builtin.set_fact:
+    nvidia_os_short_name: "{{ ansible_facts.lsb.id | lower + ansible_facts.lsb.release | replace('.', '') }}"
 
-    - name: Download the cuda keyring
-      ansible.builtin.get_url:
-        url: "https://developer.download.nvidia.com/compute/cuda/repos/{{ nvidia_os_short_name }}/{{ ansible_architecture }}/cuda-keyring_1.1-1_all.deb"
-        dest: /tmp
-        mode: "0644"
+- name: Download the cuda keyring
+  ansible.builtin.get_url:
+    url: "https://developer.download.nvidia.com/compute/cuda/repos/{{ nvidia_os_short_name }}/{{ ansible_facts.architecture }}/cuda-keyring_1.1-1_all.deb"
+    dest: /tmp
+    mode: "0644"
 
-    - name: Install the cuda keyring
-      ansible.builtin.apt:
-        deb: /tmp/cuda-keyring_1.1-1_all.deb
+# This will add the keyring in /usr/share/keyrings and specific APT source list
+- name: Install the cuda keyring
+  ansible.builtin.apt:
+    deb: /tmp/cuda-keyring_1.1-1_all.deb
 
-    - name: Remove the cuda keyring
-      ansible.builtin.file:
-        path: /tmp/cuda-keyring_1.1-1_all.deb
-        state: absent
+- name: Remove the cuda keyring installation deb file
+  ansible.builtin.file:
+    path: /tmp/cuda-keyring_1.1-1_all.deb
+    state: absent
+
+- name: Move the cuda keyring to a permanent location
+  ansible.builtin.copy:
+    src: /usr/share/keyrings/cuda-archive-keyring.gpg
+    dest: /etc/apt/keyrings/
+    remote_src: true
+    mode: "0644"
+
+- name: Remove the cuda keyring and the sources list entry
+  ansible.builtin.apt:
+    name: cuda-keyring
+    state: absent
+
+- name: Add the NVIDIA repository
+  ansible.builtin.deb822_repository:
+    name: "cuda-{{ nvidia_os_short_name }}-{{ ansible_facts.architecture }}"
+    types: [deb]
+    uris: ["https://developer.download.nvidia.com/compute/cuda/repos/{{ nvidia_os_short_name }}/{{ ansible_facts.architecture }}"]
+    suites: ["/"]
+    signed_by: /etc/apt/keyrings//cuda-archive-keyring.gpg
+    state: present
+    enabled: true
+
+- name: Update ATP lists
+  ansible.builtin.apt:
+    update_cache: true
+
+# Starting from branch 590 this is the recommended way to pin the branch
+- name: Add a specific driver branch
+  when: nvidia_driver_branch != 'latest'
+  ansible.builtin.apt:
+    name: "nvidia-driver-pinning-{{ nvidia_driver_branch }}"
 
 - name: Install Nvidia driver
   ansible.builtin.apt:
     update_cache: true
-    name: "{{ nvidia_driver_packages[ansible_lsb.id] }}"
+    name: "{{ nvidia_driver_packages[ansible_facts.lsb.id] }}"

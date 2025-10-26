@@ -1,0 +1,33 @@
+[server]
+Driver=lis
+DriverPath=/usr/local/lib/lcdproc/
+Bind={{ nmedia_prolcd_bind }}
+Port={{ nmedia_prolcd_port }}
+Foreground=no
+ServerScreen=no
+Backlight=open
+ReportLevel=2
+ReportToSyslog=no
+WaitTime=5
+
+## LIS MCE 2005 driver ##
+[lis]
+
+# Set the initial brightness [default: 1000; legal: 0 - 1000]
+# 0-250 = 25%, 251-500 = 50%, 501-750 = 75%, 751-1000 = 100%
+Brightness=200
+
+# Columns by lines [default: 20x2]
+#Size=20x2
+
+# USB Vendor ID [default: 0x0403]
+# Change only if testing a compatible device.
+#VendorID=0x0403
+
+# USB Product ID [default: 0x6001]
+# Change only if testing a compatible device.
+#ProductID=0x6001
+
+# Specifies if the last line is pixel addressable (yes) or it only controls an
+# underline effect (no). [default: yes; legal: yes, no]
+#Lastline=yes

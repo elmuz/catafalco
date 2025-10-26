@@ -51,6 +51,10 @@
       tags:
         - msmtp
 
+    - role: nvidia
+      tags:
+        - nvidia
+
     #
     # Filesystems
     #
@@ -177,6 +181,11 @@
         - uptime_kuma
         - monitoring
         - containers
+
+    - role: nmedia_prolcd
+      tags:
+        - nmedia_prolcd
+        - monitoring
 
     #
     # ServArr

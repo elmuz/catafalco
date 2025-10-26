@@ -20,6 +20,6 @@ snapraid_btrfs_pool: false
 snapraid_btrfs_cleanup: true
 
 # Scrub settings
-snapraid_scrub_enabled: false
+snapraid_scrub_enabled: true
 snapraid_scrub_plan: 12
 snapraid_scrub_older_than: 10

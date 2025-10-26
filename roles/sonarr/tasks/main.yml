@@ -20,7 +20,7 @@
     file: network.yml
 
 - name: Make sure that Sonarr container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ sonarr_container_name }}"
     image: ghcr.io/linuxserver/sonarr
     pull: true

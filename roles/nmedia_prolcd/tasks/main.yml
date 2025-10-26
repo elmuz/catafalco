@@ -1,0 +1,81 @@
+---
+- name: Install build dependencies for LCDproc
+  ansible.builtin.apt:
+    name:
+      - autoconf
+      - automake
+      - build-essential
+      - git
+      - libftdi1-dev
+      - libusb-1.0-0-dev
+      - pkg-config
+      - python3
+      - python3-pip
+    state: present
+    update_cache: true
+
+- name: Clone LCDproc source (official repo)
+  ansible.builtin.git:
+    repo: 'https://github.com/lcdproc/lcdproc.git'
+    dest: /usr/local/src/lcdproc
+    version: master
+    update: true
+
+- name: Run autogen
+  ansible.builtin.command:
+    cmd: sh ./autogen.sh
+    chdir: /usr/local/src/lcdproc
+  args:
+    creates: /usr/local/src/lcdproc/configure
+
+- name: Configure LCDproc
+  ansible.builtin.command: ./configure --enable-libusb --enable-drivers=lis --prefix=/usr/local
+  args:
+    chdir: /usr/local/src/lcdproc
+    creates: /usr/local/src/lcdproc/Makefile
+
+- name: Build and install LCDproc
+  ansible.builtin.make:
+    chdir: /usr/local/src/lcdproc
+    target: "{{ item }}"
+  loop:
+    - all
+    - install
+
+- name: Create /usr/local/etc/LCDd.conf from template
+  ansible.builtin.template:
+    src: LCDd.conf.j2
+    dest: /usr/local/etc/LCDd.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Install python3-psutil
+  ansible.builtin.apt:
+    name: python3-psutil
+
+- name: Deploy stats script
+  ansible.builtin.template:
+    src: lcd-stats.py.j2
+    dest: /usr/local/bin/lcd-stats.py
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Deploy systemd units
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { src: 'LCDd.service.j2', dest: '/etc/systemd/system/LCDd.service' }
+    - { src: 'lcd-stats.service.j2', dest: '/etc/systemd/system/lcd-stats.service' }
+
+- name: Enable and start services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+    daemon_reload: true
+  loop:
+    - LCDd
+    - lcd-stats

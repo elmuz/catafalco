@@ -34,7 +34,7 @@
     file: network.yml
 
 - name: Make sure that Lidarr container is created and running
-  docker_container:
+  community.docker.docker_container:
     name: "{{ lidarr_container_name }}"
     image: ghcr.io/linuxserver/lidarr
     pull: true

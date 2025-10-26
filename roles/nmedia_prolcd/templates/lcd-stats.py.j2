@@ -1,0 +1,275 @@
+import datetime
+import random
+from dataclasses import dataclass, InitVar
+import threading
+import time
+import signal
+import sys
+import socket
+import os
+from typing import Type
+
+try:
+    import psutil
+except Exception:
+    psutil = None
+
+# --- LCDproc client config ---
+LCD_HOST = "{{ nmedia_prolcd_bind }}"
+LCD_PORT = {{nmedia_prolcd_port}}
+SCREEN_NAME = "sysinfo"
+WIDGET_PREFIX = "w"
+
+
+class LCDProcClient:
+    def __init__(self, host: str = "127.0.0.1", port: int = 13666):
+        """Initialize the LCDProc client."""
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((host, port))
+        self._send("hello")
+        # TODO: retrieve geometry from the 'hello' initialization
+        self.width = 20
+
+    def _send(self, cmd: str) -> None:
+        """Send a command to the LCDProc server."""
+        msg = cmd + "\n"
+        self.sock.sendall(msg.encode("ascii"))
+
+    def add_screen(self, screen_id: str) -> None:
+        """Add a new screen to the LCDProc server."""
+        self._send(f"screen_add {screen_id}")
+
+    def add_widget(
+        self, widget_id: str, screen_id: str, widget_type: str = "string"
+    ) -> None:
+        """Add a new widget to an existing screen."""
+        self._send(f"widget_add {screen_id} {widget_id} {widget_type}")
+
+    def update_widget(
+        self, widget_id: str, screen_id: str, lines: list[str], alignment: str = "left"
+    ) -> None:
+        """Update a string widget."""
+
+        def align(content: str, justify: str) -> str:
+            match justify:
+                case "left":
+                    return content.ljust(self.width)
+                case "center":
+                    return content.center(self.width)
+                case "right":
+                    return content.rjust(self.width)
+                case _:
+                    return content.ljust(self.width)
+
+        msg = "".join([align(line[: self.width], alignment) for line in lines])
+        self._send(f'widget_set {screen_id} {widget_id} 1 1 "{msg}"')
+
+    def close(self):
+        """Close the connection to the LCDProc server."""
+        self.sock.close()
+
+
+class ScreenThread(threading.Thread):
+    def __init__(
+        self,
+        lcd: LCDProcClient,
+        lock: threading.Lock,
+        screen_name: str,
+        widget_name: str,
+        interval: float = 5,
+    ):
+        super().__init__(name=widget_name or self.__class__.__name__, daemon=True)
+        self.screen_name = screen_name
+        self.widget_name = widget_name
+        self.lcd = lcd
+        self.lock = lock
+        self.interval = interval
+        self.stop_event = threading.Event()
+
+    def stop(self):
+        self.stop_event.set()
+
+    def run(self):
+        # Run immediately, then sleep interval between updates
+        while not self.stop_event.is_set():
+            try:
+                content = self.get_content()
+                if content:
+                    with self.lock:
+                        self.update_widget(content)
+
+            except Exception as e:
+                # Don't crash the thread on transient errors
+                with self.lock:
+                    self.update_widget(["Error:", str(e)])
+
+            # Wait with the ability to break early
+            if self.stop_event.wait(self.interval):
+                break
+
+    def get_content(self) -> list[str]:
+        # Override in subclasses; return list of strings (lines)
+        return ["BaseScreen", "No content"]
+
+    def update_widget(self, content: list[str]) -> None:
+        self.lcd.update_widget(
+            self.widget_name, self.screen_name, content, alignment="left"
+        )
+
+
+class TimeScreen(ScreenThread):
+    def __init__(
+        self,
+        lcd: LCDProcClient,
+        lock: threading.Lock,
+        screen_name: str,
+        widget_name: str,
+        interval: float = 1,
+    ):
+        super().__init__(lcd, lock, screen_name, widget_name, interval=interval)
+
+    def get_content(self) -> list[str]:
+        now = datetime.datetime.now()
+        return [now.strftime("%a %d %b %Y"), now.strftime("%H:%M")]
+
+    def update_widget(self, content: list[str]) -> None:
+        self.lcd.update_widget(
+            self.widget_name, self.screen_name, content, alignment="center"
+        )
+
+
+class LoadScreen(ScreenThread):
+    def __init__(
+        self,
+        lcd: LCDProcClient,
+        lock: threading.Lock,
+        screen_name: str,
+        widget_name: str,
+        interval: float = 2,
+    ):
+        super().__init__(lcd, lock, screen_name, widget_name, interval=interval)
+
+    def get_content(self):
+        try:
+            return [
+                f"CPU {psutil.cpu_percent():.0f}% | RAM {psutil.virtual_memory().percent:.0f}%",
+            ]
+        except Exception as e:
+            return ["Load: n/a", str(e)]
+
+
+class TempScreen(ScreenThread):
+    def __init__(
+        self,
+        lcd: LCDProcClient,
+        lock: threading.Lock,
+        screen_name: str,
+        widget_name: str,
+        interval: float = 5,
+    ):
+        super().__init__(lcd, lock, screen_name, widget_name, interval=interval)
+
+    def get_content(self):
+        try:
+            cpu_temp = psutil.sensors_temperatures()["coretemp"][0].current
+            return [
+                "TEMPERATURE",
+                f"[CPU]: {cpu_temp:.1f} C",
+            ]
+        except Exception:
+            pass
+        return ["Temp: n/a", ""]
+
+
+class UptimeScreen(ScreenThread):
+    def __init__(
+        self,
+        lcd: LCDProcClient,
+        lock: threading.Lock,
+        screen_name: str,
+        widget_name: str,
+        interval: float = 1,
+    ):
+        super().__init__(lcd, lock, screen_name, widget_name, interval=interval)
+
+    def get_content(self) -> list[str]:
+        try:
+            # get uptime seconds
+            if psutil and hasattr(psutil, "boot_time"):
+                up_secs = int(time.time() - psutil.boot_time())
+            else:
+                with open("/proc/uptime") as f:
+                    up_secs = int(float(f.readline().split()[0]))
+
+            days, rem = divmod(up_secs, 86400)
+            hours, rem = divmod(rem, 3600)
+            minutes, seconds = divmod(rem, 60)
+
+            line1 = "UPTIME:"
+            line2 = f"{days}d {hours:02d}h {minutes:02d}m {seconds:02d}s"
+
+            return [line1, line2]
+        except Exception as e:
+            return ["Uptime: n/a", str(e)]
+
+    def update_widget(self, content: list[str]) -> None:
+        self.lcd.update_widget(
+            self.widget_name, self.screen_name, content, alignment="center"
+        )
+
+
+@dataclass
+class Widget:
+    widget: str
+    lcdproc_client: InitVar[LCDProcClient]
+    thread: InitVar[Type[ScreenThread]]
+    lock: InitVar[threading.Lock]
+
+    def __post_init__(self, lcdproc_client, thread, lock):
+        self.screen = self.widget
+        lcdproc_client.add_screen(self.screen)
+        lcdproc_client.add_widget(self.widget, self.screen)
+        self.feeder = thread(lcdproc_client, lock, self.screen, self.widget)
+        self.feeder.start()
+
+
+def main():
+    # Ensure unbuffered logging if started without -u
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except Exception:
+        pass
+
+    lcd_client = LCDProcClient(LCD_HOST, LCD_PORT)
+    lock = threading.Lock()
+
+    screens = [
+        Widget("Temperature", lcd_client, TempScreen, lock),
+        Widget("CpuLoad", lcd_client, LoadScreen, lock),
+        Widget("Time", lcd_client, TimeScreen, lock),
+        Widget("UpTime", lcd_client, UptimeScreen, lock),
+    ]
+
+    # handle termination from systemd
+    stop_event = threading.Event()
+
+    def stop_all(signum, frame):
+        stop_event.set()
+        for screen in screens:
+            screen.feeder.stop()
+
+    signal.signal(signal.SIGTERM, stop_all)
+    signal.signal(signal.SIGINT, stop_all)
+
+    try:
+        # wait until stop
+        while not stop_event.is_set():
+            time.sleep(0.5)
+    finally:
+        # join threads with timeout
+        for s in screens:
+            s.feeder.join(timeout=2)
+
+
+if __name__ == "__main__":
+    main()

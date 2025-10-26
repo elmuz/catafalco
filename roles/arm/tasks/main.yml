@@ -50,7 +50,7 @@
     file: network.yml
 
 - name: Make sure that ARM container is created and running
-  ansible.builtin.docker_container:
+  community.docker.docker_container:
     name: "{{ arm_container_name }}"
     image: automaticrippingmachine/automatic-ripping-machine:latest
     pull: true
@@ -81,6 +81,7 @@
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ arm_dashboard_name }}"
       swag.uptime-kuma.monitor.url: "{{ arm_dashboard_url }}"
+      swag.uptime-kuma.monitor.maxretries: "2"
 
 - name: Install the SWAG config files
   template:

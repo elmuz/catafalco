@@ -1,0 +1,15 @@
+[Unit]
+Description=LCDproc Server for NMedia PC PRO
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/LCDd -c /usr/local/etc/LCDd.conf -f
+Restart=always
+RestartSec=3
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
