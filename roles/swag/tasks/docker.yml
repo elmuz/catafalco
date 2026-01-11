@@ -146,7 +146,7 @@
         url: https://raw.githubusercontent.com/fail2ban/fail2ban/refs/heads/master/config/action.d/cloudflare-token.conf
         dest: "{{ swag_volume_fail2ban }}/action.d/cloudflare-token.local"
         mode: '0640'
-      when: swag_cloudflare_tunnel_enable | default(False)
+      when: swag_cloudflare_tunnel_enable | default(false)
     - name: Add Cloudflare Zone to 'clouflare-token.local'
       ansible.builtin.lineinfile:
         path: "{{ swag_volume_fail2ban }}/action.d/cloudflare-token.local"
@@ -165,7 +165,7 @@
       ansible.builtin.set_fact:
         fail2ban_services: "{{ fail2ban_services | default([]) + [item] }}"
       loop: "{{ containers }}"
-      when: "lookup('ansible.builtin.fileglob', 'roles/' + item + '/tasks/fail2ban.yml', wantlist=True) | length == 1"
+      when: "lookup('ansible.builtin.fileglob', 'roles/' + item + '/tasks/fail2ban.yml', wantlist=true) | length == 1"
     - name: Include selected `fail2ban_services` roles and execute 'fail2ban' tasks
       ansible.builtin.include_role:
         name: "{{ item }}"

@@ -29,17 +29,33 @@
     - role: swag
       tags:
         - swag
+        - containers
+
     - role: authelia
       tags:
         - authelia
+        - containers
+
+    - role: radicale
+      tags:
+        - radicale
+        - containers
+
     - role: seafile
       tags:
         - seafile
         - containers
+
     - role: ntfy
       tags:
         - ntfy
         - containers
+
+    - role: vaultwarden
+      tags:
+        - vaultwarden
+        - containers
+
     - role: watchtower
       tags:
         - watchtower

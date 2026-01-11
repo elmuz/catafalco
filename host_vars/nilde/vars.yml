@@ -29,11 +29,14 @@ extra_packages:
   - zsh
 
 enable_containers: true
-docker_dir: /var/opt/docker
+docker_dir: /srv
 containers:
   - authelia
-  - seafile
+  - ntfy
   - onlyoffice
+  - radicale
+  - seafile
+  - vaultwarden
 
 site_url: catafal.co
 

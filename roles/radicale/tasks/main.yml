@@ -1,0 +1,71 @@
+---
+- name: Create the necessary Radicale folder
+  file:
+    path: "{{ docker_dir }}/{{ radicale_container_name }}/{{ item }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+  loop:
+    - config
+    - data
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
+- name: Copy the configuration file
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "{{ docker_dir }}/{{ radicale_container_name }}/config/{{ item }}"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+  loop:
+    - config
+    - users
+
+- name: Make sure that Radicale container is created and running
+  community.docker.docker_container:
+    name: "{{ radicale_container_name }}"
+    image: tomsquest/docker-radicale:latest
+    pull: true
+    networks:
+      - name: "{{ radicale_network_name }}"
+    state: started
+    capabilities:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - KILL
+    cap_drop:
+      - all
+    init: true
+    memory: 256M
+    pids_limit: 50
+    #  read_only: true  # not possible if changing the user which the container runs through
+    security_opts:
+      - no-new-privileges:true
+    env:
+      UID: "{{ guid }}"
+      GID: "{{ guid }}"
+    volumes:
+      - "{{ docker_dir }}/{{ radicale_container_name }}/config:/config:ro"
+      - "{{ docker_dir }}/{{ radicale_container_name }}/data:/data"
+    healthcheck:
+      "test": ["CMD-SHELL", "curl --fail http://localhost:5232 || exit 1"]
+      interval: 30s
+      retries: 3
+    restart_policy: unless-stopped
+    labels:
+      swag.uptime-kuma.enabled: "true"
+      swag.uptime-kuma.monitor.name: "{{ radicale_dashboard_name }}"
+      swag.uptime-kuma.monitor.url: "{{ radicale_dashboard_url }}"
+
+- name: Install the SWAG config files
+  template:
+    src: "{{ radicale_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ radicale_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"

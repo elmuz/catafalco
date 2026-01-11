@@ -7,3 +7,4 @@ vaultwarden_dashboard_name: Vaultwarden
 vaultwarden_homer:
   name: "{{ vaultwarden_dashboard_name }}"
   category: services
+vaultwarden_log_file: "{{ docker_dir }}/{{ vaultwarden_container_name }}/vaultwarden.log"

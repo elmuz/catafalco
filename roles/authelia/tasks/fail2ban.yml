@@ -17,7 +17,7 @@
       enabled = true
       port = http,https,9091
       filter = authelia
-      action = {{ 'cloudflare-token' if swag_cloudflare_tunnel_enable | default(False) else 'iptables-allports' }}[name=authelia,cftoken="{{
+      action = {{ 'cloudflare-token' if swag_cloudflare_tunnel_enable | default(false) else 'iptables-allports' }}[name=authelia,cftoken="{{
         cloudflare_api_token }}"]
       logpath = {{ swag_fail2ban_monitored_logs }}/authelia.log
 

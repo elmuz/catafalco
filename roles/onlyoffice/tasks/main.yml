@@ -17,7 +17,7 @@
 - name: Make sure that ONLYOFFICE container is created and running
   community.docker.docker_container:
     name: "{{ onlyoffice_container_name }}"
-    image: onlyoffice/documentserver:8.2
+    image: onlyoffice/documentserver:9.2
     pull: true
     networks:
       - name: "{{ onlyoffice_network_name }}"

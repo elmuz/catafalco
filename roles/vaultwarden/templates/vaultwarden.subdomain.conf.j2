@@ -8,39 +8,11 @@
 
 server {
 {% include "roles/swag/templates/nginx/common.j2" %}
-
-{% if "authelia" in containers %}
-    include /config/nginx/authelia-server.conf;
-{% endif %}
-
     server_name {{ vaultwarden_subdomain }}.*;
 
     location / {
-        include /config/nginx/proxy.conf;
-        include /config/nginx/resolver.conf;
-
-{% if "authelia" in containers %}
-        include /config/nginx/authelia-location.conf;
-{% endif %}
-
-        set $upstream_app {{ vaultwarden_container_name }};
-        set $upstream_port 80;
-        set $upstream_proto http;
-        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
-
-    }
-
-    location ~ ^(/vaultwarden)?/admin {
-{% if "authelia" in containers %}
-        include /config/nginx/authelia-location.conf;
-{% endif %}
-
-        # if you enable admin page via ADMIN_TOKEN env variable
-        # consider restricting access to LAN only via uncommenting the following lines
-        allow 10.0.0.0/8;
-        allow 172.16.0.0/12;
-        allow 192.168.0.0/16;
-        deny all;
+        # override this to avoid warnings
+        add_header X-Frame-Options "";
 
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
@@ -48,26 +20,5 @@ server {
         set $upstream_port 80;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;
-
-    }
-
-    location ~ (/vaultwarden)?/api {
-        include /config/nginx/proxy.conf;
-        include /config/nginx/resolver.conf;
-        set $upstream_app {{ vaultwarden_container_name }};
-        set $upstream_port 80;
-        set $upstream_proto http;
-        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
-
-    }
-
-    location ~ (/vaultwarden)?/notifications/hub {
-        include /config/nginx/proxy.conf;
-        include /config/nginx/resolver.conf;
-        set $upstream_app {{ vaultwarden_container_name }};
-        set $upstream_port 80;
-        set $upstream_proto http;
-        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
-
     }
 }

@@ -1,7 +1,7 @@
 ---
 - name: Create the necessary Vaultwarden folder
   file:
-    path: "{{ docker_dir }}/{{ vaultwarden_container_name }}/data"
+    path: "{{ docker_dir }}/{{ vaultwarden_container_name }}"
     state: directory
     owner: "{{ guid }}"
     group: "{{ guid }}"
@@ -21,8 +21,20 @@
     state: started
     env:
       ADMIN_TOKEN: "{{ vaultwarden_admin_token_hash }}"
+      DOMAIN: "{{ vaultwarden_dashboard_url }}"
+      INVITATIONS_ALLOWED: "false"
+      LOG_FILE: /data/vaultwarden.log
+      LOG_LEVEL: warn
+      SIGNUPS_ALLOWED: "false"
+      SIGNUPS_VERIFY: "true"
+      SMTP_FROM: "{{ email }}"
+      SMTP_HOST: "{{ email_smtp_host }}"
+      SMTP_PASSWORD: "{{ email_password }}"
+      SMTP_PORT: "'{{ email_smtp_port_startls }}'"
+      SMTP_SECURITY: starttls
+      SMTP_USERNAME: "{{ email }}"
     volumes:
-      - "{{ docker_dir }}/{{ vaultwarden_container_name }}/data:/data"
+      - "{{ docker_dir }}/{{ vaultwarden_container_name }}:/data"
     user: "{{ guid }}:{{ guid }}"
     restart_policy: unless-stopped
     labels:

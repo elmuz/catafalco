@@ -1,0 +1,6 @@
+---
+radicale_container_name: radicale
+radicale_network_name: radicale_network
+radicale_subdomain: calendar
+radicale_dashboard_url: https://{{ radicale_subdomain }}.{{ site_url }}
+radicale_dashboard_name: Radicale

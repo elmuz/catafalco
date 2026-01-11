@@ -1,4 +1,4 @@
-## Version 2021/05/18
+## Version 2026/01/03
 server {
 {% include "roles/swag/templates/nginx/common.j2" %}
 
@@ -7,13 +7,20 @@ server {
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        if ($http_origin ~* "^https?://({{ site_url }})$") {
-            add_header 'Access-Control-Allow-Origin' "$http_origin";
-        }
+        #if ($http_origin ~* "^https?://({{ site_url }})$") {
+        #    add_header 'Access-Control-Allow-Origin' "$http_origin";
+        #}
 
-        set $upstream_app {{ seafile_container_name }}-caddy;
+        set $upstream_app {{ seafile_container_name }};
         set $upstream_port 80;
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+
+    location /notification {
+        proxy_pass http://seafile-notification-server:8083;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
     }
 }
