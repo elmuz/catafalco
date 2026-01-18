@@ -25,8 +25,6 @@
       - "{{ swag_container_name }}"
     appends: true
 
-
-
 - name: Add optional 'Cloudflare tunnel' Docker mod and ENV vars
   when: swag_cloudflare_tunnel_enable | default(False)
   block:

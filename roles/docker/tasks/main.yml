@@ -32,7 +32,7 @@
       - docker-compose-plugin
       - python3-requests  # this is required for community.docker.docker_network module
 
-- name: Add "{{ ansible_user }}" to 'docker' group
+- name: "Add user to 'docker' group: {{ ansible_user }}"
   ansible.builtin.user:
     name: "{{ ansible_user }}"
     groups: docker
@@ -120,7 +120,7 @@
 
         - name: Filter backup directories to active services
           ansible.builtin.set_fact:
-            docker_services_with_backup: "{{ all_backup_dirs.files | map(attribute='path') | map('split', '/') | map('last') | select('in', containers)}}"
+            docker_services_with_backup: "{{ all_backup_dirs.files | map(attribute='path') | map('split', '/') | map('last') | select('in', containers) }}"
 
         - name: Synchronize active service backup folders to {{ docker_dir }}
           ansible.posix.synchronize:
@@ -134,7 +134,7 @@
             - docker_restore_volumes_backup
             - docker_services_with_backup | length > 0
 
-    - name: Restore the "{{ docker_dir }}" folder from the MergerFS array
+    - name: Restore Docker folder from the MergerFS array
       when:
         - containers is not defined
         - docker_restore_volumes_backup
@@ -153,13 +153,13 @@
 
 - name: Restart service and socket
   block:
-  - name: Restart Docker service
-    ansible.builtin.systemd:
-      name: docker.service
-      state: restarted
-      enabled: true
+    - name: Restart Docker service
+      ansible.builtin.systemd:
+        name: docker.service
+        state: restarted
+        enabled: true
 
-  - name: Restart Docker socket
-    ansible.builtin.systemd:
-      name: docker.socket
-      state: restarted
+    - name: Restart Docker socket
+      ansible.builtin.systemd:
+        name: docker.socket
+        state: restarted

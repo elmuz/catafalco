@@ -1,0 +1,44 @@
+# Restic backup configuration
+# This file is a YAML document consumed by the backup script.
+# Sensitive values like S3/B2 credentials and RESTIC_PASSWORD should be set here
+# or provided via a vault/secret mechanism. This template stores them in
+# the config file because the user requested a single configuration file;
+# however storing secrets on disk requires proper filesystem permissions and
+# host security.
+
+# Amazon S3/Backblaze B2 credentials (from environment or vault/secret management)
+access_key_id: "{{ restic_access_key_id | default('') }}"
+secret_access_key: "{{ restic_secret_access_key | default('') }}"
+
+# Restic repository location, e.g. "s3:https://server:port/bucket_name" or "b2:my-bucket:restic_repo"
+restic_repository: "{{ restic_repository | default('') }}"
+
+# Restic repository password. If you don't want to store it here, leave
+# empty and set RESTIC_PASSWORD in the environment or use a key-management
+# solution. Restic uses this password to encrypt/decrypt the repository.
+restic_password: "{{ restic_password | default('') }}"
+
+# Retention policy arguments passed to `restic forget`
+retention_args: "{{ retention_args | default('--keep-last 7 --keep-daily 30 --keep-weekly 12 --prune') }}"
+
+# Backup paths and exclusions
+# paths:
+#   - /var/lib/immich
+# exclusions:
+#   - "**/tmp/**"
+paths:
+{% if restic_backup_paths is defined and restic_backup_paths %}
+{% for path in restic_backup_paths %}
+  - "{{ path }}"
+{% endfor %}
+{% else %}
+  []
+{% endif %}
+exclusions:
+{% if restic_backup_exclusions is defined and restic_backup_exclusions %}
+{% for ex in restic_backup_exclusions %}
+  - "{{ ex }}"
+{% endfor %}
+{% else %}
+  []
+{% endif %}

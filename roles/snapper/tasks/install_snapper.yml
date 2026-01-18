@@ -6,7 +6,7 @@
     owner: root
     group: root
     mode: "0644"
-  register: snapepr_apt_key
+  register: snapper_apt_key
 
 - name: Add openSUSE Snapper repository
   block:
@@ -23,15 +23,15 @@
         suites: ['/']
         components: ['']
         architectures: amd64
-        signed_by: "{{ snapepr_apt_key.dest }}"
+        signed_by: "{{ snapper_apt_key.dest }}"
 
-#- name: Add openSUSE Snapper repository
-#  ansible.builtin.apt_repository:
-#    repo: >-
-#      deb [signed-by={{ snapepr_apt_key.dest }}]
-#      http://download.opensuse.org/repositories/filesystems:/snapper/{{ ansible_distribution }}_{{ ansible_distribution_major_version }}/ /
-#    filename: opensuse_snapper
-#    state: present
+# - name: Add openSUSE Snapper repository
+#   ansible.builtin.apt_repository:
+#     repo: >-
+#       deb [signed-by={{ snapper_apt_key.dest }}]
+#       http://download.opensuse.org/repositories/filesystems:/snapper/{{ ansible_distribution }}_{{ ansible_distribution_major_version }}/ /
+#     filename: opensuse_snapper
+#     state: present
 
 - name: Pin openSUSE Snapper repository with higher priority
   ansible.builtin.copy:
@@ -69,11 +69,11 @@
   block:
     - name: Call 'which snapper'
       ansible.builtin.command: "which snapper"
-      register: which_snapper
+      register: snapper_which_command
 
     - name: Set Snapper executable path for other roles
       ansible.builtin.set_fact:
-        snapper_executable: "{{ which_snapper.stdout }}"
+        snapper_executable: "{{ snapper_which_command.stdout }}"
 
     - name: Display Snapper executable path
       ansible.builtin.debug:

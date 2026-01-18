@@ -1,0 +1,43 @@
+---
+- name: Install fail2ban filter configuration
+  ansible.builtin.copy:
+    src: fail2ban_filter.conf
+    dest: "{{ swag_volume_fail2ban }}/filter.d/vaultwarden.local"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: '0644'
+
+- name: Install fail2ban filter configuration
+  ansible.builtin.copy:
+    src: fail2ban_filter_admin.conf
+    dest: "{{ swag_volume_fail2ban }}/filter.d/vaultwarden-admin.local"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: '0644'
+
+- name: Install fail2ban jail configuration
+  ansible.builtin.blockinfile:
+    path: "{{ swag_volume_fail2ban }}/jail.local"
+    marker: "# {mark} ANSIBLE | VAULTWARDEN CONFIGURATION"
+    prepend_newline: true
+    block: |
+      [vaultwarden]
+      enabled = true
+      port = 80,443,8081
+      filter = vaultwarden
+      action = {{ 'cloudflare-token' if swag_cloudflare_tunnel_enable | default(false) else 'iptables-allports' }}[name=vaultwarden,cftoken="{{
+        cloudflare_api_token }}"]
+      logpath = {{ swag_fail2ban_monitored_logs }}/vaultwarden.log
+
+      [vaultwarden-admin]
+      enabled = true
+      port = 80,443
+      filter = vaultwarden-admin
+      action = {{ 'cloudflare-token' if swag_cloudflare_tunnel_enable | default(false) else 'iptables-allports' }}[name=vaultwarden,cftoken="{{
+        cloudflare_api_token }}"]
+      logpath = {{ swag_fail2ban_monitored_logs }}/vaultwarden.log
+
+- name: Add Vaultwarden to the list of logs to be mounted by SWAG
+  ansible.builtin.set_fact:
+    swag_container_volumes: "{{ swag_container_volumes + [vaultwarden_log_file + ':'
+    + swag_fail2ban_monitored_logs + '/vaultwarden.log:ro'] }}"  # noqa var-naming[no-role-prefix]

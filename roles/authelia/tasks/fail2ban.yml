@@ -23,4 +23,5 @@
 
 - name: Add Authelia to the list of logs to be mounted by SWAG
   ansible.builtin.set_fact:
-    swag_container_volumes: "{{ swag_container_volumes + [authelia_log_file + ':' + swag_fail2ban_monitored_logs + '/authelia.log:ro'] }}"
+    swag_container_volumes: "{{ swag_container_volumes + [authelia_log_file + ':' +
+      swag_fail2ban_monitored_logs + '/authelia.log:ro'] }}"  # noqa var-naming[no-role-prefix]

@@ -41,6 +41,11 @@
         - radicale
         - containers
 
+    - role: restic
+      tags:
+        - restic
+        - backup
+
     - role: seafile
       tags:
         - seafile

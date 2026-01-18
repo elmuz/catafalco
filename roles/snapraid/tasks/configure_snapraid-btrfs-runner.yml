@@ -74,11 +74,11 @@
 - name: Final verification of snapraid-btrfs
   ansible.builtin.command:
     cmd: "{{ snapraid_btrfs_executable }} list"
-  register: final_snapraid_btrfs_output
+  register: snapraid_btrfs_final_output
   changed_when: false
   ignore_errors: true
   check_mode: false
 
 - name: Display final snapraid-btrfs output
   ansible.builtin.debug:
-    var: final_snapraid_btrfs_output.stdout_lines
+    var: snapraid_btrfs_final_output.stdout_lines

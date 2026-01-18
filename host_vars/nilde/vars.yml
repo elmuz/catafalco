@@ -43,3 +43,14 @@ site_url: catafal.co
 swag_dashboard_subdomain: swag
 swag_cloudflare_tunnel_enable: true
 swag_maxmind_enable: true
+
+restic_repository: s3:s3.eu-central-003.backblazeb2.com/nilde-services
+retention_args: "--keep-last 2 --keep-daily 2 --keep-weekly 2 --keep-monthly 2 --keep-yearly 2 --prune"
+restic_backup_paths:
+  - "{{ docker_dir }}/authelia"
+  - "{{ docker_dir }}/ntfy"
+  - "{{ docker_dir }}/onlyoffice"
+  - "{{ docker_dir }}/radicale"
+  - "{{ docker_dir }}/seafile"
+  - "{{ docker_dir }}/swag"
+  - "{{ docker_dir }}/vaultwarden"

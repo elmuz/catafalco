@@ -1,0 +1,317 @@
+#!/usr/bin/env python3
+"""
+Restic backup wrapper (converted from the project's bash script).
+
+Usage: backup.sh --config /etc/restic/backup.yml [--dry-run]
+
+- Loads YAML config (requires pyyaml).
+- Config keys supported: access_key_id, secret_access_key, restic_password,
+  restic_repository, retention_args, paths, exclusions.
+
+This script runs docker/restic via subprocess. When --dry-run is given, commands are
+only printed.
+"""
+
+from __future__ import annotations
+import argparse
+import logging
+import os
+import shlex
+import subprocess
+import sys
+import time
+from pathlib import Path
+import json
+
+import yaml
+
+# Defaults
+DEFAULT_CONFIG_PATH = "/etc/restic/backup.yml"
+LOG_FILE = "/var/log/restic-backup.log"
+
+logger = logging.getLogger("restic_backup")
+
+
+def setup_logging(debug: bool = False):
+    logger.setLevel(logging.DEBUG if debug else logging.INFO)
+    fmt = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
+
+    sh = logging.StreamHandler(sys.stdout)
+    sh.setFormatter(fmt)
+    logger.addHandler(sh)
+
+    # Rotate logs to keep last N invocations
+    MAX_LOG_BACKUPS = 4
+    try:
+        log_path = Path(LOG_FILE)
+        # If log exists, rotate: delete oldest, shift others up, move current to .1
+        if log_path.exists():
+            oldest = Path(f"{LOG_FILE}.{MAX_LOG_BACKUPS}")
+            if oldest.exists():
+                try:
+                    oldest.unlink()
+                except IOError:
+                    # best-effort
+                    logger.debug("Could not remove oldest log: %s", oldest)
+            for i in range(MAX_LOG_BACKUPS - 1, 0, -1):
+                src = Path(f"{LOG_FILE}.{i}")
+                dst = Path(f"{LOG_FILE}.{i+1}")
+                if src.exists():
+                    try:
+                        src.replace(dst)
+                    except IOError:
+                        logger.debug("Could not rotate log %s -> %s", src, dst)
+            # Move current log to .1
+            try:
+                log_path.replace(Path(f"{LOG_FILE}.1"))
+            except IOError:
+                logger.debug("Could not move current log to %s.1", LOG_FILE)
+
+        fh = logging.FileHandler(LOG_FILE)
+        fh.setFormatter(fmt)
+        logger.addHandler(fh)
+    except Exception:
+        # If we can't write to LOG_FILE (permissions), continue with console only
+        logger.debug(f"Could not open log file {LOG_FILE}, continuing without it")
+
+
+def run_cmd(cmd: list[str], env: dict[str, str] | None = None, dry_run: bool = False, check: bool = True) -> subprocess.CompletedProcess:
+    """Run a command. If dry_run is True, log and return a dummy CompletedProcess with returncode 0."""
+    display = shlex.join(cmd)
+    if dry_run:
+        logger.info("DRY-RUN: %s", display)
+        return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
+
+    logger.info("+ %s", display)
+    try:
+        completed = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if completed.stdout:
+            logger.debug(completed.stdout.decode(errors="replace"))
+        if completed.stderr:
+            logger.debug(completed.stderr.decode(errors="replace"))
+        if check and completed.returncode != 0:
+            logger.error("Command failed (code %s): %s", completed.returncode, display)
+            raise subprocess.CalledProcessError(completed.returncode, cmd, output=completed.stdout, stderr=completed.stderr)
+        return completed
+    except subprocess.CalledProcessError:
+        raise
+
+
+def load_config(path: str) -> dict:
+    if not Path(path).exists():
+        logger.error("Configuration file not found: %s", path)
+        raise SystemExit(1)
+    with open(path, "r") as fh:
+        data = yaml.safe_load(fh) or {}
+    logger.info("Loaded configuration from %s", path)
+    return data
+
+
+class BackupManager:
+    def __init__(self, cfg: dict, dry_run: bool = False):
+        self.cfg = cfg
+        self.dry_run = dry_run
+        self.env = os.environ.copy()
+        # Map credentials from config to commonly-used environment variables
+        access = cfg.get("access_key_id")
+        secret = cfg.get("secret_access_key")
+        if access:
+            # common AWS variables
+            self.env["AWS_ACCESS_KEY_ID"] = str(access)
+            # Backblaze B2 account id
+            self.env["B2_ACCOUNT_ID"] = str(access)
+        if secret:
+            self.env["AWS_SECRET_ACCESS_KEY"] = str(secret)
+            self.env["B2_ACCOUNT_KEY"] = str(secret)
+        if cfg.get("restic_password"):
+            # restic reads RESTIC_PASSWORD env var for repository encryption
+            self.env["RESTIC_PASSWORD"] = str(cfg["restic_password"])
+
+        self.repo = cfg.get("restic_repository")
+        self.retention_args = cfg.get("retention_args", "--keep-last 7 --keep-daily 30 --keep-weekly 12 --prune")
+
+        self.paths = cfg.get("paths", [])
+        self.exclusions = cfg.get("exclusions", [])
+
+        # track stopped services for restart
+        self.stopped_compose: list[str] = []  # (service name)
+        self.stopped_containers: list[str] = []
+
+    def repo_initialized(self) -> bool:
+        cmd = ["restic", "-r", self.repo, "snapshots", "--json"]
+        try:
+            run_cmd(cmd, env=self.env, dry_run=self.dry_run, check=True)
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    def initialize_repo(self):
+        logger.info("Initializing restic repository if needed...")
+        if self.dry_run:
+            logger.info("DRY-RUN: restic -r %s snapshots --json", self.repo)
+            return
+        if not self.repo_initialized():
+            logger.info("Repository not initialized. Running restic init...")
+            run_cmd(["restic", "-r", self.repo, "init"], env=self.env, dry_run=self.dry_run)
+        else:
+            logger.info("Repository is available.")
+
+    def stop_services(self):
+        logger.info("Discovering docker compose projects to stop...")
+        # Discover compose projects (use JSON format if available)
+        try:
+            # Use self.dry_run so listing does not execute during a dry-run
+            cp = run_cmd(["docker", "compose", "ls", "--format", "json"], env=self.env, dry_run=self.dry_run, check=False)
+            stdout = cp.stdout.decode() if cp.stdout else "[]"
+            items = json.loads(stdout)
+        except Exception:
+            logger.warning("Failed to parse 'docker compose ls' output, attempting fallback to plain output")
+            try:
+                cp = run_cmd(["docker", "compose", "ls"], env=self.env, dry_run=self.dry_run, check=False)
+                stdout = cp.stdout.decode() if cp.stdout else ""
+                items = []
+                for line in stdout.splitlines()[1:]:
+                    parts = line.split()
+                    if parts:
+                        items.append({"Name": parts[0]})
+            except Exception:
+                items = []
+
+        for item in items:
+            project_name = item.get("Name")
+            cmd = ["docker", "compose", "--project-name", project_name, "stop"]
+            try:
+                run_cmd(cmd, env=self.env, dry_run=self.dry_run)
+                self.stopped_compose.append(project_name)
+                logger.info("Stopped compose project: %s", project_name)
+            except subprocess.CalledProcessError:
+                logger.warning("Failed to stop compose project: %s", project_name)
+
+        # Now stop any remaining running containers (standalone or leftover)
+        logger.info("Discovering running containers to stop...")
+        try:
+            cp = run_cmd(["docker", "ps", "--format", "{{.Names}}"], env=self.env, dry_run=self.dry_run, check=False)
+            stdout = cp.stdout.decode() if cp.stdout else ""
+            running_names = [n.strip() for n in stdout.splitlines() if n.strip()]
+        except Exception:
+            running_names = []
+
+        for name in running_names:
+            # Skip if this container belongs to a compose project we already stopped (best-effort: name prefix)
+            # We still stop all running containers as requested.
+            try:
+                run_cmd(["docker", "stop", name], env=self.env, dry_run=self.dry_run)
+                self.stopped_containers.append(name)
+                logger.info("Stopped container: %s", name)
+            except subprocess.CalledProcessError:
+                logger.warning("Failed to stop container: %s", name)
+
+        if self.stopped_compose or self.stopped_containers:
+            logger.info("Waiting 10 seconds for services to stop...")
+            if not self.dry_run:
+                time.sleep(10)
+
+    def start_services(self):
+        if not (self.stopped_compose or self.stopped_containers):
+            logger.info("No services to restart.")
+            return
+
+        logger.info("Restarting compose projects...")
+        for project_name in self.stopped_compose:
+            cmd = ["docker", "compose", "--project-name", project_name, "start"]
+            try:
+                run_cmd(cmd, env=self.env, dry_run=self.dry_run)
+                logger.info("Started compose project: %s", project_name)
+            except subprocess.CalledProcessError:
+                logger.warning("Failed to start compose project: %s", project_name)
+
+        logger.info("Starting standalone containers...")
+        for container in self.stopped_containers:
+            try:
+                run_cmd(["docker", "start", container], env=self.env, dry_run=self.dry_run)
+                logger.info("Started container: %s", container)
+            except subprocess.CalledProcessError:
+                logger.warning("Failed to start container: %s", container)
+
+        logger.info("Waiting 5 seconds for services to stabilize...")
+        if not self.dry_run:
+            time.sleep(5)
+
+    def perform_backup(self):
+        cmd = ["restic", "-r", self.repo, "backup"]
+        for e in self.exclusions:
+            cmd.append("--exclude")
+            cmd.append(e)
+        cmd.extend(self.paths)
+
+        if self.dry_run:
+            logger.info("DRY-RUN: %s", shlex.join(cmd))
+            return
+
+        try:
+            run_cmd(cmd, env=self.env, dry_run=self.dry_run)
+            logger.info("Backup completed successfully.")
+        except subprocess.CalledProcessError:
+            logger.error("Backup command failed.")
+            raise
+
+    def apply_retention(self):
+        args = shlex.split(self.retention_args)
+        cmd = ["restic", "-r", self.repo, "forget"] + args
+        if self.dry_run:
+            logger.info("DRY-RUN: %s", shlex.join(cmd))
+            return
+        try:
+            run_cmd(cmd, env=self.env, dry_run=self.dry_run)
+            logger.info("Applied retention policy successfully.")
+        except subprocess.CalledProcessError:
+            logger.error("Failed to apply retention policy.")
+            raise
+
+
+def main(argv: list[str] | None = None):
+    parser = argparse.ArgumentParser(description="Restic backup wrapper")
+    parser.add_argument("--config", "-c", default=DEFAULT_CONFIG_PATH, help="Path to YAML config (default: %(default)s)")
+    parser.add_argument("--dry-run", "-n", action="store_true", help="Show actions without executing them")
+    parser.add_argument("--debug", "-d", action="store_true", help="Enable debug logging")
+    args = parser.parse_args(argv)
+
+    setup_logging(debug=args.debug)
+
+    cfg = load_config(args.config)
+
+    manager = BackupManager(cfg, dry_run=args.dry_run)
+
+    # Initialize repository (if necessary)
+    try:
+        manager.initialize_repo()
+
+        # Stop services
+        manager.stop_services()
+
+        # Small sleep to let things settle
+        if not args.dry_run:
+            time.sleep(2)
+
+        # Perform backup
+        manager.perform_backup()
+
+        # Start services back up
+        manager.start_services()
+
+        # Apply retention
+        manager.apply_retention()
+
+        logger.info("=== Backup process completed successfully ===")
+    except Exception as exc:
+        logger.exception("Backup process failed: %s", exc)
+        # Attempt to restart services if they were stopped
+        try:
+            manager.start_services()
+        except Exception:
+            logger.exception("Failed to restart services during error cleanup")
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

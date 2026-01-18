@@ -8,10 +8,21 @@
     name: debian
     types: deb
     uris: [http://deb.debian.org/debian]
-    suites: "{{ ansible_facts.distribution_release }}"
-    components:
-      - main
-      - contrib
+    suites:
+      - "{{ ansible_facts.distribution_release }}"
+      - "{{ ansible_facts.distribution_release }}-updates"
+    components: [main, contrib, non-free, non-free-firmware]
+    signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
+  when: ansible_facts.lsb.id == "Debian"
+
+- name: Configure Debian Security repository
+  ansible.builtin.deb822_repository:
+    name: debian-security
+    types: deb
+    uris: [http://security.debian.org/debian-security]
+    suites: ["{{ ansible_facts.distribution_release }}-security"]
+    components: [main, contrib, non-free, non-free-firmware]
+    signed_by: /usr/share/keyrings/debian-archive-keyring.gpg
   when: ansible_facts.lsb.id == "Debian"
 
 - name: Refresh package list and install kernel headers

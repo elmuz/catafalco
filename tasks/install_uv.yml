@@ -1,6 +1,6 @@
 - name: Install `uv`
   ansible.builtin.shell:
-    cmd: curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL="/usr/local/bin" UV_NO_MODIFY_PATH=1 sh
+    cmd: curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL="/usr/local/bin" UV_NO_MODIFY_PATH=1 sh  # noqa command-instead-of-module
 
 - name: Fix permissions for `/usr/local/bin/uv`
   ansible.builtin.file:

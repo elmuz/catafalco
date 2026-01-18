@@ -53,7 +53,7 @@
     - name: Check if oh-my-zsh directory exists
       stat:
         path: "{{ ansible_env.HOME }}/.local/share/oh-my-zsh"
-      register: system_oh_my_zsh_dir
+      register: zsh_oh_my_zsh_dir
 
     - name: Install Oh-my-zsh
       ansible.builtin.shell: |
@@ -64,4 +64,4 @@
         HOME: "{{ ansible_env.HOME }}"
         ZDOTDIR: "{{ ansible_env.HOME }}/.config/zsh"
         ZSH: "{{ ansible_env.HOME }}/.local/share/oh-my-zsh"
-      when: not system_oh_my_zsh_dir.stat.exists or not system_oh_my_zsh_dir.stat.isdir
+      when: not zsh_oh_my_zsh_dir.stat.exists or not zsh_oh_my_zsh_dir.stat.isdir

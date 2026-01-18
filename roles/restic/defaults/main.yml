@@ -1,0 +1,2 @@
+restic_config_path: "/etc/restic/backup-conf.yml"
+restic_backup_script_path: /usr/local/bin/restic-backup

@@ -73,7 +73,7 @@
 - name: Enable and start services
   ansible.builtin.systemd:
     name: "{{ item }}"
-    enabled: yes
+    enabled: true
     state: started
     daemon_reload: true
   loop:

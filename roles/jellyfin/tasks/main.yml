@@ -7,7 +7,7 @@
 ---
 - name: Make sure that QuickSync packages are installed
   become: true
-  package:
+  ansible.builtin.package:
     name:
       - vainfo
       - intel-media-va-driver
@@ -15,7 +15,7 @@
     state: present
 
 - name: Create the Jellyfin folder
-  file:
+  ansible.builtin.file:
     path: "{{ docker_dir }}/{{ jellyfin_container_name }}"
     state: directory
     owner: "{{ guid }}"
@@ -41,7 +41,7 @@
       - /dev/dri/renderD128:/dev/dri/renderD128
     state: started
     healthcheck:
-      "test":
+      test:
         [
           "CMD",
           "curl",

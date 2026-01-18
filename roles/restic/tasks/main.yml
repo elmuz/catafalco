@@ -1,0 +1,49 @@
+---
+- name: Ensure restic is installed
+  ansible.builtin.apt:
+    name:
+      - restic
+      - python3-yaml
+    state: present
+    update_cache: true
+
+- name: Create backup config directory
+  ansible.builtin.file:
+    path: "{{ restic_config_path | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: Deploy restic configuration
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: "{{ restic_config_path }}"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Deploy backup script
+  ansible.builtin.copy:
+    src: backup
+    dest: "{{ restic_backup_script_path }}"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Ensure log directory exists
+  file:
+    path: /var/log
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create daily cronjob for restic backup
+  cron:
+    name: "restic backup"
+    user: root
+    minute: "0"
+    hour: "4"
+    job: "{{ restic_backup_script_path }} --config {{ restic_config_path }}"
+    state: present
