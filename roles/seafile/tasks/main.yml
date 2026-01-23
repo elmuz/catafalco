@@ -7,8 +7,8 @@
     group: "{{ guid }}"
     mode: "0755"
   loop:
-    - "mysql"
-    - "data"
+    - seafile
+    - mysql
 
 - name: Copy compose files
   ansible.builtin.template:
@@ -17,72 +17,134 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
-  loop:
-    - .env
-    - seafile-server.yml
-    - notification-server.yml
-
-- name: Create and start services
-  community.docker.docker_compose_v2:
-    project_src: "{{ docker_dir }}/{{ seafile_container_name }}"
-    files:
-      - seafile-server.yml
-      - notification-server.yml
+  loop: "{{ seafile_compose_files + ['.env'] }}"
 
 - name: Create docker network
   ansible.builtin.include_tasks:
     file: network.yml
 
-- name: Pause until Seafile has created configuration files
-  become: true
-  ansible.builtin.wait_for:
-    path: "{{ docker_dir }}/{{ seafile_container_name }}/data/seafile/conf/seahub_settings.py"
+- name: Install ONLYOFFICE for document integration
+  when: '"onlyoffice" in containers'
+  ansible.builtin.include_role:
+    name: onlyoffice
+  vars:
+    onlyoffice_network_name: "{{ seafile_network_name }}"
+    onlyoffice_document_server_domain: "https://{{ seafile_subdomain }}.{{ site_url }}"
 
-- name: Fix CSRF  # Not sure why it shows as http://https://seafile.mydomain.com
-  ansible.builtin.lineinfile:
-    path: "{{ docker_dir }}/{{ seafile_container_name }}/data/seafile/conf/seahub_settings.py"
-    search_string: "{{ item[0] }}"
-    line: "{{ item[0] }} = {{ item[1] }}"
-  loop:
-    # - ["ALLOWED_HOSTS", "'.{{ site_url }}'"]  # `seahub.sh start` crashes
-    - ["CSRF_COOKIE_SECURE", "True"]
-    - ["CSRF_COOKIE_SAMESITE", "'Strict'"]
-    - ["CSRF_TRUSTED_ORIGINS", "['{{ seafile_dashboard_url }}']"]
+- name: Create and start services
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_dir }}/{{ seafile_container_name }}"
+    files: "{{ seafile_compose_files }}"
+  register: seafile_bootstrap_result
+  ignore_errors: true
+
+# For some reason, configuration files get overwritten and need to be re-created here
+- name: Create configuration files
+  when: seafile_bootstrap_result.failed | default(false)
+  block:
+    - name: Install Seafile config files
+      ansible.builtin.template:
+        src: "conf/{{ item }}.j2"
+        dest: "{{ docker_dir }}/{{ seafile_container_name }}/seafile/seafile/conf/{{ item }}"
+        owner: root
+        group: root
+        mode: "0600"
+      loop:
+        - seafile.conf
+        - gunicorn.conf.py
+        - seafdav.conf
+        - seafevents.conf
+        - seahub_settings.py
+
+    - name: Add a storage classes file
+      ansible.builtin.copy:
+        dest: "{{ docker_dir }}/{{ seafile_container_name }}/seafile/seafile/conf/seafile_storage_classes.json"
+        content: |
+          [
+            {
+              "storage_id": "local_storage",
+              "name": "Local Storage",
+              "is_default": true,
+              "fs": {
+                "backend": "fs",
+                "dir": "/share/seafile/seafile-data"
+              },
+              "commits": {
+                "backend": "fs",
+                "dir": "/share/seafile/seafile-data"
+              },
+              "blocks": {
+                "backend": "fs",
+                "dir": "/share/seafile/seafile-data"
+              }
+            },
+            {
+              "storage_id": "remote_storage",
+              "name": "Remote Storage",
+              "is_default": false,
+              "commits": {
+                "backend": "s3",
+                "host": "{{ seafile_s3_endpoint }}",
+                "aws_region": "{{ seafile_s3_region }}",
+                "use_https": true,
+                "use_v4_signature": true,
+                "bucket": "{{ seafile_s3_commit_bucket }}",
+                "sse_c_key": "{{ seafile_s3_sse_c_key }}",
+                "key": "{{ seafile_s3_secret_key }}",
+                "key_id": "{{ seafile_s3_key_id }}"
+              },
+              "fs": {
+                "backend": "s3",
+                "host": "{{ seafile_s3_endpoint }}",
+                "aws_region": "{{ seafile_s3_region }}",
+                "use_https": true,
+                "use_v4_signature": true,
+                "bucket": "{{ seafile_s3_fs_bucket }}",
+                "sse_c_key": "{{ seafile_s3_sse_c_key }}",
+                "key": "{{ seafile_s3_secret_key }}",
+                "key_id": "{{ seafile_s3_key_id }}"
+              },
+              "blocks": {
+                "backend": "s3",
+                "host": "{{ seafile_s3_endpoint }}",
+                "aws_region": "{{ seafile_s3_region }}",
+                "use_https": true,
+                "use_v4_signature": true,
+                "bucket": "{{ seafile_s3_block_bucket }}",
+                "sse_c_key": "{{ seafile_s3_sse_c_key }}",
+                "key": "{{ seafile_s3_secret_key }}",
+                "key_id": "{{ seafile_s3_key_id }}"
+              }
+            }
+          ]
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Restart Seafile services
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_dir }}/{{ seafile_container_name }}"
+        files: "{{ seafile_compose_files }}"
+        state: restarted
+
+#- name: Fix CSRF  # Not sure why it shows as http://https://seafile.mydomain.com
+#  ansible.builtin.lineinfile:
+#    path: "{{ docker_dir }}/{{ seafile_container_name }}/seafile/seafile/conf/seahub_settings.py"
+#    search_string: "{{ item[0] }}"
+#    line: "{{ item[0] }} = {{ item[1] }}"
+#  loop:
+#    # - ["ALLOWED_HOSTS", "'.{{ site_url }}'"]  # `seahub.sh start` crashes
+#    - ["CSRF_COOKIE_SECURE", "True"]
+#    - ["CSRF_COOKIE_SAMESITE", "'Strict'"]
+#    - ["CSRF_TRUSTED_ORIGINS", "['{{ seafile_dashboard_url }}']"]
+#    - ["ENABLE_STORAGE_CLASSES", "True"]
 
 # - name: Allow connections from 0.0.0.0
 #   become: true
 #   ansible.builtin.lineinfile:
-#     path: "{{ docker_dir }}/{{ seafile_container_name }}/data/seafile/conf/gunicorn.conf.py"
+#     path: "{{ docker_dir }}/{{ seafile_container_name }}/seafile/seafile/conf/gunicorn.conf.py"
 #     search_string: "bind = "
 #     line: "bind = '0.0.0.0:8000'"
-
-- name: Install ONLYOFFICE for document integration
-  when: '"onlyoffice" in containers'
-  block:
-    - name: Include OnlyOffice role
-      ansible.builtin.include_role:
-        name: onlyoffice
-      vars:
-        onlyoffice_network_name: "{{ seafile_network_name }}"
-        onlyoffice_document_server_domain: "https://{{ seafile_subdomain }}.{{ site_url }}"
-    - name: Edit Seahub configuration for OnlyOffice
-      ansible.builtin.lineinfile:
-        path: "{{ docker_dir }}/{{ seafile_container_name }}/data/seafile/conf/seahub_settings.py"
-        search_string: "{{ item[0] }} = "
-        line: "{{ item[0] }} = {{ item[1] }}"
-      loop:
-        - ["ENABLE_ONLYOFFICE", "True"]
-        - ["ONLYOFFICE_APIJS_URL", "'https://onlyoffice.{{ site_url }}/web-apps/apps/api/documents/api.js'"]
-        - ["ONLYOFFICE_FILE_EXTENSION", "('doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'odt', 'fodt', 'odp', 'fodp', 'ods', 'fods', 'csv', 'ppsx', 'pps')"]
-        - ["ONLYOFFICE_EDIT_FILE_EXTENSION", "('docx', 'pptx', 'xlsx')"]
-        - ["ONLYOFFICE_JWT_SECRET", "'{{ onlyoffice_jwt_secret }}'"]
-        - ["OFFICE_PREVIEW_MAX_SIZE", "30 * 1024 * 1024  # preview size, 30 MB"]
-
-- name: Restart Seafile container to apply above changes
-  community.docker.docker_container:
-    name: "{{ seafile_container_name }}"
-    state: started
-    restart: true
 
 - name: Install the SWAG config files
   template:

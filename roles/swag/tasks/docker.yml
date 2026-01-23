@@ -26,7 +26,7 @@
     appends: true
 
 - name: Add optional 'Cloudflare tunnel' Docker mod and ENV vars
-  when: swag_cloudflare_tunnel_enable | default(False)
+  when: swag_cloudflare_tunnel_enable | default(false)
   block:
     - name: Append Docker mod
       ansible.builtin.set_fact:
@@ -205,9 +205,9 @@
     tasks_from: network
   loop: "{{ containers | reject('equalto', 'socket_proxy') | reject('equalto', 'watchtower') | reject('equalto', 'onlyoffice') }}"
 
-- name: Pause for 10 seconds and let SWAG creating configuration files
-  ansible.builtin.pause:
-    seconds: 10
+- name: Pause until SWAG created configuration files
+  ansible.builtin.wait_for:
+    path: "{{ swag_volume_nginx }}/ssl.conf"
 
 - name: Enable optional additional headers in 'ssl.conf'
   ansible.builtin.replace:
@@ -253,7 +253,7 @@
 
 - name: Update Maxmind configuration
   become: true
-  when: swag_maxmind_enable | default(False)
+  when: swag_maxmind_enable | default(false)
   notify:
     - Restart SWAG
   block:

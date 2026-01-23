@@ -44,6 +44,12 @@ swag_dashboard_subdomain: swag
 swag_cloudflare_tunnel_enable: true
 swag_maxmind_enable: true
 
+seafile_s3_block_bucket: "seafile-data-block"
+seafile_s3_commit_bucket: "seafile-data-commit"
+seafile_s3_fs_bucket: "seafile-data-fs"
+seafile_s3_endpoint: "s3.eu-central-003.backblazeb2.com"
+seafile_s3_region: "eu-central-003"
+
 restic_repository: s3:s3.eu-central-003.backblazeb2.com/nilde-services
 retention_args: "--keep-last 2 --keep-daily 2 --keep-weekly 2 --keep-monthly 2 --keep-yearly 2 --prune"
 restic_backup_paths:

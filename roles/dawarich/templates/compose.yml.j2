@@ -4,9 +4,9 @@ networks:
     external: true
 
 services:
-  dawarich_redis:
+  redis:
     image: redis:7.4-alpine
-    container_name: "{{ dawarich_container_name }}_redis"
+    container_name: "{{ dawarich_container_name }}-redis"
     command: redis-server
     networks:
       - dawarich_network
@@ -20,10 +20,10 @@ services:
       start_period: 30s
       timeout: 10s
 
-  dawarich_db:
+  db:
     image: postgis/postgis:17-3.5-alpine
     shm_size: 1G
-    container_name: "{{ dawarich_container_name }}_db"
+    container_name: "{{ dawarich_container_name }}-db"
     volumes:
       - {{ docker_dir }}/{{ dawarich_container_name }}/db_data:/var/lib/postgresql/data
     networks:
@@ -32,7 +32,7 @@ services:
       POSTGRES_USER: "{{ dawarich_postgres_username }}"
       POSTGRES_PASSWORD: "{{ dawarich_postgres_password }}"
       POSTGRES_DB: dawarich_production
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U {{ dawarich_postgres_username }} -d dawarich_production" ]
       interval: 10s
@@ -40,9 +40,9 @@ services:
       start_period: 30s
       timeout: 10s
 
-  dawarich_app:
+  dawarich:
     image: freikin/dawarich:{{ dawarich_version }}
-    container_name: "{{ dawarich_container_name }}_app"
+    container_name: "{{ dawarich_container_name }}"
     volumes:
       - {{ docker_dir }}/{{ dawarich_container_name }}/public:/var/app/public
       - {{ docker_dir }}/{{ dawarich_container_name }}/watched:/var/app/tmp/imports/watched
@@ -59,8 +59,8 @@ services:
     restart: unless-stopped
     environment:
       RAILS_ENV: production
-      REDIS_URL: redis://dawarich_redis:6379
-      DATABASE_HOST: dawarich_db
+      REDIS_URL: redis://redis:6379
+      DATABASE_HOST: db
       DATABASE_PORT: 5432
       DATABASE_USERNAME: "{{ dawarich_postgres_username }}"
       DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
@@ -86,25 +86,26 @@ services:
       start_period: 30s
       timeout: 10s
     depends_on:
-      dawarich_db:
+      db:
         condition: service_healthy
         restart: true
-      dawarich_redis:
+      redis:
         condition: service_healthy
         restart: true
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ dawarich_dashboard_name }}"
       swag.uptime-kuma.monitor.url: "{{ dawarich_dashboard_url }}"
+      swag.uptime-kuma.monitor.maxretries: "2"
     deploy:
       resources:
         limits:
           cpus: "0.50"
           memory: "4G"
 
-  dawarich_sidekiq:
+  sidekiq:
     image: freikin/dawarich:{{ dawarich_version }}
-    container_name: dawarich_sidekiq
+    container_name: dawarich-sidekiq
     volumes:
       - {{ docker_dir }}/{{ dawarich_container_name }}/public:/var/app/public
       - {{ docker_dir }}/{{ dawarich_container_name }}/watched:/var/app/tmp/imports/watched
@@ -118,8 +119,8 @@ services:
     restart: on-failure
     environment:
       RAILS_ENV: production
-      REDIS_URL: redis://dawarich_redis:6379
-      DATABASE_HOST: dawarich_db
+      REDIS_URL: redis://redis:6379
+      DATABASE_HOST: db
       DATABASE_PORT: 5432
       DATABASE_USERNAME: "{{ dawarich_postgres_username }}"
       DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
@@ -128,7 +129,7 @@ services:
       BACKGROUND_PROCESSING_CONCURRENCY: 10
       APPLICATION_PROTOCOL: http
       PROMETHEUS_EXPORTER_ENABLED: false
-      PROMETHEUS_EXPORTER_HOST: dawarich_app
+      PROMETHEUS_EXPORTER_HOST: dawarich
       PROMETHEUS_EXPORTER_PORT: 9394
       SELF_HOSTED: "true"
       SECRET_KEY_BASE: 1234567890
@@ -146,13 +147,13 @@ services:
       start_period: 30s
       timeout: 10s
     depends_on:
-      dawarich_db:
+      db:
         condition: service_healthy
         restart: true
-      dawarich_redis:
+      redis:
         condition: service_healthy
         restart: true
-      dawarich_app:
+      dawarich:
         condition: service_healthy
         restart: true
 

@@ -7,9 +7,6 @@ server {
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        #if ($http_origin ~* "^https?://({{ site_url }})$") {
-        #    add_header 'Access-Control-Allow-Origin' "$http_origin";
-        #}
 
         set $upstream_app {{ seafile_container_name }};
         set $upstream_port 80;

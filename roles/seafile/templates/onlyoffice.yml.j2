@@ -1,0 +1,26 @@
+---
+services:
+
+  onlyoffice:
+    image: ${ONLYOFFICE_IMAGE:-onlyoffice/documentserver:8.1.0.1}
+    restart: unless-stopped
+    container_name: seafile-onlyoffice
+    environment:
+      #- DB_TYPE=${DB_TYPE:-mariadb}
+      #- DB_HOST=${SEAFILE_MYSQL_DB_HOST:-db}
+      #- DB_USER=${SEAFILE_MYSQL_DB_USER:-seafile}
+      #- DB_PWD=${SEAFILE_MYSQL_DB_PASSWORD:?Variable is not set or empty}
+      - JWT_ENABLED=true
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:?Variable is not set or empty}
+      - REDIS_SERVER_HOST=seafile-redis
+      - REDIS_SERVER_PORT=6379
+    volumes:
+      - ${ONLYOFFICE_VOLUME:-/opt/onlyoffice}/logs:/var/log/onlyoffice
+      - ${ONLYOFFICE_VOLUME:-/opt/onlyoffice}/data:/var/www/onlyoffice/Data
+      - ${ONLYOFFICE_VOLUME:-/opt/onlyoffice}/lib:/var/lib/onlyoffice
+    networks:
+      - "{{ seafile_network_name }}"
+
+networks:
+  "{{ seafile_network_name }}":
+    name: "{{ seafile_network_name }}"

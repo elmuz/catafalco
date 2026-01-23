@@ -1,0 +1,36 @@
+[SEAHUB EMAIL]
+enabled = true
+
+## interval of sending Seahub email. Can be s(seconds), m(minutes), h(hours), d(days)
+interval = 30m
+
+# Enable statistics
+[STATISTICS]
+enabled=true
+
+[AUDIT]
+enabled = true
+
+[INDEX FILES]
+enabled = false
+external_es_server = true
+es_host = elasticsearch
+es_port = 9200
+interval = 10m
+
+highlight = fvh
+
+## If true, indexes the contents of office/pdf files while updating search index
+## Note: If you change this option from "false" to "true", then you need to clear the search index and update the index again. See the FAQ for details.
+index_office_pdf = true
+
+# Enable file history
+[FILE HISTORY]
+enabled = true
+suffix = md,txt,doc,docx,xls,xlsx,ppt,pptx,sdoc
+
+[SEASEARCH]
+enabled = false
+seasearch_url = http://seasearch:4080
+seasearch_token = {{ seafile_seasearch_token }}
+interval = 10m

@@ -7,4 +7,7 @@ seafile_dashboard_name: Seafile
 seafile_homer:
   name: "{{ seafile_dashboard_name }}"
   category: services
+
 seafile_onlyoffice_host: onlyoffice
+seafile_webdav_enabled: true
+seafile_compose_files: [seafile-server.yml, notification-server.yml]

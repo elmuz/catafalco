@@ -12,6 +12,7 @@
     recreate: true
 
 - name: Refresh Uptime Kuma monitored services
+  when: "'uptime_kuma' in containers"
   community.docker.docker_container_exec:
     container: "{{ swag_container_name }}"
     command: python3 /app/auto-uptime-kuma.py
