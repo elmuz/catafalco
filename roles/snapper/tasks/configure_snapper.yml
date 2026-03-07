@@ -28,9 +28,9 @@
 
     - name: Check if snapper config for each data disk is valid
       ansible.builtin.set_fact:
-        config_valid: "{{ 'data%02d' % item in snapper_configs.stdout }}"
+        snapper_config_valid: "{{ 'data%02d' % item in snapper_configs.stdout }}"
       loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
-      register: config_validity
+      register: snapper_config_validity
 
     - name: Conditionally rebuild snapper configs if 'snapraid_data_disks' exist
       when:
@@ -41,25 +41,25 @@
           ansible.builtin.command:
             cmd: snapper -c data{{ '%02d' % item }} delete-config
           loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
-          when: not config_validity.results[item-1].ansible_facts.config_valid
+          when: not snapper_config_validity.results[item-1].ansible_facts.snapper_config_valid
           ignore_errors: true
 
         - name: Attempt to create Snapper configuration
           ansible.builtin.command:
             cmd: snapper -c data{{ '%02d' % item }} create-config -t default {{ mounts_root_location }}/data{{ snapraid_data_disks[item - 1].data_disk_id }}
-          register: create_config_result
-          changed_when: create_config_result.rc == 0
+          register: snapper_create_config_result
+          changed_when: snapper_create_config_result.rc == 0
           ignore_errors: true
           loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
-          when: not config_validity.results[item - 1].ansible_facts.config_valid
+          when: not snapper_config_validity.results[item - 1].ansible_facts.snapper_config_valid
 
         - name: Remove existing snapshots for failed configs  # noqa command-instead-of-module
           ansible.builtin.command:
             cmd: btrfs subvolume delete -C {{ mounts_root_location }}/data{{ snapraid_data_disks[item - 1].data_disk_id }}/.snapshots/*
           loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
           when:
-            - not config_validity.results[item-1].ansible_facts.config_valid
-            - "'creating btrfs subvolume .snapshots failed since it already exists' in create_config_result.results[item - 1].stderr"
+            - not snapper_config_validity.results[item-1].ansible_facts.snapper_config_valid
+            - "'creating btrfs subvolume .snapshots failed since it already exists' in snapper_create_config_result.results[item - 1].stderr"
           ignore_errors: true
 
         - name: Remove .snapshots subvolume for failed configs  # noqa command-instead-of-module
@@ -67,8 +67,8 @@
             cmd: btrfs subvolume delete -C {{ mounts_root_location }}/data{{ snapraid_data_disks[item - 1].data_disk_id }}/.snapshots
           loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
           when:
-            - not config_validity.results[item - 1].ansible_facts.config_valid
-            - "'creating btrfs subvolume .snapshots failed since it already exists' in create_config_result.results[item-1].stderr"
+            - not snapper_config_validity.results[item - 1].ansible_facts.snapper_config_valid
+            - "'creating btrfs subvolume .snapshots failed since it already exists' in snapper_create_config_result.results[item-1].stderr"
           ignore_errors: true
 
         - name: Retry creating Snapper configuration for failed configs
@@ -76,10 +76,10 @@
             cmd: snapper -c data{{ '%02d' % item }} create-config -t default {{ mounts_root_location }}/data{{ snapraid_data_disks[item - 1].data_disk_id }} }}
           loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
           when:
-            - not config_validity.results[item-1].ansible_facts.config_valid
-            - "'creating btrfs subvolume .snapshots failed since it already exists' in create_config_result.results[item - 1].stderr"
-          register: create_config_result_retry
-          changed_when: create_config_result_retry.rc == 0
+            - not snapper_config_validity.results[item-1].ansible_facts.snapper_config_valid
+            - "'creating btrfs subvolume .snapshots failed since it already exists' in snapper_create_config_result.results[item - 1].stderr"
+          register: snapper_create_config_result_retry
+          changed_when: snapper_create_config_result_retry.rc == 0
           ignore_errors: true
 
     - name: Ensure 'TIMELINE_CREATE="no"' in each data disk's Snapper configuration
@@ -107,23 +107,23 @@
     - name: Verify snapraid-btrfs can see Snapper configs
       ansible.builtin.command:
         cmd: /usr/local/bin/snapraid-btrfs list
-      register: snapraid_btrfs_output
+      register: snapper_snapraid_btrfs_output
       changed_when: false
       ignore_errors: true
       check_mode: false
 
     - name: Check for invalid btrfs subvolume
       ansible.builtin.set_fact:
-        invalid_subvolume: "{{ 'is not a valid btrfs subvolume' in snapraid_btrfs_output.stderr }}"
+        snapper_invalid_subvolume: "{{ 'is not a valid btrfs subvolume' in snapper_snapraid_btrfs_output.stderr }}"
 
     - name: Display snapraid-btrfs output
       ansible.builtin.debug:
-        var: snapraid_btrfs_output.stdout_lines
+        var: snapper_snapraid_btrfs_output.stdout_lines
 
     - name: Fail if invalid subvolume detected
       ansible.builtin.fail:
         msg: "Invalid btrfs subvolume detected. Initiating reset process."
-      when: invalid_subvolume | bool
+      when: snapper_invalid_subvolume | bool
 
   rescue:
     - name: Reset Snapper configurations
@@ -149,14 +149,14 @@
             paths: "{{ mounts_root_location }}/data{{ item.data_disk_id }}/.snapshots"
             file_type: directory
           loop: "{{ snapraid_data_disks }}"
-          register: snapshot_dirs
+          register: snapper_snapshot_dirs
           ignore_errors: true
 
         - name: Delete all snapshots  # noqa command-instead-of-module
           ansible.builtin.command:
             cmd: "btrfs subvolume delete -C {{ item.1.path }}/snapshot"
-          loop: "{{ snapshot_dirs.results | subelements('files') }}"
-          when: snapshot_dirs.results is defined
+          loop: "{{ snapper_snapshot_dirs.results | subelements('files') }}"
+          when: snapper_snapshot_dirs.results is defined
           ignore_errors: true
 
         - name: Remove .snapshots subvolume on all disks  # noqa command-instead-of-module
@@ -169,12 +169,12 @@
           ansible.builtin.command:
             cmd: "snapper -c data{{ '%02d' % item }} create-config -t default {{ mounts_root_location }}/data{{ item.data_disk_id }}"
           loop: "{{ snapraid_data_disks }}"
-          register: create_config_result
+          register: snapper_create_config_result
           failed_when:
-            - create_config_result.rc != 0
-            - "'Config exists' not in create_config_result.stderr"
-            - "'creating btrfs subvolume .snapshots failed since it already exists' not in create_config_result.stderr"
-          changed_when: create_config_result.rc == 0
+            - snapper_create_config_result.rc != 0
+            - "'Config exists' not in snapper_create_config_result.stderr"
+            - "'creating btrfs subvolume .snapshots failed since it already exists' not in snapper_create_config_result.stderr"
+          changed_when: snapper_create_config_result.rc == 0
 
         - name: Ensure 'TIMELINE_CREATE="no"' in each data disk's Snapper configuration after reset
           ansible.builtin.lineinfile:
@@ -198,36 +198,36 @@
         - name: Verify snapraid-btrfs can see Snapper configs after reset
           ansible.builtin.command:
             cmd: /usr/local/bin/snapraid-btrfs list
-          register: snapraid_btrfs_output_reset
+          register: snapper_snapraid_btrfs_output_reset
           changed_when: false
           check_mode: false
 
         - name: Display snapraid-btrfs output after reset
           ansible.builtin.debug:
-            var: snapraid_btrfs_output_reset.stdout_lines
+            var: snapper_snapraid_btrfs_output_reset.stdout_lines
 
         - name: Check for persistent invalid btrfs subvolume
           ansible.builtin.set_fact:
-            persistent_invalid_subvolume: "{{ 'is not a valid btrfs subvolume' in snapraid_btrfs_output_reset.stderr }}"
+            snapper_persistent_invalid_subvolume: "{{ 'is not a valid btrfs subvolume' in snapper_snapraid_btrfs_output_reset.stderr }}"
 
         - name: Fail if invalid subvolume persists
           ansible.builtin.fail:
             msg: "Snapper config failed, try again or check manually."
-          when: persistent_invalid_subvolume | bool
+          when: snapper_persistent_invalid_subvolume | bool
 
     - name: Display error message
       ansible.builtin.debug:
         msg: "Snapper config failed, try again or check manually."
-      when: persistent_invalid_subvolume | bool
+      when: snapper_persistent_invalid_subvolume | bool
 
   always:
     - name: Final verification of Snapper configs
       ansible.builtin.command:
         cmd: snapper list-configs
-      register: final_snapper_configs
+      register: snapper_final_configs
       changed_when: false
       check_mode: false
 
     - name: Display final Snapper configs
       ansible.builtin.debug:
-        var: final_snapper_configs.stdout_lines
+        var: snapper_final_configs.stdout_lines

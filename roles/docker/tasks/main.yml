@@ -44,16 +44,16 @@
       ansible.builtin.shell:
         cmd: "set -o pipefail && lspci | grep -i 'nvidia' 2>&1 || true"
         executable: /bin/bash
-      register: gpu_check
+      register: docker_gpu_check
       changed_when: false
 
     - name: "Fact definition"
       ansible.builtin.set_fact:
-        gpu_present: "{{ gpu_check.stdout != '' }}"
+        docker_gpu_present: "{{ docker_gpu_check.stdout != '' }}"
 
 - name: Install Nvidia Container Toolkit
   when:
-    - docker_install_nvidia_runtime == 'always' or (docker_install_nvidia_runtime == 'auto' and gpu_present)
+    - docker_install_nvidia_runtime == 'always' or (docker_install_nvidia_runtime == 'auto' and docker_gpu_present)
   block:
     - name: Install Nvidia driver (if missing)
       ansible.builtin.include_role:
@@ -116,11 +116,12 @@
           ansible.builtin.find:
             paths: "{{ mergerfs_root }}/docker-volumes-backup/"
             file_type: directory
-          register: all_backup_dirs
+          register: docker_all_backup_dirs
 
         - name: Filter backup directories to active services
           ansible.builtin.set_fact:
-            docker_services_with_backup: "{{ all_backup_dirs.files | map(attribute='path') | map('split', '/') | map('last') | select('in', containers) }}"
+            docker_services_with_backup: "{{ docker_all_backup_dirs.files | map(attribute='path') | map('split', '/') |
+              map('last') | select('in', containers) }}"
 
         - name: Synchronize active service backup folders to {{ docker_dir }}
           ansible.posix.synchronize:

@@ -1,5 +1,5 @@
 [SEAHUB EMAIL]
-enabled = true
+enabled = false
 
 ## interval of sending Seahub email. Can be s(seconds), m(minutes), h(hours), d(days)
 interval = 30m
@@ -9,7 +9,7 @@ interval = 30m
 enabled=true
 
 [AUDIT]
-enabled = true
+enabled = false
 
 [INDEX FILES]
 enabled = false
@@ -22,7 +22,7 @@ highlight = fvh
 
 ## If true, indexes the contents of office/pdf files while updating search index
 ## Note: If you change this option from "false" to "true", then you need to clear the search index and update the index again. See the FAQ for details.
-index_office_pdf = true
+index_office_pdf = false
 
 # Enable file history
 [FILE HISTORY]
@@ -30,7 +30,7 @@ enabled = true
 suffix = md,txt,doc,docx,xls,xlsx,ppt,pptx,sdoc
 
 [SEASEARCH]
-enabled = false
+enabled = {{'true' if seafile_enable_seasearch | default(false) else 'false'}}
 seasearch_url = http://seasearch:4080
 seasearch_token = {{ seafile_seasearch_token }}
 interval = 10m

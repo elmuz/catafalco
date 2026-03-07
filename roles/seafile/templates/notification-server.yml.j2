@@ -3,7 +3,7 @@ services:
   notification-server:
     image: ${NOTIFICATION_SERVER_IMAGE:-seafileltd/notification-server:13.0-latest}
     container_name: seafile-notification-server
-    restart: always
+    restart: unless-stopped
     volumes:
       - ${SEAFILE_VOLUME:-/opt/seafile-data}/seafile/logs:/shared/seafile/logs
     environment:

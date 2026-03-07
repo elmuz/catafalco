@@ -47,9 +47,9 @@
       ENABLE_SOCKS: "yes"
       LAN_NETWORK: 172.18.0.0/16
       NAME_SERVERS: 9.9.9.9,149.112.112.112
-      DELUGE_DAEMON_LOG_LEVEL: info
+      DELUGE_DAEMON_LOG_LEVEL: debug
       DELUGE_WEB_LOG_LEVEL: info
-      DEBUG: "false"
+      DEBUG: "true"
       UMASK: "000"
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"
@@ -60,6 +60,11 @@
       - "{{ mergerfs_root }}/Downloads:/home/nobody/Downloads"
       - /etc/localtime:/etc/localtime:ro
     restart_policy: unless-stopped
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/system/scripts/docker/healthcheck.sh"]
+      interval: 5m
+      retries: 3
+      start_period: 30s
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ deluge_dashboard_name }}"

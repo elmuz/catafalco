@@ -32,6 +32,7 @@ enable_containers: true
 docker_dir: /srv
 containers:
   - authelia
+  - miniflux
   - ntfy
   - onlyoffice
   - radicale

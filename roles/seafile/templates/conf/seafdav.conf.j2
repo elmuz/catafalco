@@ -1,5 +1,5 @@
 [WEBDAV]
-enabled = true
+enabled = {{ true if seafile_enable_webdav | default(false) else false }}
 port = 8080
 share_name = /seafdav
 workers = 2

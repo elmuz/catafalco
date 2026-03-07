@@ -324,3 +324,8 @@
       tags:
         - cypht
         - containers
+
+    - role: vllm
+      tags:
+        - vllm
+        - containers

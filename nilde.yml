@@ -36,6 +36,11 @@
         - authelia
         - containers
 
+    - role: miniflux
+      tags:
+        - miniflux
+        - containers
+
     - role: radicale
       tags:
         - radicale

@@ -58,7 +58,7 @@
     name: Dump Dawarich database
     user: root
     job: >-
-      docker exec -t dawarich_db pg_dumpall --clean --if-exists --username={{ dawarich_postgres_username }}
+      docker exec -t dawarich-db pg_dumpall --clean --if-exists --username={{ dawarich_postgres_username }}
       | gzip > "{{ docker_dir }}/{{ dawarich_container_name }}/backup/latest.sql.gz"
     minute: 50
     hour: 4
@@ -76,4 +76,5 @@
     backup_cli_args:
       source_paths: "{{ docker_dir }}/{{ dawarich_container_name }}"
       destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
-      container_names_str: "{{ dawarich_container_name }}_db {{ dawarich_container_name }}_app"
+      container_names_str: "{{ dawarich_container_name }}-db {{ dawarich_container_name }}-redis
+        {{ dawarich_container_name }}-sidekiq {{ dawarich_container_name }}"

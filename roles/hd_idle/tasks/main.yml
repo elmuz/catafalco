@@ -3,11 +3,11 @@
   command:
     cmd: which hd-idle
   ignore_errors: true
-  register: hdidle
+  register: hd_idle_which
   changed_when: hdidle.rc != 0
 
 - name: Install hd-idle
-  when: hdidle.rc != 0
+  when: hd_idle_which.rc != 0
   vars:
     release:
       tag: v1.21

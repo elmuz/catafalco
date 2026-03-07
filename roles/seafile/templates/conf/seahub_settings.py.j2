@@ -3,7 +3,7 @@ SECRET_KEY = "{{ seafile_django_secret_key }}"
 
 TIME_ZONE = "{{ timezone }}"
 
-ALLOWED_HOSTS = ['{{ seafile_subdomain }}.{{ site_url }}', 'localhost']
+ALLOWED_HOSTS = ['{{ seafile_subdomain }}.{{ site_url }}', 'localhost', '127.0.0.1']
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = "Strict"
 CSRF_TRUSTED_ORIGINS = ["{{ seafile_dashboard_url }}"]

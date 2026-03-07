@@ -23,6 +23,7 @@
         cloudflare_api_token }}"]
       logpath = {{ swag_fail2ban_monitored_logs }}/nextcloud.log
 
+# noqa: var-naming[no-role-prefix]
 - name: Add Nextcloud to the list of logs to be mounted by SWAG
   ansible.builtin.set_fact:
     swag_container_volumes: "{{ swag_container_volumes + [nextcloud_log_file + ':' + swag_fail2ban_monitored_logs + '/nextcloud.log:ro'] }}"

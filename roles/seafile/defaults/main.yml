@@ -9,5 +9,12 @@ seafile_homer:
   category: services
 
 seafile_onlyoffice_host: onlyoffice
-seafile_webdav_enabled: true
-seafile_compose_files: [seafile-server.yml, notification-server.yml]
+seafile_enable_webdav: true
+seafile_enable_notification_server: true
+seafile_enable_seasearch: true
+seafile_compose_files: >-
+  {{
+    ['seafile-server.yml'] +
+    (['notification-server.yml'] if seafile_enable_notification_server else []) +
+    (['seasearch.yml'] if seafile_enable_seasearch else [])
+  }}

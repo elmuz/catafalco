@@ -21,7 +21,7 @@
 # certificates_directory: '/config/certificates/'
 
 ## The theme to display: light, dark, grey, auto.
-theme: 'light'
+theme: 'grey'
 
 ## Set the default 2FA method for new users and for when a user has a preferred method configured that has been
 ## disabled. This setting must be a method that is enabled.
@@ -230,7 +230,11 @@ totp:
 ## Parameters used for WebAuthn.
 webauthn:
   ## Disable WebAuthn.
-  disable: true
+  disable: false
+
+  ## Enables login via a Passkey instead of a username and password. This login only counts as a single factor.
+  ## The user will be prompted for their password by default if the request requires multi-factor authentication.
+  enable_passkey_login: false
 
   ## The interaction timeout for WebAuthn dialogues in the duration common syntax.
   # timeout: '60 seconds'

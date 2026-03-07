@@ -70,7 +70,7 @@
 
 # docker exec swag python3 /app/auto-uptime-kuma.py
 - name: Add optional 'Auto Uptime Kuma' Docker mod and ENV vars
-  when: "'uptime_kuma' in containers"
+  when: false  # "'uptime_kuma' in containers", not maintained
   block:
     - name: Run the Docker Socket Proxy
       ansible.builtin.include_role:
@@ -158,17 +158,17 @@
       loop:
         - ["cfzone =", "cfzone = {{ cloudflare_zone_id[site_url] }}"]
         - ["cftoken =", "cftoken ="]  # remove # comment, if present.
-      when: swag_cloudflare_tunnel_enable | default(False)
+      when: swag_cloudflare_tunnel_enable | default(false)
     - name: Select services for which 'fail2ban.yml' is available
       ansible.builtin.set_fact:
-        fail2ban_services: "{{ fail2ban_services | default([]) + [item] }}"
+        swag_fail2ban_services: "{{ swag_fail2ban_services | default([]) + [item] }}"
       loop: "{{ containers }}"
       when: "lookup('ansible.builtin.fileglob', 'roles/' + item + '/tasks/fail2ban.yml', wantlist=true) | length == 1"
-    - name: Include selected `fail2ban_services` roles and execute 'fail2ban' tasks
+    - name: Include selected `swag_fail2ban_services` roles and execute 'fail2ban' tasks
       ansible.builtin.include_role:
         name: "{{ item }}"
         tasks_from: fail2ban
-      loop: "{{ fail2ban_services | default([]) }}"
+      loop: "{{ swag_fail2ban_services | default([]) }}"
     - name: Add options to 'jail.local'
       ansible.builtin.lineinfile:
         path: "{{ swag_volume_fail2ban }}/jail.local"

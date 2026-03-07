@@ -92,11 +92,11 @@ services:
       redis:
         condition: service_healthy
         restart: true
-    labels:
-      swag.uptime-kuma.enabled: "true"
-      swag.uptime-kuma.monitor.name: "{{ dawarich_dashboard_name }}"
-      swag.uptime-kuma.monitor.url: "{{ dawarich_dashboard_url }}"
-      swag.uptime-kuma.monitor.maxretries: "2"
+    # labels:
+    #  swag.uptime-kuma.enabled: "true"
+    #  swag.uptime-kuma.monitor.name: "{{ dawarich_dashboard_name }}"
+    #  swag.uptime-kuma.monitor.url: "{{ dawarich_dashboard_url }}"
+    #  swag.uptime-kuma.monitor.maxretries: "2"
     deploy:
       resources:
         limits:
@@ -156,13 +156,3 @@ services:
       dawarich:
         condition: service_healthy
         restart: true
-
-#volumes:
-#{% for item in ['shared_data', 'public', 'watched', 'db_data_pg_17', 'storage', 'redis_data'] %}
-#  {{ item }}:
-#    driver: local
-#    driver_opts:
-#      o: bind
-#      type: none
-#      device: "{{ docker_dir }}/{{ dawarich_container_name }}/{{ item }}"
-#{% endfor %}
