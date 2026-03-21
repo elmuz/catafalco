@@ -1,0 +1,15 @@
+[Unit]
+Description=Custom nftables rules for Docker (DOCKER-USER chain)
+After=docker.service network-online.target
+Wants=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/nft add rule ip filter DOCKER-USER ip daddr {{ swag_network_ip }} tcp dport 443 accept
+RemainAfterExit=yes
+
+# Clean up on stop (optional)
+ExecStop=/usr/sbin/nft delete rule ip filter DOCKER-USER ip daddr {{ swag_network_ip }} tcp dport 443 accept
+
+[Install]
+WantedBy=multi-user.target

@@ -1,4 +1,5 @@
-nvidia_driver_branch: latest  # 'latest' or 580, 590, ...
+---
+nvidia_driver_branch: latest # 'latest' or 580, 590, ...
 nvidia_driver_packages:
   Debian:
     - nvidia-driver-cuda

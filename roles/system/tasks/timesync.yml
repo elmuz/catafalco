@@ -9,7 +9,7 @@
     - ntp
     - ntpd
     - ntpsec
-  ignore_errors: true  # in case the service doesn't exist
+  ignore_errors: true # in case the service doesn't exist
 
 - name: Uninstall ntp and ntpsec packages if installed
   ansible.builtin.apt:

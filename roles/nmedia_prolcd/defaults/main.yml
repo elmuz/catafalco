@@ -1,2 +1,3 @@
+---
 nmedia_prolcd_bind: "127.0.0.1"
 nmedia_prolcd_port: "13666"

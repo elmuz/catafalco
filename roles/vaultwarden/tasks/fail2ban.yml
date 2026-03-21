@@ -5,7 +5,7 @@
     dest: "{{ swag_volume_fail2ban }}/filter.d/vaultwarden.local"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: '0644'
+    mode: "0644"
 
 - name: Install fail2ban filter configuration
   ansible.builtin.copy:
@@ -13,7 +13,7 @@
     dest: "{{ swag_volume_fail2ban }}/filter.d/vaultwarden-admin.local"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: '0644'
+    mode: "0644"
 
 - name: Install fail2ban jail configuration
   ansible.builtin.blockinfile:
@@ -39,5 +39,4 @@
 
 - name: Add Vaultwarden to the list of logs to be mounted by SWAG
   ansible.builtin.set_fact:
-    swag_container_volumes: "{{ swag_container_volumes + [vaultwarden_log_file + ':'
-    + swag_fail2ban_monitored_logs + '/vaultwarden.log:ro'] }}"  # noqa var-naming[no-role-prefix]
+    swag_container_volumes: "{{ swag_container_volumes + [vaultwarden_log_file + ':' + swag_fail2ban_monitored_logs + '/vaultwarden.log:ro'] }}" # noqa var-naming[no-role-prefix]

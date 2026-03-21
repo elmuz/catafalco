@@ -1,3 +1,4 @@
+---
 - name: Add Docker APT repository
   become: true
   block:
@@ -5,7 +6,7 @@
       ansible.builtin.get_url:
         url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
         dest: /etc/apt/keyrings/docker.asc
-        mode: '0644'
+        mode: "0644"
         owner: root
         group: root
 
@@ -63,7 +64,7 @@
       ansible.builtin.get_url:
         url: https://nvidia.github.io/libnvidia-container/gpgkey
         dest: /etc/apt/keyrings/nvidia-container-toolkit-keyring.asc
-        mode: '0644'
+        mode: "0644"
 
     - name: Install curl
       ansible.builtin.apt:
@@ -120,8 +121,7 @@
 
         - name: Filter backup directories to active services
           ansible.builtin.set_fact:
-            docker_services_with_backup: "{{ docker_all_backup_dirs.files | map(attribute='path') | map('split', '/') |
-              map('last') | select('in', containers) }}"
+            docker_services_with_backup: "{{ docker_all_backup_dirs.files | map(attribute='path') | map('split', '/') | map('last') | select('in', containers) }}"
 
         - name: Synchronize active service backup folders to {{ docker_dir }}
           ansible.posix.synchronize:
@@ -151,6 +151,28 @@
     src: daemon.json.j2
     dest: /etc/docker/daemon.json
     mode: "0644"
+
+- name: Configure nftables for the hairpinning workaround
+  when: "'swag' in containers"
+  block:
+    - name: Add nftables configuration for Docker
+      ansible.builtin.template:
+        src: docker.nftables.j2
+        dest: /etc/nftables.conf
+        mode: "0755"
+
+    - name: Add systemd service for nftables custom rules (DOCKER-USER chain)
+      ansible.builtin.template:
+        src: nftables-docker-rules.service.j2
+        dest: /etc/systemd/system/nftables-docker-rules.service
+        mode: "0644"
+
+    - name: Enable and start the nftables-docker-rules service
+      ansible.builtin.systemd:
+        name: nftables-docker-rules.service
+        state: started
+        enabled: true
+        daemon_reload: true
 
 - name: Restart service and socket
   block:

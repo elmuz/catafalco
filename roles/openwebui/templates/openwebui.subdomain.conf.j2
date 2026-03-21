@@ -7,8 +7,17 @@ server {
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        # CORS settings: OpenWebUI automatically adds "Access-Control-Allow-Origin: *" header to responses
-        # add_header Access-Control-Allow-Origin 'https://{{ site_url }}';
+
+        # Remove any CORS headers sent by the backend first
+        proxy_hide_header Access-Control-Allow-Origin;
+        proxy_hide_header Access-Control-Allow-Methods;
+        proxy_hide_header Access-Control-Allow-Headers;
+
+        # These headers are for the actual request response,
+        # allowing origins and methods for non-preflight requests (GET, POST, etc.)
+        add_header 'Access-Control-Allow-Origin' 'https://{{ site_url }}';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE'; # Still good practice to include
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,X-Emby-Authorization,x-emby-token';
 
         set $upstream_app {{ openwebui_container_name }};
         set $upstream_port 8080;

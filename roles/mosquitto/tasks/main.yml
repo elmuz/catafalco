@@ -1,3 +1,4 @@
+---
 - name: Install Mosquitto
   ansible.builtin.apt:
     name: mosquitto
@@ -15,7 +16,7 @@
     state: touch
     owner: mosquitto
     group: mosquitto
-    mode: '0600'
+    mode: "0600"
 
 - name: Create mosquitto users
   when: mqtt_users is defined

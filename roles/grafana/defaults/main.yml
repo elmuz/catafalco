@@ -1,0 +1,12 @@
+grafana_container_name: grafana
+grafana_network_name: "{{ influxdb_network_name }}"
+grafana_subdomain: grafana
+grafana_dashboard_url: https://{{ grafana_subdomain }}.{{ site_url }}
+grafana_dashboard_name: Grafana
+grafana_homer:
+  name: "{{ grafana_dashboard_name }}"
+  category: system
+grafana_prometheus_datasource_uid: PBFA97CFB590B2093
+grafana_influxdb_datasource_uid: PA6F3E0496B9A4E62
+grafana_vllm_dashboard_uid: "b281712d-8bff-41ef-9f3f-71ad43c05e9b"
+grafana_system_dashboard_uid: "system-monitor-dashboard"

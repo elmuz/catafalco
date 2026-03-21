@@ -1,18 +1,19 @@
 ---
-- name: Set SSH correctly before executing other roles
-  hosts: pihole-one
+- name: Bootstrap (network, timezone, users, SSH)
+  hosts: dns
   become: true
+  become_user: root
+  become_method: ansible.builtin.su
 
-  pre_tasks:
-#    - name: Set SSH correctly before executing other roles
-#      import_tasks: tasks/ssh.yml
-#      tags:
-#        - port
+  tags:
+    - bootstrap
+    - never
 
-    - name: Configure timezone
-      community.general.timezone:
-        name: "{{ timezone | default('UTC') }}"
+  vars:
+    ansible_become_password: "{{ root_password }}"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
 
+  tasks:
     - name: Get current status of time synchronization
       ansible.builtin.command: timedatectl show -P NTPSynchronized
       register: ntp_status
@@ -25,9 +26,26 @@
         state: started
         enabled: true
 
+    - name: Configure timezone
+      community.general.timezone:
+        name: "{{ timezone | default('UTC') }}"
+
+    - name: Update and upgrade system packages
+      ansible.builtin.package:
+        name: "*"
+        state: latest
+        update_cache: true
+
     - name: Set hostname
       ansible.builtin.hostname:
         name: "{{ inventory_hostname }}"
+
+    - name: Update /etc/hosts with new hostname
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s+'
+        line: "127.0.1.1 {{ inventory_hostname }}"
+        state: present
 
     - name: Set static IP
       block:
@@ -92,44 +110,107 @@
                       name: "{{ discovered_interface }}"
                     dhcp4: no
                     dhcp6: no
+                    accept-ra: no
                     addresses:
                       - {{ discovered_ip_cidr }}
                     routes:
                       - to: default
                         via: {{ discovered_gateway }}
                     nameservers:
-                      addresses: [9.9.9.9]
+                      addresses: [9.9.9.9, 149.112.112.112]
                     ipv6-privacy: true
             dest: "/etc/netplan/05-static-{{ discovered_interface }}.yaml"
             owner: root
             group: root
-            mode: '0600'
+            mode: "0600"
 
-        - name: Apply Netplan configuration
-          ansible.builtin.command: netplan apply
+        - name: Apply netplan configuration
+          ansible.builtin.command: /usr/sbin/netplan apply
           changed_when: true
 
-  tasks:
-    - name: Install git
+    - name: Install main packages
       ansible.builtin.package:
-        name: git
+        name:
+          - sudo
+          - vim
+          - zsh
         state: present
-        update_cache: true
 
-    - name: Clone Pi-hole repository
-      ansible.builtin.git:
-        repo: https://github.com/pi-hole/pi-hole.git
-        dest: /tmp/Pi-hole
+    - name: Create main user
+      ansible.builtin.user:
+        name: "{{ username }}"
+        password: "{{ password | password_hash('sha512') }}"
+        update_password: on_create
+        groups: sudo
+        append: true
+        shell: /bin/zsh
 
-    - name: Execute basic-install.sh script
-      ansible.builtin.command:
-        argv:
-          - "/tmp/Pi-hole/automated install/basic-install.sh"
-          - --unattended
-      args:
-        chdir: /tmp/Pi-hole
+    - name: Set authorized keys taken from path on controller node
+      ansible.posix.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ lookup('file', ssh_public_key_path) }}"
 
-    - name: Delete cloned repository
-      ansible.builtin.file:
-        path: /tmp/Pi-hole
-        state: absent
+    - name: Verify SSH key access externally
+      become: false
+      ansible.builtin.command: >
+        ssh -o StrictHostKeyChecking=no 
+            -o BatchMode=yes 
+            -o ConnectTimeout=5 
+            -i "{{ ansible_ssh_private_key_file }}"
+            {{ username }}@{{ inventory_hostname }} exit
+      delegate_to: localhost
+
+    - name: Update /etc/ssh/sshd_config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?{{ item[0] }}'
+        line: '{{ item[0] }} {{ item[1] }}'
+        state: present
+      loop:
+        - ["PermitRootLogin", "no"]
+        - ["PasswordAuthentication", "no"]
+        - ["PubkeyAuthentication", "yes"]
+
+    - name: Reload SSH service to apply changes
+      ansible.builtin.systemd:
+        name: ssh
+        state: reloaded
+
+- name: Install Pi-hole
+  hosts: dns
+  become: true
+  become_method: ansible.builtin.sudo
+
+  gather_facts: false
+  pre_tasks:
+    - name: Gather facts as normal user
+      setup:
+      become: false
+      tags: always
+
+  roles:
+    - zsh
+    # - pihole
+
+  tasks:
+    - name: Install unattended upgrades
+      ansible.builtin.package:
+        name: unattended-upgrades
+        state: present
+
+    - name: Enable automatic security updates
+      ansible.builtin.lineinfile:
+       path: /etc/apt/apt.conf.d/02-armbian-periodic
+       regexp: '^APT::Periodic::Enable'
+       line: 'APT::Periodic::Enable "1";'
+       state: present
+       create: false
+
+    - name: Enable periodic Pi-hole updates
+      ansible.builtin.cron:
+        name: "Pi-hole Update"
+        minute: "0"
+        hour: "4"
+        weekday: "1"
+        job: "/usr/local/bin/pihole -up 2>&1 | logger -t pihole-update"

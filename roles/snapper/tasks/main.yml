@@ -1,3 +1,4 @@
+---
 - name: Install Snapper
   ansible.builtin.include_tasks:
     file: install_snapper.yml

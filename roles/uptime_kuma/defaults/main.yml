@@ -8,3 +8,4 @@ uptime_kuma_homer:
   category: system
   url: "{{ uptime_kuma_dashboard_url }}"
   type: "UptimeKuma"
+uptime_kuma_api_version: "2"

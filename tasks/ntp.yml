@@ -1,3 +1,4 @@
+---
 - name: Install NTP service
   ansible.builtin.apt:
     name: ntpsec

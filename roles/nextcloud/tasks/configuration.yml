@@ -32,11 +32,11 @@
   ansible.builtin.lineinfile:
     path: "{{ docker_dir }}/nextcloud/config/www/nextcloud/config/config.php"
     search_string: "{{ item[0] }}"
-    insertbefore: '.;'
+    insertbefore: ".;"
     line: "{{ item[1] }}"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: '0644'
+    mode: "0644"
   loop:
     - ["dbport", "  'dbport' => '3306',"]
     - ["overwritehost", "  'overwritehost' => 'nextcloud.{{ site_url }}',"]
@@ -124,7 +124,7 @@
     line: "{{ item[1] }}"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: '0644'
+    mode: "0644"
   loop:
     - ["memory_limit", "memory_limit = 1G"]
     - ["apc.shm_size", "apc.shm_size = 128M"]

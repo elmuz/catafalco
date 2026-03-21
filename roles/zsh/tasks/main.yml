@@ -51,8 +51,8 @@
   become: false
   block:
     - name: Check if oh-my-zsh directory exists
-      stat:
-        path: "{{ ansible_env.HOME }}/.local/share/oh-my-zsh"
+      ansible.builtin.stat:
+        path: "{{ ansible_facts['env'].HOME }}/.local/share/oh-my-zsh"
       register: zsh_oh_my_zsh_dir
 
     - name: Install Oh-my-zsh
@@ -61,7 +61,7 @@
       args:
         executable: /bin/sh
       environment:
-        HOME: "{{ ansible_env.HOME }}"
-        ZDOTDIR: "{{ ansible_env.HOME }}/.config/zsh"
-        ZSH: "{{ ansible_env.HOME }}/.local/share/oh-my-zsh"
+        HOME: "{{ ansible_facts['env'].HOME }}"
+        ZDOTDIR: "{{ ansible_facts['env'].HOME }}/.config/zsh"
+        ZSH: "{{ ansible_facts['env'].HOME }}/.local/share/oh-my-zsh"
       when: not zsh_oh_my_zsh_dir.stat.exists or not zsh_oh_my_zsh_dir.stat.isdir

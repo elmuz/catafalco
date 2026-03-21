@@ -1,0 +1,22 @@
+#!/usr/sbin/nft -f
+
+table ip hairpin_nat {
+    set docker_networks {
+        type ipv4_addr
+        flags interval
+        elements = {
+            172.16.0.0/12,
+            172.32.0.0/12
+	    }
+    }
+
+    chain prerouting {
+        type nat hook prerouting priority dstnat - 10; policy accept;
+        ip saddr @docker_networks tcp dport 443 fib daddr type local dnat to {{ swag_network_ip }}
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority srcnat + 10; policy accept;
+        ip saddr @docker_networks ip daddr {{ swag_network_ip }} tcp dport 443 masquerade
+    }
+}

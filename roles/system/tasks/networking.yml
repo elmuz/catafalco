@@ -22,7 +22,7 @@
     dest: "/etc/systemd/network/10-{{ system_primary_interface }}.network"
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Remove any existing Netplan configuration files
   ansible.builtin.file:
@@ -46,7 +46,7 @@
     dest: /etc/systemd/resolved.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Enable and start systemd-resolved
   ansible.builtin.systemd:

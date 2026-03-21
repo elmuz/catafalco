@@ -1,0 +1,8 @@
+---
+miniflux_container_name: miniflux
+miniflux_network_name: miniflux_network
+miniflux_subdomain: news
+miniflux_url: https://{{ miniflux_subdomain }}.{{ site_url }}
+miniflux_dashboard_name: Miniflux
+miniflux_db_user: miniflux
+miniflux_db_name: miniflux

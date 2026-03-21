@@ -1,8 +1,9 @@
 ---
 influxdb_container_name: influxdb
-influxdb_network_name: influxdb_network
+influxdb_network_name: "{{ monitoring_network }}"
 influxdb_subdomain: influxdb
-influxdb_dashboard_url: https://{{ influxdb_subdomain }}.{{ host_local }}/
+influxdb_ui_subdomain: influxdb-ui
+influxdb_dashboard_url: https://{{ influxdb_ui_subdomain }}.{{ host_local }}/
 influxdb_dashboard_name: InfluxDB
 influxdb_homer:
   name: "{{ influxdb_dashboard_name }}"

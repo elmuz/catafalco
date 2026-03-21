@@ -1,6 +1,6 @@
 ---
 openwebui_container_name: openwebui
-openwebui_network_name: openwebui
+openwebui_network_name: openwebui_network
 openwebui_subdomain: chat
 openwebui_dashboard_url: https://{{ openwebui_subdomain }}.{{ site_url }}
 openwebui_dashboard_name: Open WebUI

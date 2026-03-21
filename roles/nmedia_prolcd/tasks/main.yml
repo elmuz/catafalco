@@ -16,7 +16,7 @@
 
 - name: Clone LCDproc source (official repo)
   ansible.builtin.git:
-    repo: 'https://github.com/lcdproc/lcdproc.git'
+    repo: "https://github.com/lcdproc/lcdproc.git"
     dest: /usr/local/src/lcdproc
     version: master
     update: true
@@ -48,7 +48,7 @@
     dest: /usr/local/etc/LCDd.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Install python3-psutil
   ansible.builtin.apt:
@@ -60,15 +60,15 @@
     dest: /usr/local/bin/lcd-stats.py
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
 
 - name: Deploy systemd units
   ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
   loop:
-    - { src: 'LCDd.service.j2', dest: '/etc/systemd/system/LCDd.service' }
-    - { src: 'lcd-stats.service.j2', dest: '/etc/systemd/system/lcd-stats.service' }
+    - { src: "LCDd.service.j2", dest: "/etc/systemd/system/LCDd.service" }
+    - { src: "lcd-stats.service.j2", dest: "/etc/systemd/system/lcd-stats.service" }
 
 - name: Enable and start services
   ansible.builtin.systemd:

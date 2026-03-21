@@ -53,7 +53,7 @@
           loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
           when: not snapper_config_validity.results[item - 1].ansible_facts.snapper_config_valid
 
-        - name: Remove existing snapshots for failed configs  # noqa command-instead-of-module
+        - name: Remove existing snapshots for failed configs # noqa command-instead-of-module
           ansible.builtin.command:
             cmd: btrfs subvolume delete -C {{ mounts_root_location }}/data{{ snapraid_data_disks[item - 1].data_disk_id }}/.snapshots/*
           loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
@@ -62,7 +62,7 @@
             - "'creating btrfs subvolume .snapshots failed since it already exists' in snapper_create_config_result.results[item - 1].stderr"
           ignore_errors: true
 
-        - name: Remove .snapshots subvolume for failed configs  # noqa command-instead-of-module
+        - name: Remove .snapshots subvolume for failed configs # noqa command-instead-of-module
           ansible.builtin.command:
             cmd: btrfs subvolume delete -C {{ mounts_root_location }}/data{{ snapraid_data_disks[item - 1].data_disk_id }}/.snapshots
           loop: "{{ range(1, snapraid_data_disks | length + 1) | list }}"
@@ -131,7 +131,7 @@
         - name: Clear SNAPPER_CONFIGS
           ansible.builtin.lineinfile:
             path: "{{ item }}"
-            regexp: '^SNAPPER_CONFIGS='
+            regexp: "^SNAPPER_CONFIGS="
             line: 'SNAPPER_CONFIGS=""'
           loop:
             - /etc/default/snapper # old default snapper config path
@@ -152,14 +152,14 @@
           register: snapper_snapshot_dirs
           ignore_errors: true
 
-        - name: Delete all snapshots  # noqa command-instead-of-module
+        - name: Delete all snapshots # noqa command-instead-of-module
           ansible.builtin.command:
             cmd: "btrfs subvolume delete -C {{ item.1.path }}/snapshot"
           loop: "{{ snapper_snapshot_dirs.results | subelements('files') }}"
           when: snapper_snapshot_dirs.results is defined
           ignore_errors: true
 
-        - name: Remove .snapshots subvolume on all disks  # noqa command-instead-of-module
+        - name: Remove .snapshots subvolume on all disks # noqa command-instead-of-module
           ansible.builtin.command:
             cmd: "btrfs subvolume delete -C {{ mounts_root_location }}/data{{ item.data_disk_id }}/.snapshots"
           loop: "{{ snapraid_data_disks }}"

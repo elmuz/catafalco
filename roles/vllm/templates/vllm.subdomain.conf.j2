@@ -13,16 +13,4 @@ server {
         set $upstream_proto http;
         proxy_pass $upstream_proto://$upstream_app:$upstream_port;
     }
-
-    location /grafana {
-        include /config/nginx/proxy.conf;
-        include /config/nginx/resolver.conf;
-
-        # Redirect /grafana to the specific dashboard path
-        rewrite ^/grafana$ /grafana/d/{{ vllm_grafana_dashboard_uid }}/vllm redirect;
-        set $upstream_app {{ vllm_container_name }}-grafana;
-        set $upstream_port 3000;
-        set $upstream_proto http;
-        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
-    }
 }

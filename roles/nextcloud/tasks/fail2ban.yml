@@ -5,7 +5,7 @@
     dest: "{{ swag_volume_fail2ban }}/filter.d/nextcloud.local"
     owner: "{{ guid }}"
     group: "{{ guid }}"
-    mode: '0644'
+    mode: "0644"
 
 - name: Install fail2ban jail configuration
   ansible.builtin.blockinfile:

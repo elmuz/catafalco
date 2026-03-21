@@ -1,11 +1,7 @@
 ---
 # General variables
 hostname: "{{ inventory_hostname }}"
-dot_nameservers:
-  [
-    185.95.218.42@853#dns.digitale-gesellschaft.ch,
-    94.140.15.140@853#dns-unfiltered.adguard.com,
-  ]
+dot_nameservers: [185.95.218.42@853#dns.digitale-gesellschaft.ch, 94.140.15.140@853#dns-unfiltered.adguard.com]
 ntp_timezone: "{{ timezone }}"
 locale: en_US.UTF-8
 lan_network: 192.168.178.0/24
@@ -75,6 +71,7 @@ containers:
   - dawarich
   - deluge
   - duplicati
+  - grafana
   - handbrake
   - healthchecks
   - homer
@@ -85,7 +82,9 @@ containers:
   - lazylibrarian
   - lidarr
   - navidrome
+  - nebula_sync
   - openwebui
+  - prometheus
   - prowlarr
   - radarr
   - redlib
@@ -95,6 +94,7 @@ containers:
   - speedtest_tracker
   - stirling_pdf
   - uptime_kuma
+  - vllm
   - watchtower
   - wud
 
@@ -281,3 +281,5 @@ mqtt_users:
     password: "{{ tasmota_mqtt_password }}"
   - user: telegraf
     password: "{{ telegraf_mqtt_password }}"
+
+monitoring_network: influxdb_network

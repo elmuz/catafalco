@@ -19,7 +19,7 @@
     suites: stable
     components: main
     signed_by: https://repos.influxdata.com/influxdata-archive.key
-    mode: '0644'
+    mode: "0644"
 
 - name: Update repositories cache and install telegraf package
   ansible.builtin.apt:
@@ -39,21 +39,21 @@
     capability: cap_sys_rawio,cap_dac_read_search,cap_sys_admin+ep
     state: present
 
-- name: Copy the main telegraf config
+- name: Copy the main telegraf config (1)
   ansible.builtin.copy:
     src: telegraf.conf
     dest: /etc/telegraf/telegraf.conf
     owner: root
-    group: root
-    mode: 644
+    group: telegraf
+    mode: "0644"
 
-- name: Copy the main telegraf config
+- name: Copy the main telegraf config (2)
   ansible.builtin.template:
     src: telegraf.j2
     dest: /etc/default/telegraf
     owner: root
-    group: root
-    mode: 644
+    group: telegraf
+    mode: "0644"
 
 - name: Add telegraf user to the docker group
   user:

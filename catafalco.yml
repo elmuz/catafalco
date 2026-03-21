@@ -89,9 +89,9 @@
       tags:
         - docker
 
-#    ########################################
-#    ############## Containers ##############
-#    ########################################
+    #    ########################################
+    #    ############## Containers ##############
+    #    ########################################
     #
     # Network
     #
@@ -137,9 +137,27 @@
         - wud
         - containers
 
+    - role: nebula_sync
+      become: false
+      tags:
+        - nebula-sync
+        - containers
+
     #
     # Monitoring
     #
+    - role: grafana
+      tags:
+        - grafana
+        - containers
+        - monitoring
+
+    - role: prometheus
+      tags:
+        - prometheus
+        - containers
+        - monitoring
+
     - role: influxdb
       tags:
         - influxdb
@@ -328,4 +346,9 @@
     - role: vllm
       tags:
         - vllm
+        - containers
+
+    - role: openwebui
+      tags:
+        - openwebui
         - containers

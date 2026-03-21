@@ -1,51 +1,82 @@
 ---
-- name: Create the necessary folder (1)
-  file:
-    path: "{{ docker_dir }}/{{ influxdb_container_name }}/config"
+- name: Create the necessary folders
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ influxdb_container_name }}/{{ item}}"
     state: directory
-    owner: "{{ guid }}"
-    group: "{{ guid }}"
+    owner: "1500"  # 'influxdb3' user within the container has UID and GID 1500
+    group: "1500"
     mode: "0755"
+  loop:
+    - data
+    - plugins
 
-- name: Create the necessary folder (2)
-  file:
-    path: "{{ docker_dir }}/{{ influxdb_container_name }}/data"
+- name: Create the necessary folders (2)
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ influxdb_container_name }}/explorer"
     state: directory
-    owner: "{{ guid }}"
-    group: "{{ guid }}"
+    owner: "1000"  # 'node' user within the container has UID and GID 1500
+    group: "1000"
     mode: "0755"
 
 - name: Create docker network
   ansible.builtin.include_tasks:
     file: network.yml
 
+- name: Create the InfluxDB admin token file
+  ansible.builtin.copy:
+    content: |
+      {
+        "token": "{{ influxdb_token }}",
+        "name": "admin-token",
+        "expiry_millis": 2088591922548
+      }
+    dest: "{{ docker_dir }}/{{ influxdb_container_name }}/admin-token.json"
+    owner: "1500"  # 'influxdb3' user within the container has UID and GID 1500
+    group: "1500"
+    mode: "0600"
+
 - name: Make sure that InfluxDB container is created and running
   community.docker.docker_container:
     name: "{{ influxdb_container_name }}"
-    image: influxdb:2
+    image: influxdb:3-core
     pull: true
     networks:
       - name: "{{ influxdb_network_name }}"
     state: started
     env:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: "{{ influxdb_user }}"
-      DOCKER_INFLUXDB_INIT_PASSWORD: "{{ influxdb_pass }}"
-      DOCKER_INFLUXDB_INIT_ORG: "{{ influxdb_org }}"
-      DOCKER_INFLUXDB_INIT_BUCKET: "{{ influxdb_bucket }}"
-      DOCKER_INFLUXDB_INIT_RETENTION: 2ew
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "{{ influxdb_token }}"
+      INFLUXDB3_NODE_IDENTIFIER_PREFIX: "{{ hostname }}"
+      INFLUXDB3_OBJECT_STORE: file
+      INFLUXDB3_DB_DIR: "/var/lib/influxdb3/data"
+      INFLUXDB3_DATABASE_NAME: "system-monitor"
+      INFLUXDB3_AUTH_TOKEN: "{{ influxdb_token }}"
+      INFLUXDB3_ADMIN_TOKEN_FILE: "/var/lib/influxdb3/admin-token.json"
+      INFLUXDB3_TLS_NO_VERIFY: "true"
+      INFLUXDB3_TELEMETRY_DISABLE_UPLOAD: "true"
     volumes:
-      - "{{ docker_dir }}/{{ influxdb_container_name }}/data:/var/lib/influxdb2"
-      - "{{ docker_dir }}/{{ influxdb_container_name }}/config:/etc/influxdb2"
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+      - "{{ docker_dir }}/{{ influxdb_container_name }}/admin-token.json:/var/lib/influxdb3/admin-token.json:ro"
+      - "{{ docker_dir }}/{{ influxdb_container_name }}/data:/var/lib/influxdb3/data"
+      - "{{ docker_dir }}/{{ influxdb_container_name }}/plugins:/var/lib/influxdb3/plugins"
     ports:
-      - 127.0.0.1:8086:8086/tcp
+      - 127.0.0.1:8181:8181/tcp
     restart_policy: unless-stopped
     labels:
       swag.uptime-kuma.enabled: "true"
       swag.uptime-kuma.monitor.name: "{{ influxdb_dashboard_name }}"
       swag.uptime-kuma.monitor.url: "{{ influxdb_dashboard_url }}"
+
+- name: Make sure that InfluxDB Explorer container is created and running
+  community.docker.docker_container:
+    name: "{{ influxdb_container_name }}-explorer"
+    image: influxdata/influxdb3-ui
+    pull: true
+    networks:
+      - name: "{{ influxdb_network_name }}"
+    state: started
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - "{{ docker_dir }}/{{ influxdb_container_name }}/explorer:/db"
+    restart_policy: unless-stopped
 
 - name: Install the SWAG config files
   template:

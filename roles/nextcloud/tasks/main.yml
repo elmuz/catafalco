@@ -55,7 +55,7 @@
         state: touch
         owner: "{{ guid }}"
         group: "{{ guid }}"
-        mode: '0644'
+        mode: "0644"
     - name: Add the line in the ".ncdata" file
       ansible.builtin.lineinfile:
         path: "{{ docker_dir }}/nextcloud/data/.ncdata"
@@ -63,7 +63,7 @@
         line: "# Nextcloud data directory"
         owner: "{{ guid }}"
         group: "{{ guid }}"
-        mode: '0644'
+        mode: "0644"
 
 - name: Make sure the Nextcloud container is created and running
   # https://hub.docker.com/r/linuxserver/nextcloud

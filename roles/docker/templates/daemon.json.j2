@@ -1,14 +1,5 @@
 {
-  "default-address-pools": [
-    {
-      "base": "172.32.0.0/16", {# 256 networks of 256-2=254 peers #}
-      "size": 24
-    },
-    {
-      "base": "172.33.0.0/16",
-      "size": 24
-    }
-  ],
+  "default-address-pools": {{ docker_address_pools | to_json }},
 {% if docker_install_nvidia_runtime == 'always' or (docker_install_nvidia_runtime == 'auto' and gpu_present) %}
   "default-runtime": "nvidia",
   "runtimes": {

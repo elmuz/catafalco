@@ -1,6 +1,9 @@
 ---
 swag_container_name: swag
 swag_network_name: swag_network
+swag_network_subnet: "172.34.0.0/24"
+swag_network_ip: "172.34.0.100"
+swag_network_gateway: "172.34.0.1"
 swag_dashboard_subdomain: dashboard
 swag_dashboard_url: https://{{ swag_dashboard_subdomain }}.{{ site_url }}
 swag_homer_category: system
@@ -60,29 +63,29 @@ swag_maxmind_allowed_countries:
   - "ES"
   - "SE"
   - "IS"
-  - 'NO'
+  - "NO"
   - "CH"
   - "GB"
   - "US"
 
 swag_maxmind_blocked_countries:
-  - "CN"  # China
-  - "RU"  # Russia
-  - "HK"  # Hong Kong
-  - "IN"  # India
-  - "IR"  # Iran
-  - "VN"  # Vietnam
-  - "TR"  # Turkey
-  - "EG"  # Egypt
-  - "MX"  # Mexico
-  - "JP"  # Japan
-  - "KR"  # South Korea
-  - "KP"  # North Korea
-  - "PE"  # Peru
-  - "BR"  # Brazil
-  - "UA"  # Ukraine
-  - "ID"  # Indonesia
-  - "TH"  # Thailand
+  - "CN" # China
+  - "RU" # Russia
+  - "HK" # Hong Kong
+  - "IN" # India
+  - "IR" # Iran
+  - "VN" # Vietnam
+  - "TR" # Turkey
+  - "EG" # Egypt
+  - "MX" # Mexico
+  - "JP" # Japan
+  - "KR" # South Korea
+  - "KP" # North Korea
+  - "PE" # Peru
+  - "BR" # Brazil
+  - "UA" # Ukraine
+  - "ID" # Indonesia
+  - "TH" # Thailand
 
 swag_cloudflare_tunnel_enable: false
 swag_maxmind_enable: false

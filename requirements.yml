@@ -12,5 +12,6 @@ roles:
   - name: simoncaron.nut
 
 collections:
+  - name: ansible.posix
   - name: community.general
   - name: vladgh.samba

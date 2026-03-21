@@ -20,8 +20,8 @@
         types: deb
         uris:
           - http://download.opensuse.org/repositories/filesystems:/snapper/{{ ansible_distribution }}_{{ ansible_distribution_major_version }}
-        suites: ['/']
-        components: ['']
+        suites: ["/"]
+        components: [""]
         architectures: amd64
         signed_by: "{{ snapper_apt_key.dest }}"
 
@@ -42,7 +42,7 @@
     dest: /etc/apt/preferences.d/snapper
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Install Snapper
   ansible.builtin.apt:

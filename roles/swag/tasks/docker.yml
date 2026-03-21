@@ -21,6 +21,9 @@
 - name: Create a docker network
   community.docker.docker_network:
     name: "{{ swag_network_name }}"
+    ipam_config:
+      - subnet: "{{ swag_network_subnet }}"
+        gateway: "{{ swag_network_gateway }}"
     connected:
       - "{{ swag_container_name }}"
     appends: true
@@ -30,9 +33,8 @@
   block:
     - name: Append Docker mod
       ansible.builtin.set_fact:
-        swag_container_env_vars: "{{ swag_container_env_vars |
-        ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS +
-        '|linuxserver/mods:universal-cloudflared|linuxserver/mods:swag-cloudflare-real-ip'}) }}"
+        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:universal-cloudflared|linuxserver/mods:swag-cloudflare-real-ip'})
+          }}"
     - name: Add ENV vars
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
@@ -70,7 +72,7 @@
 
 # docker exec swag python3 /app/auto-uptime-kuma.py
 - name: Add optional 'Auto Uptime Kuma' Docker mod and ENV vars
-  when: false  # "'uptime_kuma' in containers", not maintained
+  when: "'uptime_kuma' in containers"
   block:
     - name: Run the Docker Socket Proxy
       ansible.builtin.include_role:
@@ -81,13 +83,13 @@
         connected:
           - "{{ socket_proxy_container_name }}"
         appends: true
-    - name: Launch UptimeKuma (if included) since Swag expects it online
+    - name: Launch Uptime Kuma (if included) since Swag expects it online
       ansible.builtin.include_role:
         name: uptime_kuma
     - name: Append Docker mod
       ansible.builtin.set_fact:
-        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS +
-        '|linuxserver/mods:universal-docker|linuxserver/mods:swag-auto-uptime-kuma'}) }}"
+        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:universal-docker|linuxserver/mods:swag-auto-uptime-kuma'})
+          }}"
     - name: Add ENV vars
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
@@ -96,14 +98,15 @@
         - ["UPTIME_KUMA_URL", "http://{{ uptime_kuma_container_name }}:3001"]
         - ["UPTIME_KUMA_USERNAME", "{{ uptime_kuma_user }}"]
         - ["UPTIME_KUMA_PASSWORD", "{{ uptime_kuma_password }}"]
+        - ["UPTIME_KUMA_API_VERSION", "{{ uptime_kuma_api_version }}"]
 
 - name: Add optional 'Maxmind' Docker mod and ENV vars
-  when: swag_maxmind_enable | default(False)
+  when: swag_maxmind_enable | default(false)
   block:
     - name: Append Docker mod
       ansible.builtin.set_fact:
-        swag_container_env_vars: "{{ swag_container_env_vars |
-        ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:swag-maxmind'}) }}"
+        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:swag-maxmind'})
+          }}"
     - name: Add ENV vars
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
@@ -128,10 +131,12 @@
 - name: Prepare all Fail2Ban configurations
   block:
     - name: Add the 'jail.local' configuration
-      ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/linuxserver/docker-swag/refs/heads/master/root/defaults/fail2ban/jail.local
+      ansible.builtin.template:
+        src: fail2ban/jail.local.j2
         dest: "{{ swag_volume_fail2ban }}/jail.local"
-        mode: '0640'
+        owner: "{{ guid }}"
+        group: "{{ guid }}"
+        mode: "0640"
     - name: Create 'filter.d' directory, which may be missing
       ansible.builtin.file:
         path: "{{ swag_volume_fail2ban }}/filter.d"
@@ -143,7 +148,7 @@
       ansible.builtin.get_url:
         url: https://raw.githubusercontent.com/fail2ban/fail2ban/refs/heads/master/config/action.d/cloudflare-token.conf
         dest: "{{ swag_volume_fail2ban }}/action.d/cloudflare-token.local"
-        mode: '0640'
+        mode: "0640"
       when: swag_cloudflare_tunnel_enable | default(false)
     - name: Add Cloudflare Zone to 'clouflare-token.local'
       ansible.builtin.lineinfile:
@@ -154,10 +159,10 @@
         insertafter: \[DEFAULT\]
         owner: "{{ guid }}"
         group: "{{ guid }}"
-        mode: '0640'
+        mode: "0640"
       loop:
         - ["cfzone =", "cfzone = {{ cloudflare_zone_id[site_url] }}"]
-        - ["cftoken =", "cftoken ="]  # remove # comment, if present.
+        - ["cftoken =", "cftoken ="] # remove # comment, if present.
       when: swag_cloudflare_tunnel_enable | default(false)
     - name: Select services for which 'fail2ban.yml' is available
       ansible.builtin.set_fact:
@@ -169,19 +174,6 @@
         name: "{{ item }}"
         tasks_from: fail2ban
       loop: "{{ swag_fail2ban_services | default([]) }}"
-    - name: Add options to 'jail.local'
-      ansible.builtin.lineinfile:
-        path: "{{ swag_volume_fail2ban }}/jail.local"
-        regexp: "{{ item[0] }}"
-        firstmatch: true
-        line: "{{ item[1] }}"
-        insertafter: \[DEFAULT\]
-        owner: "{{ guid }}"
-        group: "{{ guid }}"
-        mode: '0640'
-      loop:
-        - ["^bantime", "bantime = 3600"]
-        - ["^maxretry", "maxretry = 3"]
 
 - name: Make sure that SWAG container is created and running
   community.docker.docker_container:
@@ -190,6 +182,7 @@
     pull: true
     networks:
       - name: "{{ swag_network_name }}"
+        ipv4_address: "{{ swag_network_ip }}"
     etc_hosts: "{{ [{'key': site_url, 'value': '127.0.0.1'}] | items2dict }}"
     capabilities:
       - net_admin

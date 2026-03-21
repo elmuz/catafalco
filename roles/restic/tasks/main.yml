@@ -13,7 +13,7 @@
     state: directory
     owner: root
     group: root
-    mode: '0750'
+    mode: "0750"
 
 - name: Deploy restic configuration
   ansible.builtin.template:
@@ -21,7 +21,7 @@
     dest: "{{ restic_config_path }}"
     owner: root
     group: root
-    mode: '0600'
+    mode: "0600"
 
 - name: Deploy backup script
   ansible.builtin.copy:
@@ -29,7 +29,7 @@
     dest: "{{ restic_backup_script_path }}"
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
 
 - name: Ensure log directory exists
   file:
@@ -37,7 +37,7 @@
     state: directory
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
 
 - name: Create daily cronjob for restic backup
   cron:

@@ -1,1 +1,23 @@
 # see https://codeberg.org/ansible/pihole/src/branch/main/tasks/main.yml
+# TODO
+- name: Install git
+  ansible.builtin.package:
+    name: git
+    state: present
+    update_cache: true
+
+- name: Clone Pi-hole repository
+  ansible.builtin.git:
+    repo: https://github.com/pi-hole/pi-hole.git
+    dest: /tmp/Pi-hole
+#
+#    - name: Execute basic-install.sh script
+#      ansible.builtin.command:
+#        cmd: ./basic-install.sh --unattended
+#      args:
+#        chdir: "/tmp/Pi-hole/automated install"
+#
+#    - name: Delete cloned repository
+#      ansible.builtin.file:
+#        path: /tmp/Pi-hole
+#        state: absent

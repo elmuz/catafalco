@@ -1,3 +1,4 @@
+---
 mounts_root_location: /mnt
 mounts_use_subvolumes: true
 mounts_snapraid_content_path: /mnt/snapraid-content

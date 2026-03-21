@@ -13,5 +13,5 @@
 - name: Configure locale
   ansible.builtin.lineinfile:
     path: /etc/default/locale
-    regexp: '^LANG='
+    regexp: "^LANG="
     line: 'LANG="{{ locale | default("en_US.UTF-8") }}"'

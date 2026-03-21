@@ -30,6 +30,9 @@
     command: >
       --model "{{ vllm_default_model }}"
       --enable-sleep-mode
+      --enable-auto-tool-choice
+      --tool-call-parser qwen3_coder
+      --enable-prefix-caching
     ipc_mode: host
     device_requests:
       - driver: nvidia
@@ -37,12 +40,6 @@
         capabilities: gpu
     runtime: nvidia
     restart_policy: unless-stopped
-
-- name: Include Prometheus setup tasks
-  ansible.builtin.include_tasks: prometheus.yml
-
-- name: Include Grafana setup tasks
-  ansible.builtin.include_tasks: grafana.yml
 
 - name: Install the SWAG config files
   template:

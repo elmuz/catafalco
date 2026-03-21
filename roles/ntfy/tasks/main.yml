@@ -46,8 +46,8 @@
     env:
       NTFY_BASE_URL: "{{ ntfy_url }}"
       NTFY_BEHIND_PROXY: "1"
-      NTFY_AUTH_FILE: '/var/lib/ntfy/user.db'
-      NTFY_AUTH_DEFAULT_ACCESS: 'deny-all'
+      NTFY_AUTH_FILE: "/var/lib/ntfy/user.db"
+      NTFY_AUTH_DEFAULT_ACCESS: "deny-all"
       NTFY_AUTH_USERS: "{{ ntfy_auth_users }}"
       NTFY_AUTH_ACCESS: "{{ ntfy_auth_access }}"
       NTFY_AUTH_TOKENS: "{{ ntfy_auth_tokens }}"
