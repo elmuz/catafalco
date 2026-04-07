@@ -11,8 +11,10 @@
 
     - name: Set snapraid_installed_version
       ansible.builtin.set_fact:
-        snapraid_installed_version: "{{ (snapraid_installed_version_output.stdout | regex_search('([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)', '\\1')) | first if snapraid_installed_version_output.rc
-          == 0 else '0' }}"
+        snapraid_installed_version: >-
+          {{ (snapraid_installed_version_output.stdout
+          | regex_search('([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)', '\\1'))
+          | first if snapraid_installed_version_output.rc == 0 else '0' }}
 
 - name: Get latest release information from GitHub for SnapRAID
   block:
@@ -20,6 +22,7 @@
       ansible.builtin.uri:
         url: https://api.github.com/repos/amadvance/snapraid/releases/latest
         return_content: true
+        force: false
       register: snapraid_github_release_page
       check_mode: false
 

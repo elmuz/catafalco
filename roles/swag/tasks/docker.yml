@@ -33,8 +33,10 @@
   block:
     - name: Append Docker mod
       ansible.builtin.set_fact:
-        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:universal-cloudflared|linuxserver/mods:swag-cloudflare-real-ip'})
-          }}"
+        swag_container_env_vars: >-
+          {{ swag_container_env_vars
+          | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS
+          + '|linuxserver/mods:universal-cloudflared|linuxserver/mods:swag-cloudflare-real-ip'}) }}
     - name: Add ENV vars
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
@@ -88,8 +90,10 @@
         name: uptime_kuma
     - name: Append Docker mod
       ansible.builtin.set_fact:
-        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:universal-docker|linuxserver/mods:swag-auto-uptime-kuma'})
-          }}"
+        swag_container_env_vars: >-
+          {{ swag_container_env_vars
+          | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS
+          + '|linuxserver/mods:universal-docker|linuxserver/mods:swag-auto-uptime-kuma'}) }}
     - name: Add ENV vars
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"
@@ -105,8 +109,10 @@
   block:
     - name: Append Docker mod
       ansible.builtin.set_fact:
-        swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS + '|linuxserver/mods:swag-maxmind'})
-          }}"
+        swag_container_env_vars: >-
+          {{ swag_container_env_vars
+          | ansible.builtin.combine({'DOCKER_MODS': swag_container_env_vars.DOCKER_MODS
+          + '|linuxserver/mods:swag-maxmind'}) }}
     - name: Add ENV vars
       ansible.builtin.set_fact:
         swag_container_env_vars: "{{ swag_container_env_vars | ansible.builtin.combine({item[0]: item[1]}) }}"

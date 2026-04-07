@@ -76,5 +76,8 @@
     backup_cli_args:
       source_paths: "{{ docker_dir }}/{{ dawarich_container_name }}"
       destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
-      container_names_str: "{{ dawarich_container_name }}-db {{ dawarich_container_name }}-redis {{ dawarich_container_name }}-sidekiq {{ dawarich_container_name
-        }}"
+      container_names_str: >-
+        {{ dawarich_container_name }}-db
+        {{ dawarich_container_name }}-redis
+        {{ dawarich_container_name }}-sidekiq
+        {{ dawarich_container_name }}

@@ -1,7 +1,7 @@
 ---
 - name: Create the necessary folders
   ansible.builtin.file:
-    path: "{{ docker_dir }}/{{ influxdb_container_name }}/{{ item}}"
+    path: "{{ docker_dir }}/{{ influxdb_container_name }}/{{ item }}"
     state: directory
     owner: "1500"  # 'influxdb3' user within the container has UID and GID 1500
     group: "1500"

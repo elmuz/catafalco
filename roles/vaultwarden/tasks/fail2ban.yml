@@ -39,4 +39,6 @@
 
 - name: Add Vaultwarden to the list of logs to be mounted by SWAG
   ansible.builtin.set_fact:
-    swag_container_volumes: "{{ swag_container_volumes + [vaultwarden_log_file + ':' + swag_fail2ban_monitored_logs + '/vaultwarden.log:ro'] }}" # noqa var-naming[no-role-prefix]
+    swag_container_volumes: >-
+      {{ swag_container_volumes + [vaultwarden_log_file + ':' + swag_fail2ban_monitored_logs + '/vaultwarden.log:ro'] }}
+  # noqa var-naming[no-role-prefix]

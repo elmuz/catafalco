@@ -154,11 +154,11 @@
     - name: Verify SSH key access externally
       become: false
       ansible.builtin.command: >
-        ssh -o StrictHostKeyChecking=no 
-            -o BatchMode=yes 
-            -o ConnectTimeout=5 
-            -i "{{ ansible_ssh_private_key_file }}"
-            {{ username }}@{{ inventory_hostname }} exit
+        ssh -o StrictHostKeyChecking=no
+        -o BatchMode=yes
+        -o ConnectTimeout=5
+        -i "{{ ansible_ssh_private_key_file }}"
+        {{ username }}@{{ inventory_hostname }} exit
       delegate_to: localhost
 
     - name: Update /etc/ssh/sshd_config
@@ -201,11 +201,11 @@
 
     - name: Enable automatic security updates
       ansible.builtin.lineinfile:
-       path: /etc/apt/apt.conf.d/02-armbian-periodic
-       regexp: '^APT::Periodic::Enable'
-       line: 'APT::Periodic::Enable "1";'
-       state: present
-       create: false
+        path: /etc/apt/apt.conf.d/02-armbian-periodic
+        regexp: '^APT::Periodic::Enable'
+        line: 'APT::Periodic::Enable "1";'
+        state: present
+        create: false
 
     - name: Enable periodic Pi-hole updates
       ansible.builtin.cron:

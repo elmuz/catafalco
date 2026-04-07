@@ -61,28 +61,10 @@
     state: started
     restart_policy: unless-stopped
 
-# - name: Make sure that Invidious sig_helper is created and running
-#   community.docker.docker_container:
-#     name: inv_sig_helper
-#     image: quay.io/invidious/inv-sig-helper:latest
-#     init: true
-#     command: ["--tcp", "0.0.0.0:12999"]
-#     env:
-#       RUST_LOG: info
-#     networks:
-#       - name: "{{ invidious_network_name }}"
-#     restart_policy: unless-stopped
-#     cap_drop:
-#       - all
-#     read_only: true
-#     state: started
-#     security_opts:
-#       - no-new-privileges:true
-
 - name: Make sure that Invidious container is created and running
   community.docker.docker_container:
     name: "{{ invidious_container_name }}"
-    image: quay.io/invidious/invidious:master
+    image: quay.io/invidious/invidious:latest
     pull: true
     env:
       INVIDIOUS_CONFIG: |
@@ -94,17 +76,18 @@
           port: 5432
         check_tables: true
         invidious_companion:
-        - private_url: "http://{{ invidious_container_name }}-companion:8282"
-          public_url: "{{ invidious_dashboard_url }}"
+          - private_url: "http://{{ invidious_container_name }}-companion:8282"
+            public_url: "{{ invidious_dashboard_url }}/companion"
         invidious_companion_key: {{ invidious_companion_key }}
         # visitor_data: {{ invidious_visitor_data }}
         # po_token: {{ invidious_po_token }}
         https_only: true
-        domain: "invidious.{{ host_local }}"
+        domain: "{{ invidious_subdomain }}.{{ host_local }}"
         external_port: 443
         use_pubsub_feeds: true
         statistics_enabled: false
         hmac_key: {{ invidious_hmac }}
+        log_level: Trace
     networks:
       - name: "{{ invidious_network_name }}"
     links:
