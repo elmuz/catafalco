@@ -1,0 +1,10 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://{{ prometheus_container_name }}:9090
+    uid: "{{ grafana_prometheus_datasource_uid }}"
+    isDefault: false
+    editable: false

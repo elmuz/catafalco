@@ -1,3 +1,4 @@
 hosts
 !/host_vars/.gitkeep
 .idea
+.vaults

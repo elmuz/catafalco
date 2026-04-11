@@ -10,3 +10,4 @@ grafana_prometheus_datasource_uid: PBFA97CFB590B2093
 grafana_influxdb_datasource_uid: PA6F3E0496B9A4E62
 grafana_vllm_dashboard_uid: "b281712d-8bff-41ef-9f3f-71ad43c05e9b"
 grafana_system_dashboard_uid: "system-monitor-dashboard"
+grafana_docker_dashboard_uid: "docker-containers-dashboard"

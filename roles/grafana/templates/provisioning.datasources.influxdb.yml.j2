@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB_v3_SQL
+    type: influxdb
+    access: proxy
+    url: http://{{ influxdb_container_name }}:8181
+    uid: "{{ grafana_influxdb_datasource_uid }}"
+    isDefault: true
+    jsonData:
+      version: SQL
+      dbName: system-monitor
+      httpMode: POST
+      insecureGrpc: true
+    secureJsonData:
+      token: $INFLUXDB_TOKEN

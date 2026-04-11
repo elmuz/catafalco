@@ -55,6 +55,24 @@
     group: "{{ guid }}"
     mode: "0640"
 
+- name: Create the Grafana provisioning configuration for Docker Containers dashboard
+  when: "'influxdb' in containers"
+  ansible.builtin.template:
+    src: provisioning.dashboards.docker.json.j2
+    dest: "{{ docker_dir }}/{{ grafana_container_name }}/provisioning/dashboards/docker-containers.json"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0640"
+
+- name: Create the Grafana provisioning configuration for S.M.A.R.T. Disk Health dashboard
+  when: "'influxdb' in containers"
+  ansible.builtin.template:
+    src: provisioning.dashboards.smart.json.j2
+    dest: "{{ docker_dir }}/{{ grafana_container_name }}/provisioning/dashboards/smart-disk-health.json"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0640"
+
 - name: Make sure that Grafana container is created and running
   community.docker.docker_container:
     name: "{{ grafana_container_name }}"
@@ -69,6 +87,7 @@
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
       GF_AUTH_DISABLE_LOGIN_FORM: "false"
       GF_SERVER_ROOT_URL: "{{ grafana_dashboard_url }}"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_UID: "{{ grafana_system_dashboard_uid }}"
       INFLUXDB_TOKEN: "{{ influxdb_token }}"
     command: grafana-server --config /etc/grafana/grafana.ini cfg:default.feature_toggles.enable=newInfluxDSConfigPageDesign
     volumes:

@@ -54,6 +54,8 @@
     env:
       SERVER_SECRET_KEY: "{{ invidious_companion_key }}"
       SERVER_BASE_URL: "{{ invidious_dashboard_url }}"
+      JOBS_YOUTUBE_SESSION_PO_TOKEN_ENABLED: "true"
+      JOBS_YOUTUBE_SESSION_FREQUENCY: "*/5 * * * *"
     networks:
       - name: "{{ invidious_network_name }}"
     expose:
@@ -76,18 +78,18 @@
           port: 5432
         check_tables: true
         invidious_companion:
-          - private_url: "http://{{ invidious_container_name }}-companion:8282"
+          - private_url: "http://{{ invidious_container_name }}-companion:8282/companion"
             public_url: "{{ invidious_dashboard_url }}/companion"
         invidious_companion_key: {{ invidious_companion_key }}
         # visitor_data: {{ invidious_visitor_data }}
-        # po_token: {{ invidious_po_token }}
+        po_token: {{ invidious_po_token }}
         https_only: true
         domain: "{{ invidious_subdomain }}.{{ host_local }}"
         external_port: 443
         use_pubsub_feeds: true
         statistics_enabled: false
         hmac_key: {{ invidious_hmac }}
-        log_level: Trace
+        log_level: Info
     networks:
       - name: "{{ invidious_network_name }}"
     links:
