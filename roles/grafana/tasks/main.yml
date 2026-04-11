@@ -73,6 +73,15 @@
     group: "{{ guid }}"
     mode: "0640"
 
+- name: Create the Grafana provisioning configuration for Temperature Monitor dashboard
+  when: "'influxdb' in containers"
+  ansible.builtin.template:
+    src: provisioning.dashboards.temperature.json.j2
+    dest: "{{ docker_dir }}/{{ grafana_container_name }}/provisioning/dashboards/temperature-monitor.json"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0640"
+
 - name: Make sure that Grafana container is created and running
   community.docker.docker_container:
     name: "{{ grafana_container_name }}"

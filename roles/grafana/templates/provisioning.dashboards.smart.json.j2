@@ -13,17 +13,11 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
         "type": "dashboard"
       }
     ]
   },
-  "description": "Comprehensive system monitoring dashboard for Telegraf metrics collected from catafalco home server",
+  "description": "S.M.A.R.T. disk health metrics collected via Telegraf smartctl",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -39,7 +33,7 @@
       },
       "id": 1,
       "panels": [],
-      "title": "System Overview",
+      "title": "Disk Overview",
       "type": "row"
     },
     {
@@ -47,11 +41,18 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "System uptime",
+      "description": "List of all detected disks with model and serial",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -59,39 +60,80 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           },
-          "unit": "s"
-        },
-        "overrides": []
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "device"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Device"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "model"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Model"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "serial_no"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Serial"
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 4,
-        "w": 3,
+        "h": 6,
+        "w": 24,
         "x": 0,
         "y": 1
       },
       "id": 2,
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
           "fields": "",
-          "values": false
+          "reducer": ["sum"],
+          "show": false
         },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "showHeader": true
       },
-      "pluginVersion": "12.4.2",
+      "pluginVersion": "10.0.0",
       "targets": [
         {
           "datasource": {
@@ -99,330 +141,186 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "table",
-          "rawSql": "SELECT time, uptime FROM system WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time DESC LIMIT 1",
+          "rawSql": "SELECT DISTINCT device, model, serial_no FROM smart_attribute WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY device",
           "refId": "A"
         }
       ],
-      "title": "Uptime",
-      "type": "stat"
+      "title": "Detected Disks",
+      "type": "table"
     },
     {
       "datasource": {
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Current CPU utilization (all cores)",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 85
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 3,
-        "y": 1
-      },
-      "id": 3,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "table",
-          "rawSql": "SELECT time, 100 - usage_idle FROM cpu WHERE host = '$server' AND cpu = 'cpu-total' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time DESC LIMIT 1",
-          "refId": "A"
-        }
-      ],
-      "title": "CPU Usage",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "${DS_INFLUXDB}"
-      },
-      "description": "Current memory utilization",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 4,
-        "x": 7,
-        "y": 1
-      },
-      "id": 4,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "table",
-          "rawSql": "SELECT time, used_percent FROM mem WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time DESC LIMIT 1",
-          "refId": "A"
-        }
-      ],
-      "title": "Memory Usage",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "${DS_INFLUXDB}"
-      },
-      "description": "Filesystem usage for key mount points",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "orange",
-                "value": 80
-              },
-              {
-                "color": "red",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 13,
-        "x": 11,
-        "y": 1
-      },
-      "id": 28,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": true
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "table",
-          "rawSql": "SELECT '/' AS path, used_percent AS \"usage\" FROM disk WHERE host = '$server' AND path = '/' AND time >= $__timeFrom() ORDER BY time DESC LIMIT 1",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "table",
-          "rawSql": "SELECT '/mnt/cache1' AS path, used_percent AS \"usage\" FROM disk WHERE host = '$server' AND path = '/mnt/cache1' AND time >= $__timeFrom() ORDER BY time DESC LIMIT 1",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "table",
-          "rawSql": "SELECT '/mnt/data1' AS path, used_percent AS \"usage\" FROM disk WHERE host = '$server' AND path = '/mnt/data1' AND time >= $__timeFrom() ORDER BY time DESC LIMIT 1",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "table",
-          "rawSql": "SELECT '/mnt/data2' AS path, used_percent AS \"usage\" FROM disk WHERE host = '$server' AND path = '/mnt/data2' AND time >= $__timeFrom() ORDER BY time DESC LIMIT 1",
-          "refId": "D"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "table",
-          "rawSql": "SELECT '/mnt/parity1' AS path, used_percent AS \"usage\" FROM disk WHERE host = '$server' AND path = '/mnt/parity1' AND time >= $__timeFrom() ORDER BY time DESC LIMIT 1",
-          "refId": "E"
-        }
-      ],
-      "title": "Disk Usage",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "${DS_INFLUXDB}"
-      },
-      "description": "Total running processes",
+      "description": "Disk temperature over time. Gaps indicate spun-down (idle) disks.",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
-                "value": 0
+                "color": "green",
+                "value": null
               }
             ]
-          }
+          },
+          "unit": "celsius"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 3,
+        "h": 8,
+        "w": 12,
         "x": 0,
-        "y": 5
+        "y": 7
       },
-      "id": 5,
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Temperature History",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*\\s+(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "description": "Current disk temperatures with trend below",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 45
+              },
+              {
+                "color": "red",
+                "value": 55
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "id": 4,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
-        "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "textMode": "auto"
       },
-      "pluginVersion": "12.4.2",
+      "pluginVersion": "10.0.0",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "format": "table",
-          "rawSql": "SELECT time, total FROM processes WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time DESC LIMIT 1",
+          "format": "time_series",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "Processes",
+      "title": "Current Temperature",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*\\s+(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
       "type": "stat"
     },
     {
@@ -430,52 +328,27 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
+      "description": "Activity indicator per disk. Big number = data points collected (proxy for active time). Area chart below = binary activity over time. Gaps = disk was idle (spun down).",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
                 "color": "green",
-                "value": 0
+                "value": 80
               }
             ]
           },
@@ -484,165 +357,38 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 10,
+        "w": 24,
         "x": 0,
-        "y": 9
+        "y": 16
       },
-      "id": 9,
+      "id": 22,
       "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": false
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "textMode": "auto"
       },
-      "pluginVersion": "12.4.2",
+      "pluginVersion": "10.0.0",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "format": "time_series",
-          "rawSql": "SELECT time, 100 - usage_idle AS \"CPU\" FROM cpu WHERE host = '$server' AND cpu = 'cpu-total' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "format": "table",
+          "rawSql": "SELECT device, COUNT(*) * 10.0 * 100.0 / ($__to - $__from) / 1000.0 AS pct FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() GROUP BY device",
           "refId": "A"
         }
       ],
-      "title": "CPU Usage History",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "${DS_INFLUXDB}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 9
-      },
-      "id": 10,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT time, used AS \"used\" FROM mem WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT time, (total - used - buffered - cached) AS \"free\" FROM mem WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT time, cached AS \"cached\" FROM mem WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT time, available AS \"available\" FROM mem WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
-          "refId": "D"
-        }
-      ],
-      "title": "Memory Usage History",
-      "type": "timeseries"
+      "title": "Disk Active Time %",
+      "type": "stat"
     },
     {
       "collapsed": false,
@@ -650,11 +396,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 26
       },
-      "id": 11,
+      "id": 10,
       "panels": [],
-      "title": "CPU Details",
+      "title": "Disk Statistics",
       "type": "row"
     },
     {
@@ -662,44 +408,11 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
+      "description": "Power-on hours per disk",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
           },
           "mappings": [],
           "thresholds": {
@@ -707,66 +420,144 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
+                "value": null
               }
             ]
           },
-          "unit": "percent"
+          "unit": "h"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 27
       },
-      "id": 12,
+      "id": 11,
       "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "barRadius": 0.1,
+        "barWidth": 0.7,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
       },
-      "pluginVersion": "12.4.2",
+      "pluginVersion": "10.0.0",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "format": "time_series",
-          "rawSql": "SELECT time, cpu, 100 - usage_idle AS \"usage\" FROM cpu WHERE host = '$server' AND cpu != 'cpu-total' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "format": "table",
+          "rawSql": "SELECT device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Power_On_Hours' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "CPU Usage per Core",
+      "title": "Power-On Hours",
       "transformations": [
         {
-          "id": "renameByRegex",
+          "id": "groupBy",
           "options": {
-            "regex": ".*\\s+(.*)",
-            "renamePattern": "$1"
+            "fields": {
+              "device": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "raw_value": {
+                "aggregations": ["last"],
+                "operation": "aggregate"
+              }
+            }
           }
         }
       ],
-      "type": "timeseries"
+      "type": "barchart"
     },
     {
       "datasource": {
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
+      "description": "Power cycle count",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "id": 12,
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.7,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "format": "table",
+          "rawSql": "SELECT device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Power_Cycle_Count' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Power Cycle Count",
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "device": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "raw_value": {
+                "aggregations": ["last"],
+                "operation": "aggregate"
+              }
+            }
+          }
+        }
+      ],
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "description": "Reallocated event count",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -779,7 +570,6 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -796,8 +586,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -812,38 +601,32 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
+                "value": null
               }
             ]
-          },
-          "unit": "percent"
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 18
+        "x": 0,
+        "y": 35
       },
       "id": 13,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
+          "calcs": ["mean", "max", "last"],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
         "tooltip": {
-          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {
@@ -851,139 +634,11 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, usage_iowait AS \"iowait\" FROM cpu WHERE host = '$server' AND cpu = 'cpu-total' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT time, usage_softirq AS \"softirq\" FROM cpu WHERE host = '$server' AND cpu = 'cpu-total' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT time, usage_steal AS \"steal\" FROM cpu WHERE host = '$server' AND cpu = 'cpu-total' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
-          "refId": "C"
-        }
-      ],
-      "title": "CPU Breakdown",
-      "transformations": [],
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 25
-      },
-      "id": 17,
-      "panels": [],
-      "title": "Network",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "influxdb",
-        "uid": "${DS_INFLUXDB}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "Bps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 26
-      },
-      "id": 18,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT time, interface, (bytes_recv - LAG(bytes_recv) OVER (PARTITION BY interface ORDER BY time)) / 10.0 AS bytes_recv_rate FROM net WHERE host = '$server' AND interface IN (${interface:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reallocated_Event_Count' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "Network Receive",
+      "title": "Reallocated Events",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -1000,6 +655,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
+      "description": "Reported uncorrectable errors",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1012,7 +668,6 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1029,8 +684,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1045,11 +699,10 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
+                "value": null
               }
             ]
-          },
-          "unit": "Bps"
+          }
         },
         "overrides": []
       },
@@ -1057,60 +710,55 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 26
-      },
-      "id": 19,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "12.4.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_INFLUXDB}"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT time, interface, (bytes_sent - LAG(bytes_sent) OVER (PARTITION BY interface ORDER BY time)) / 10.0 AS bytes_sent_rate FROM net WHERE host = '$server' AND interface IN (${interface:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
-          "refId": "A"
-        }
-      ],
-      "title": "Network Transmit",
-      "transformations": [
-        {
-          "id": "renameByRegex",
-          "options": {
-            "regex": ".*\\s+(.*)",
-            "renamePattern": "$1"
-          }
-        }
-      ],
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 34
+        "y": 35
       },
       "id": 14,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "last"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reported_Uncorrect' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Reported Uncorrectable",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*\\s+(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "id": 5,
       "panels": [],
-      "title": "Disk & Filesystem",
+      "title": "Health & Errors",
       "type": "row"
     },
     {
@@ -1118,6 +766,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
+      "description": "Reallocated sector count per disk",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1130,7 +779,6 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1140,15 +788,14 @@
               "viz": false
             },
             "insertNulls": false,
-            "lineInterpolation": "smooth",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1163,114 +810,32 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "Bps"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sda"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sdb"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sdc"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sdd"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "nvme0n1"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "purple",
-                  "mode": "fixed"
-                }
+                "value": null
               }
             ]
           }
-        ]
+        },
+        "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
         "x": 0,
-        "y": 35
+        "y": 44
       },
-      "id": 15,
+      "id": 6,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
+          "calcs": ["mean", "max", "last"],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
         "tooltip": {
-          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {
@@ -1278,16 +843,16 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, name, (read_bytes - LAG(read_bytes) OVER (PARTITION BY name ORDER BY time)) / 10.0 AS read_rate FROM diskio WHERE host = '$server' AND name !~ '^sd[a-z][0-9]+$' AND name !~ 'p[0-9]+$' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reallocated_Sector_Ct' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "Disk Read",
+      "title": "Reallocated Sectors",
       "transformations": [
         {
           "id": "renameByRegex",
           "options": {
-            "regex": "^read_rate\\s+(.*)",
+            "regex": ".*\\s+(.*)",
             "renamePattern": "$1"
           }
         }
@@ -1299,6 +864,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
+      "description": "Current pending sector count",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1311,7 +877,6 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1321,15 +886,14 @@
               "viz": false
             },
             "insertNulls": false,
-            "lineInterpolation": "smooth",
+            "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -1344,114 +908,32 @@
             "steps": [
               {
                 "color": "green",
-                "value": 0
-              }
-            ]
-          },
-          "unit": "Bps"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sda"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sdb"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sdc"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "sdd"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "nvme0n1"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "purple",
-                  "mode": "fixed"
-                }
+                "value": null
               }
             ]
           }
-        ]
+        },
+        "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 12,
         "x": 12,
-        "y": 35
+        "y": 44
       },
-      "id": 20,
+      "id": 7,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
+          "calcs": ["mean", "max", "last"],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
         },
         "tooltip": {
-          "hideZeros": false,
           "mode": "multi",
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {
@@ -1459,16 +941,431 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, name, (write_bytes - LAG(write_bytes) OVER (PARTITION BY name ORDER BY time)) / 10.0 AS write_rate FROM diskio WHERE host = '$server' AND name !~ '^sd[a-z][0-9]+$' AND name !~ 'p[0-9]+$' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Current_Pending_Sector' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "Disk Write",
+      "title": "Pending Sectors",
       "transformations": [
         {
           "id": "renameByRegex",
           "options": {
-            "regex": "^write_rate\\s+(.*)",
+            "regex": ".*\\s+(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "description": "Offline uncorrectable sectors",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 52
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "last"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Offline_Uncorrectable' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Offline Uncorrectable",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*\\s+(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "description": "UDMA CRC errors indicate cable/connection issues",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 52
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "last"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'UDMA_CRC_Error_Count' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "UDMA CRC Errors",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*\\s+(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      },
+      "id": 15,
+      "panels": [],
+      "title": "SSD / NVMe Wear",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "description": "SSD wear indicator (normalized value, higher is better). Only available on SSDs.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 20
+              },
+              {
+                "color": "green",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 61
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": ["last"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT time, device, value FROM smart_attribute WHERE host = '$server' AND name IN ('Media_Wearout_Indicator', 'SSD_Life_Left', 'Percent_Lifetime_Remain', 'Wear_Leveling_Count') AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "SSD Wear Level",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*\\s+(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_INFLUXDB}"
+      },
+      "description": "Total LBAs written (SSD/NVMe lifetime writes). Raw value shown.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 61
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": ["last"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_INFLUXDB}"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name IN ('Total_LBAs_Written', 'Host_Writes_32MiB', 'Total_NAND_Writes') AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Writes",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*\\s+(.*)",
             "renamePattern": "$1"
           }
         }
@@ -1476,11 +1373,11 @@
       "type": "timeseries"
     }
   ],
-  "preload": false,
-  "refresh": "30s",
-  "schemaVersion": 42,
+  "refresh": "5m",
+  "schemaVersion": 38,
   "tags": [
-    "system",
+    "smart",
+    "disk",
     "telegraf",
     "influxdb"
   ],
@@ -1488,20 +1385,25 @@
     "list": [
       {
         "current": {
+          "selected": false,
           "text": "InfluxDB_v3_SQL",
-          "value": "PA6F3E0496B9A4E62"
+          "value": "{{ grafana_influxdb_datasource_uid }}"
         },
+        "hide": 0,
         "includeAll": false,
         "label": "Datasource",
+        "multi": false,
         "name": "DS_INFLUXDB",
         "options": [],
         "query": "influxdb",
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
         "type": "datasource"
       },
       {
         "current": {
+          "selected": false,
           "text": "catafalco",
           "value": "catafalco"
         },
@@ -1509,19 +1411,23 @@
           "type": "influxdb",
           "uid": "${DS_INFLUXDB}"
         },
-        "definition": "SELECT DISTINCT(host) FROM system WHERE time > now() - INTERVAL 24 HOUR",
+        "definition": "SELECT DISTINCT(host) FROM smart_attribute WHERE time > now() - INTERVAL 24 HOUR",
+        "hide": 0,
         "includeAll": false,
         "label": "Server",
+        "multi": false,
         "name": "server",
         "options": [],
-        "query": "SELECT DISTINCT(host) FROM system WHERE time > now() - INTERVAL 24 HOUR",
+        "query": "SELECT DISTINCT(host) FROM smart_attribute WHERE time > now() - INTERVAL 24 HOUR",
         "refresh": 1,
         "regex": "",
-        "regexApplyTo": "value",
+        "skipUrlSync": false,
+        "sort": 0,
         "type": "query"
       },
       {
         "current": {
+          "selected": false,
           "text": "All",
           "value": "$__all"
         },
@@ -1529,73 +1435,43 @@
           "type": "influxdb",
           "uid": "${DS_INFLUXDB}"
         },
-        "definition": "SELECT DISTINCT(name) FROM diskio WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR",
+        "definition": "SELECT DISTINCT(device) FROM smart_attribute WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR ORDER BY device",
+        "hide": 0,
         "includeAll": true,
         "label": "Disk",
         "multi": true,
-        "name": "disk",
+        "name": "device",
         "options": [],
-        "query": "SELECT DISTINCT(name) FROM diskio WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR",
-        "refresh": 1,
-        "regex": "/^(?!loop|ram).*/",
-        "regexApplyTo": "value",
-        "sort": 1,
-        "type": "query"
-      },
-      {
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "influxdb",
-          "uid": "${DS_INFLUXDB}"
-        },
-        "definition": "SELECT DISTINCT(path) FROM disk WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR",
-        "includeAll": true,
-        "label": "Mount Point",
-        "multi": true,
-        "name": "mountpoint",
-        "options": [],
-        "query": "SELECT DISTINCT(path) FROM disk WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR",
+        "query": "SELECT DISTINCT(device) FROM smart_attribute WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR ORDER BY device",
         "refresh": 1,
         "regex": "",
-        "regexApplyTo": "value",
-        "sort": 1,
-        "type": "query"
-      },
-      {
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
-        "datasource": {
-          "type": "influxdb",
-          "uid": "${DS_INFLUXDB}"
-        },
-        "definition": "SELECT DISTINCT(interface) FROM net WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR",
-        "includeAll": true,
-        "label": "Interface",
-        "multi": true,
-        "name": "interface",
-        "options": [],
-        "query": "SELECT DISTINCT(interface) FROM net WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR",
-        "refresh": 1,
-        "regex": "",
-        "regexApplyTo": "value",
+        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
   "timezone": "browser",
-  "title": "System Monitor",
-  "uid": "system-monitor-dashboard",
-  "version": 49,
+  "title": "S.M.A.R.T. Disk Health",
+  "uid": "smart-disk-health",
+  "version": 1,
   "weekStart": ""
 }
