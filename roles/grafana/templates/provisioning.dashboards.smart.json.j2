@@ -117,7 +117,7 @@
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 24,
         "x": 0,
         "y": 1
@@ -182,7 +182,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
+            "spanNulls": false,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -207,9 +207,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 11,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "id": 3,
       "options": {
@@ -282,9 +282,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 7
+        "w": 10,
+        "x": 11,
+        "y": 8
       },
       "id": 4,
       "options": {
@@ -328,27 +328,20 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Activity indicator per disk. Big number = data points collected (proxy for active time). Area chart below = binary activity over time. Gaps = disk was idle (spun down).",
+      "description": "Percentage of time each disk was active (not spun down). Computed as: (actual temperature data points / expected data points for selected time range) × 100. Gaps in the Temperature History panel below indicate idle/spun-down periods.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "mappings": [],
+          "decimals": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 50
-              },
-              {
                 "color": "green",
-                "value": 80
+                "value": null
               }
             ]
           },
@@ -357,17 +350,17 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 16
+        "h": 8,
+        "w": 3,
+        "x": 21,
+        "y": 8
       },
       "id": 22,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "auto",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": ["lastNotNull"],
           "fields": "",
@@ -382,12 +375,21 @@
             "type": "influxdb",
             "uid": "${DS_INFLUXDB}"
           },
-          "format": "table",
-          "rawSql": "SELECT device, COUNT(*) * 10.0 * 100.0 / ($__to - $__from) / 1000.0 AS pct FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() GROUP BY device",
+          "format": "time_series",
+          "rawSql": "SELECT time, device, ROUND(COUNT(*) OVER (PARTITION BY device) * 1000000.0 / ($__to - $__from)) AS pct FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
       "title": "Disk Active Time %",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*\\s+(.*)",
+            "renamePattern": "$1"
+          }
+        }
+      ],
       "type": "stat"
     },
     {
@@ -396,7 +398,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 16
       },
       "id": 10,
       "panels": [],
@@ -432,7 +434,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 17
       },
       "id": 11,
       "options": {
@@ -506,7 +508,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 17
       },
       "id": 12,
       "options": {
@@ -612,7 +614,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 35
+        "y": 25
       },
       "id": 13,
       "options": {
@@ -710,7 +712,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 35
+        "y": 25
       },
       "id": 14,
       "options": {
@@ -754,7 +756,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 33
       },
       "id": 5,
       "panels": [],
@@ -821,7 +823,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 44
+        "y": 34
       },
       "id": 6,
       "options": {
@@ -919,7 +921,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 44
+        "y": 34
       },
       "id": 7,
       "options": {
@@ -1017,7 +1019,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 52
+        "y": 42
       },
       "id": 8,
       "options": {
@@ -1115,7 +1117,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 52
+        "y": 42
       },
       "id": 9,
       "options": {
@@ -1159,7 +1161,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 60
+        "y": 50
       },
       "id": 15,
       "panels": [],
@@ -1235,7 +1237,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 61
+        "y": 51
       },
       "id": 16,
       "options": {
@@ -1334,7 +1336,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 61
+        "y": 51
       },
       "id": 17,
       "options": {

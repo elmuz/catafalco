@@ -1,0 +1,72 @@
+## Version 2026/04/12
+# Prometheus subdomain configuration with API token authentication
+# Access requires: X-API-Key header or Bearer token in Authorization header
+
+server {
+{% include "roles/swag/templates/nginx/common.j2" %}
+
+    server_name {{ prometheus_subdomain }}.*;
+
+    location / {
+        # Check for API token (X-API-Key header or Bearer token)
+        set $api_valid "no";
+        if ($http_x_api_key = "{{ prometheus_api_token }}") {
+            set $api_valid "yes";
+        }
+        if ($http_authorization ~* "Bearer\s+{{ prometheus_api_token }}") {
+            set $api_valid "yes";
+        }
+
+        if ($api_valid = "no") {
+            return 401;
+        }
+
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app prometheus;
+        set $upstream_port 9090;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+
+    location /api/ {
+        # Check for API token (X-API-Key header or Bearer token)
+        set $api_valid "no";
+        if ($http_x_api_key = "{{ prometheus_api_token }}") {
+            set $api_valid "yes";
+        }
+        if ($http_authorization ~* "Bearer\s+{{ prometheus_api_token }}") {
+            set $api_valid "yes";
+        }
+
+        if ($api_valid = "no") {
+            return 401;
+        }
+
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app prometheus;
+        set $upstream_port 9090;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+
+    # Lifecycle endpoints (read-only, no token required for health checks)
+    location ~ /-/healthy {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app prometheus;
+        set $upstream_port 9090;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+
+    location ~ /-/ready {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        set $upstream_app prometheus;
+        set $upstream_port 9090;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+    }
+}

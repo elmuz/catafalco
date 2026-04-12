@@ -619,7 +619,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, (total - used - buffered - cached) AS \"free\" FROM mem WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, free AS \"free\" FROM mem WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "B"
         },
         {

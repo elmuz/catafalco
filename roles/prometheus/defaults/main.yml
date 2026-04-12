@@ -1,0 +1,5 @@
+---
+prometheus_container_name: prometheus
+prometheus_network_name: "{{ monitoring_network }}"
+prometheus_subdomain: prometheus
+prometheus_server_url: https://{{ prometheus_subdomain }}.{{ site_url }}

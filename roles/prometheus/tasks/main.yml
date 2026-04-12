@@ -1,0 +1,38 @@
+---
+- name: Create the Prometheus data directory
+  file:
+    path: "{{ docker_dir }}/{{ prometheus_container_name }}/data"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+
+- name: Install the Prometheus config file
+  ansible.builtin.template:
+    src: templates/prometheus.yml.j2
+    dest: "{{ docker_dir }}/{{ prometheus_container_name }}/prometheus.yml"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Make sure that Prometheus container is created and running
+  community.docker.docker_container:
+    name: "{{ prometheus_container_name }}"
+    image: prom/prometheus:latest
+    pull: true
+    user: "{{ guid }}"
+    networks:
+      - name: "{{ prometheus_network_name }}"
+    state: started
+    volumes:
+      - "{{ docker_dir }}/{{ prometheus_container_name }}/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "{{ docker_dir }}/{{ prometheus_container_name }}/data:/prometheus"
+    restart_policy: unless-stopped
+
+- name: Install the Prometheus SWAG subdomain configuration with API token authentication
+  ansible.builtin.template:
+    src: templates/prometheus.subdomain.conf.j2
+    dest: "{{ swag_volume_nginx_proxy_confs }}/prometheus.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
