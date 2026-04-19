@@ -555,47 +555,28 @@
       "type": "barchart"
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "id": 5,
+      "panels": [],
+      "title": "Health & Errors",
+      "type": "row"
+    },
+    {
       "datasource": {
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Reallocated event count",
+      "description": "Reallocated event count. Only reported by SSDs (NVMe drives use media_errors).",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -604,6 +585,10 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           }
@@ -612,22 +597,22 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 6,
         "x": 0,
-        "y": 25
+        "y": 34
       },
       "id": 13,
       "options": {
-        "legend": {
-          "calcs": ["mean", "max", "last"],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "textMode": "auto"
       },
       "targets": [
         {
@@ -640,7 +625,7 @@
           "refId": "A"
         }
       ],
-      "title": "Reallocated Events",
+      "title": "Reallocated Events (sdd)",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -650,50 +635,18 @@
           }
         }
       ],
-      "type": "timeseries"
+      "type": "stat"
     },
     {
       "datasource": {
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Reported uncorrectable errors",
+      "description": "Reported uncorrectable errors. Zero is the only acceptable value.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
@@ -702,6 +655,10 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           }
@@ -710,22 +667,22 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 25
+        "w": 6,
+        "x": 6,
+        "y": 34
       },
       "id": 14,
       "options": {
-        "legend": {
-          "calcs": ["mean", "max", "last"],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "textMode": "auto"
       },
       "targets": [
         {
@@ -738,7 +695,7 @@
           "refId": "A"
         }
       ],
-      "title": "Reported Uncorrectable",
+      "title": "Reported Uncorrectable (All disks)",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -748,20 +705,7 @@
           }
         }
       ],
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 33
-      },
-      "id": 5,
-      "panels": [],
-      "title": "Health & Errors",
-      "type": "row"
+      "type": "stat"
     },
     {
       "datasource": {
@@ -823,7 +767,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 34
+        "y": 42
       },
       "id": 6,
       "options": {
@@ -921,7 +865,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 34
+        "y": 42
       },
       "id": 7,
       "options": {
@@ -1019,7 +963,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 42
+        "y": 50
       },
       "id": 8,
       "options": {
@@ -1117,7 +1061,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 42
+        "y": 50
       },
       "id": 9,
       "options": {
@@ -1161,7 +1105,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 58
       },
       "id": 15,
       "panels": [],
@@ -1173,45 +1117,15 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "SSD wear indicator (normalized value, higher is better). Only available on SSDs.",
+      "description": "Estimated remaining lifespan for the Crucial BX500 SSD (sdd). Higher is better (100% = new, 0% = end of life). Uses percent_lifetime_remain from SMART data.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
+          "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -1237,20 +1151,21 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 51
+        "y": 59
       },
       "id": 16,
       "options": {
-        "legend": {
-          "calcs": ["last"],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
       "targets": [
         {
@@ -1259,11 +1174,11 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, value FROM smart_attribute WHERE host = '$server' AND name IN ('Media_Wearout_Indicator', 'SSD_Life_Left', 'Percent_Lifetime_Remain', 'Wear_Leveling_Count') AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, 'sdd' AS device, COALESCE(percent_lifetime_remain, 100.0 - percentage_used) AS life_remaining FROM smart_device WHERE host = '$server' AND device = 'sdd' AND (percent_lifetime_remain IS NOT NULL OR percentage_used IS NOT NULL) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "SSD Wear Level",
+      "title": "SSD Life Remaining (sdd)",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -1273,62 +1188,40 @@
           }
         }
       ],
-      "type": "timeseries"
+      "type": "gauge"
     },
     {
       "datasource": {
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Total LBAs written (SSD/NVMe lifetime writes). Raw value shown.",
+      "description": "Estimated remaining lifespan for the Crucial P2 NVMe (nvme0). Higher is better (100% = new, 0% = end of life). Uses 100 - percentage_used from NVMe SMART data.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
+          "max": 100,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 20
+              },
+              {
+                "color": "green",
+                "value": 50
               }
             ]
           },
-          "unit": "decbytes"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1336,20 +1229,21 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 51
+        "y": 59
       },
-      "id": 17,
+      "id": 23,
       "options": {
-        "legend": {
-          "calcs": ["last"],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
       "targets": [
         {
@@ -1358,11 +1252,11 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name IN ('Total_LBAs_Written', 'Host_Writes_32MiB', 'Total_NAND_Writes') AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, 'nvme0' AS device, COALESCE(percent_lifetime_remain, 100.0 - percentage_used) AS life_remaining FROM smart_device WHERE host = '$server' AND device = 'nvme0' AND (percent_lifetime_remain IS NOT NULL OR percentage_used IS NOT NULL) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "Total Writes",
+      "title": "NVMe Life Remaining (nvme0)",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -1372,7 +1266,7 @@
           }
         }
       ],
-      "type": "timeseries"
+      "type": "gauge"
     }
   ],
   "refresh": "5m",
@@ -1437,14 +1331,14 @@
           "type": "influxdb",
           "uid": "${DS_INFLUXDB}"
         },
-        "definition": "SELECT DISTINCT(device) FROM smart_attribute WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR ORDER BY device",
+        "definition": "SELECT DISTINCT(device) FROM smart_device WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR ORDER BY device",
         "hide": 0,
         "includeAll": true,
         "label": "Disk",
         "multi": true,
         "name": "device",
         "options": [],
-        "query": "SELECT DISTINCT(device) FROM smart_attribute WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR ORDER BY device",
+        "query": "SELECT DISTINCT(device) FROM smart_device WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR ORDER BY device",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
