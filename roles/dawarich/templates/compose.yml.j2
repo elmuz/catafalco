@@ -7,7 +7,11 @@ services:
   redis:
     image: redis:7.4-alpine
     container_name: "{{ dawarich_container_name }}-redis"
-    command: redis-server
+    command: >-
+      redis-server
+      --save 900 1
+      --save 300 10
+      --appendonly no
     networks:
       - dawarich_network
     volumes:
@@ -65,6 +69,7 @@ services:
       DATABASE_USERNAME: "{{ dawarich_postgres_username }}"
       DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
       DATABASE_NAME: dawarich_production
+      WEB_CONCURRENCY: 1
       MIN_MINUTES_SPENT_IN_CITY: 60
       APPLICATION_HOSTS: "{{ dawarich_subdomain }}.{{ site_url }},127.0.0.1"
       TIME_ZONE: "{{ timezone }}"
@@ -115,8 +120,8 @@ services:
     stdin_open: true
     tty: true
     entrypoint: sidekiq-entrypoint.sh
-    command: ['bundle', 'exec', 'sidekiq']
-    restart: on-failure
+    command: ['sidekiq']
+    restart: unless-stopped
     environment:
       RAILS_ENV: production
       REDIS_URL: redis://redis:6379
@@ -126,13 +131,13 @@ services:
       DATABASE_PASSWORD: "{{ dawarich_postgres_password }}"
       DATABASE_NAME: dawarich_production
       APPLICATION_HOSTS: localhost,::1,127.0.0.1
-      BACKGROUND_PROCESSING_CONCURRENCY: 10
+      BACKGROUND_PROCESSING_CONCURRENCY: 3
       APPLICATION_PROTOCOL: http
       PROMETHEUS_EXPORTER_ENABLED: false
       PROMETHEUS_EXPORTER_HOST: dawarich
       PROMETHEUS_EXPORTER_PORT: 9394
       SELF_HOSTED: "true"
-      SECRET_KEY_BASE: 1234567890
+      SECRET_KEY_BASE: "{{ dawarich_secret_key_base }}"
       RAILS_LOG_TO_STDOUT: "true"
       STORE_GEODATA: "true"
     logging:

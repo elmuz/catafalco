@@ -7,3 +7,6 @@ deluge_dashboard_name: Deluge
 deluge_homer:
   name: "{{ deluge_dashboard_name }}"
   category: servarr
+# LAN subnet in CIDR notation, computed from the host's main IP (default route
+# interface). Can be overridden per host with the `lan_network` variable.
+deluge_lan_network: "{{ lan_network | default(ansible_default_ipv4.network ~ '/' ~ ansible_default_ipv4.prefix) }}"

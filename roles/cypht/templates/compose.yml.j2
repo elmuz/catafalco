@@ -1,0 +1,85 @@
+services:
+  db:
+    container_name: {{ cypht_container_name }}-db
+    image: mariadb:10
+    networks:
+      - cypht_network
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASS}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USER}", "-p${DB_PASS}"]
+      interval: 5m
+      timeout: 5s
+      start_period: 1m
+      start_interval: 5s
+      retries: 3
+    restart: unless-stopped
+
+  redis:
+    container_name: {{ cypht_container_name }}-redis
+    image: redis:7-alpine
+    networks:
+      - cypht_network
+    command: redis-server --appendonly yes
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASS:-}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5m
+      timeout: 3s
+      retries: 5
+      start_period: 1m
+      start_interval: 5s
+    restart: unless-stopped
+
+  cypht:
+    container_name: {{ cypht_container_name }}
+    image: cypht/cypht:2.7.0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cypht_network
+    environment:
+      APP_2FA_SECRET: ${APP_2FA_SECRET}
+      ALLOW_SESSION_CACHE: ${ALLOW_SESSION_CACHE}
+      AUTH_PASSWORD: ${AUTH_PASSWORD}
+      AUTH_TYPE: ${AUTH_TYPE}
+      AUTH_USERNAME: ${AUTH_USERNAME}
+      CYPHT_MODULES: ${CYPHT_MODULES}
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_PASS: ${DB_PASS}
+      DB_USER: ${DB_USER}
+      DEBUG_LOG: ${DEBUG_LOG}
+      ENABLE_MEMCACHED: ${ENABLE_MEMCACHED}
+      ENABLE_REDIS: ${ENABLE_REDIS}
+      MEMCACHED_SERVER: ${MEMCACHED_SERVER}
+      MEMCACHED_PORT: ${MEMCACHED_PORT}
+      MEMCACHED_AUTH: ${MEMCACHED_AUTH}
+      SESSION_TYPE: ${SESSION_TYPE}
+      REDIS_SERVER: ${REDIS_SERVER}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_INDEX: ${REDIS_INDEX}
+      REDIS_SOCKET: ${REDIS_SOCKET}
+      USER_CONFIG_TYPE: ${USER_CONFIG_TYPE}
+    volumes:
+      - ./user_attachments:/var/lib/hm3/attachments
+      - ./user_settings:/var/lib/hm3/users
+      - ./log/nginx:/var/log/nginx
+      - ./log/php:/var/log/php
+      - ./log/supervisord:/var/log/supervisord
+      - ./fonts:/usr/local/share/cypht/site/fonts
+    restart: unless-stopped
+
+networks:
+  cypht_network:
+    name: "{{ cypht_network_name }}"
+    external: true

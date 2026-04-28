@@ -14,8 +14,8 @@
   ansible.builtin.file:
     path: "{{ docker_dir }}/{{ influxdb_container_name }}/explorer"
     state: directory
-    owner: "1000"  # 'node' user within the container has UID and GID 1500
-    group: "1000"
+    owner: "1500"  # 'node' user within the container has UID and GID 1500
+    group: "1500"
     mode: "0755"
 
 - name: Create docker network

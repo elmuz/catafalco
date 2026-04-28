@@ -2,3 +2,9 @@ hosts
 !/host_vars/.gitkeep
 .idea
 .vaults
+
+# Local galaxy role install cache (ansible-galaxy install -p .ansible/roles)
+/.ansible/
+
+# Qwen CLI config (agent-specific; knowledge migrated to docs/ and .agents/)
+/.qwen/

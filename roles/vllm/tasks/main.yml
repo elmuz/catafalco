@@ -1,20 +1,12 @@
 ---
-- name: Create the configuration directory
-  file:
-    path: "{{ docker_dir }}/{{ vllm_container_name }}"
-    state: directory
-    owner: "{{ guid }}"
-    group: "{{ guid }}"
-    mode: "0755"
-
 - name: Create docker network
   ansible.builtin.include_tasks:
     file: network.yml
 
-- name: Ensure that vLLM container is created and running
+- name: Install vLLM container
   community.docker.docker_container:
     name: "{{ vllm_container_name }}"
-    image: docker.io/vllm/vllm-openai:latest-x86_64-cu130
+    image: docker.io/vllm/vllm-openai:latest
     pull: true
     exposed_ports:
       - "8000"
@@ -24,17 +16,27 @@
     env:
       HUGGING_FACE_HUB_TOKEN: "{{ hugging_face_token }}"
       DO_NOT_TRACK: "1"
+      VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS: "1"
     volumes:
       - "{{ cache_root }}/docker-volumes-cache/{{ vllm_container_name }}:/root/.cache"
       - /etc/localtime:/etc/localtime:ro
     command: >
-      --model "{{ vllm_default_model }}"
+      "{{ vllm_default_model }}"
+      --gpu-memory-utilization 0.65
       --enable-sleep-mode
+      --max-model-len 262144
+      --tensor-parallel-size 1
+      --max-num-seqs 1
+      --kv-cache-dtype fp8
+      --enable-prefix-caching
       --enable-auto-tool-choice
       --tool-call-parser qwen3_coder
-      --enable-prefix-caching
-      --max_model_len=200000
+      --reasoning-parser qwen3
+      --language-model-only
+      --default-chat-template-kwargs '{"enable_thinking": false}'
+      --speculative-config '{"method": "mtp", "num_speculative_tokens": 3}'
     ipc_mode: host
+    shm_size: 16G
     device_requests:
       - driver: nvidia
         count: -1
@@ -49,13 +51,3 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0644"
-
-- name: Setup backup cron job
-  ansible.builtin.include_tasks: tasks/backup_service.yml
-  vars:
-    service_name: "{{ vllm_container_name }}"
-    cron_schedule: "0 5 * * 3"
-    backup_cli_args:
-      source_paths: "{{ docker_dir }}/{{ vllm_container_name }}"
-      destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
-      container_names_str: "{{ vllm_container_name }}"

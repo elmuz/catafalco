@@ -1,0 +1,55 @@
+---
+- name: Create the required directories for configs
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ cypht_container_name }}/{{ item }}"
+    state: directory
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0755"
+  loop:
+    - mysql
+
+- name: Create docker network
+  ansible.builtin.include_tasks:
+    file: network.yml
+
+- name: Install the env file
+  ansible.builtin.template:
+    src: "env.j2"
+    dest: "{{ docker_dir }}/{{ cypht_container_name }}/.env"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Install the compose file
+  ansible.builtin.template:
+    src: "compose.yml.j2"
+    dest: "{{ docker_dir }}/{{ cypht_container_name }}/compose.yml"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+- name: Make sure Cypht containers are running
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_dir }}/{{ cypht_container_name }}"
+    state: present
+    remove_orphans: true
+    remove_volumes: true
+
+- name: Install the SWAG config files
+  ansible.builtin.template:
+    src: "{{ cypht_container_name }}.subdomain.conf.j2"
+    dest: "{{ docker_dir }}/swag/nginx/proxy-confs/{{ cypht_container_name }}.subdomain.conf"
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0644"
+
+# - name: Setup backup cron job
+#   ansible.builtin.include_tasks: tasks/backup_service.yml
+#   vars:
+#     service_name: "{{ openwebui_container_name }}"
+#     cron_schedule: "0 5 * * 3"
+#     backup_cli_args:
+#       source_paths: "{{ docker_dir }}/{{ openwebui_container_name }}"
+#       destination_path: "{{ mergerfs_root }}/docker-volumes-backup"
+#       container_names_str: "{{ openwebui_container_name }}"

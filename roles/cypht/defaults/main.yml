@@ -1,0 +1,33 @@
+---
+cypht_container_name: cypht
+cypht_network_name: cypht_network
+cypht_subdomain: mail
+cypht_dashboard_url: https://{{ cypht_subdomain }}.{{ site_url }}
+cypht_dashboard_name: "Cypht"
+cypht_homer:
+  name: "{{ cypht_dashboard_name }}"
+  category: services
+
+cypht_modules:
+  - 2fa
+  - account
+  - advanced_search
+  - calendar
+  - contacts
+  - core
+  - desktop_notifications
+  - feeds
+  - gmail_contacts
+  - history
+  - idle_timer
+  - imap
+  - imap_folders
+  - jmap
+  - keyboard_shortcuts
+  - local_contacts
+  - nux
+  - profiles
+  - sievefilters
+  - smtp
+  - tags
+  - themes
