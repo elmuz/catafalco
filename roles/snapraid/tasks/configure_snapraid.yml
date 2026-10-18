@@ -1,4 +1,15 @@
 ---
+- name: Validate SnapRAID parity disk configuration
+  ansible.builtin.assert:
+    that:
+      - snapraid_parity_disks is defined
+      - snapraid_parity_disks | length >= 1
+      - snapraid_parity_disks | length <= 6
+    fail_msg: >-
+      SnapRAID supports between 1 and 6 parity disks, but
+      {{ snapraid_parity_disks | default([]) | length }} were configured.
+    quiet: true
+
 - name: Ensure directories for `snapraid.content` files exist
   ansible.builtin.file:
     path: "{{ item | dirname }}"

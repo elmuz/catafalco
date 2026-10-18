@@ -13,9 +13,12 @@
       ansible.builtin.set_fact:
         snapraid_installed_version: >-
           {{ (snapraid_installed_version_output.stdout
-          | regex_search('([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)', '\\1'))
-          | first if snapraid_installed_version_output.rc == 0 else '0' }}
+          | regex_search('[0-9]+[.][0-9]+(?:[.][0-9]+)?')) | default('0', true)
+          if snapraid_installed_version_output.rc == 0 else '0' }}
 
+# NOTE: SnapRAID 15+ no longer reads content files written by versions older
+# than 14.x. Existing arrays must first run `snapraid sync` with a 14.x binary
+# (14.10 is the last 14.x release) to migrate the content file before upgrading.
 - name: Get latest release information from GitHub for SnapRAID
   block:
     - name: Get GitHub latest release page

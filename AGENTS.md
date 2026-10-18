@@ -264,7 +264,13 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
 **Important:** Telegraf is a **host-installed service** (not a container). It sends metrics to InfluxDB via `http://localhost:8181` (NOT the external HTTPS URL through the reverse proxy).
 
 ### Telegraf Configuration
-- **Config file:** `/etc/telegraf/telegraf.conf` (managed by `roles/telegraf/files/telegraf.conf`)
+- **Config file:** `/etc/telegraf/telegraf.conf` (managed by `roles/telegraf/templates/telegraf.conf.j2`)
+- **SMART devices:** generated from `data_disks`, `parity_disks`, `cache_disks` and
+  `system_disks` in `host_vars/<host>/vars.yml`. Each entry provides `device`, `model`,
+  `serial` and `smart_type` (`sat` or `nvme`); the template builds stable
+  `/dev/disk/by-id/... -d <type>` entries and a regex processor maps the tags back to
+  `sda`/`sdb`/`sdc`/`sdd`/`nvme0`/`nvme1`. SMART polling is `interval = "5m"` with
+  `nocheck = "standby"`, so standby disks are not woken.
 - **Environment variables:** `/etc/default/telegraf` (managed by `roles/telegraf/templates/telegraf.j2`)
 - **Key environment variable:** `INFLUX_URL="http://localhost:8181"` — must use local HTTP, NOT external HTTPS
 - **Network interfaces monitored:** `eth*`, `enp*`, `eno*`, `lo` (configured in telegraf.conf `[[inputs.net]]` section)

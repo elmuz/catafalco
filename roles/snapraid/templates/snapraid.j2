@@ -4,11 +4,8 @@
 
 # Parity Disks
 parity {{ mounts_root_location }}/parity{{ snapraid_parity_disks[0].parity_disk_id }}/snapraid.parity
-
-{% for i in range(2, 7) %}
-{% if i <= snapraid_parity_disks|length %}
-{{ i }}-parity {{ parity_mount_path }}/parity{{ snapraid_parity_disks[i].parity_disk_id }}/snapraid.{{ snapraid_parity_disks[i].parity_disk_id }}-parity
-{% endif %}
+{% for parity_disk in snapraid_parity_disks[1:] %}
+{{ loop.index + 1 }}-parity {{ mounts_root_location }}/parity{{ parity_disk.parity_disk_id }}/snapraid.{{ loop.index + 1 }}-parity
 {% endfor %}
 
 # Content Files

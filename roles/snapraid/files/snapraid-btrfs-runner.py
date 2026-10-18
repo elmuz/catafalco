@@ -5,7 +5,6 @@ import logging
 import logging.handlers
 import os.path
 import shutil
-import socket
 import subprocess
 import sys
 import threading
@@ -131,7 +130,27 @@ def send_email(success):
     server.quit()
 
 
+def ping_healthchecks(endpoint=""):
+    """Ping the configured Healthchecks.io check.
+
+    ``endpoint`` is "" for success, "/start" when the run starts, and
+    "/fail" when it fails. Reporting failures explicitly is important:
+    otherwise Healthchecks only sees the "/start" ping and the check stays
+    in the "started" state forever instead of turning red.
+    """
+    if not config["healthchecks"]["url"]:
+        return
+
+    url = config["healthchecks"]["url"].rstrip("/") + endpoint
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            response.read()
+    except Exception as e:
+        logging.error(f"{e}. Failed to open {url}.")
+
+
 def finish(is_success):
+    ping_healthchecks("" if is_success else "/fail")
     if ("error", "success")[is_success] in config["email"]["sendon"]:
         try:
             send_email(is_success)
@@ -309,12 +328,7 @@ def run():
     if len(config["snapraid-btrfs"]["snapper-configs-file"]) > 0:
         snapraid_btrfs_args_extend["snapper-configs-file"] = config["snapraid-btrfs"]["snapper-configs-file"]
 
-    if config["healthchecks"]["url"]:
-        try:
-            urllib.request.urlopen(config["healthchecks"]["url"] + "/start", timeout=3)
-        except socket.error as e:
-            logging.error(f"{e}. Failed to open {config['healthchecks']['url']}.")
-
+    ping_healthchecks("/start")
 
     if config["snapraid"]["touch"]:
         logging.info("Running touch...")
@@ -397,12 +411,6 @@ def run():
             logging.error(e)
             finish(False)
         logging.info("*" * 60)
-
-    if config["healthchecks"]["url"]:
-        try:
-            urllib.request.urlopen(config["healthchecks"]["url"], timeout=3)
-        except socket.error as e:
-            logging.error(f"{e}. Failed to open {config['healthchecks']['url']}.")
 
     logging.info("All done")
     finish(True)

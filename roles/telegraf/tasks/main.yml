@@ -39,9 +39,9 @@
     capability: cap_sys_rawio,cap_dac_read_search,cap_sys_admin+ep
     state: present
 
-- name: Copy the main telegraf config (1)
-  ansible.builtin.copy:
-    src: telegraf.conf
+- name: Template the main telegraf config
+  ansible.builtin.template:
+    src: telegraf.conf.j2
     dest: /etc/telegraf/telegraf.conf
     owner: root
     group: telegraf
