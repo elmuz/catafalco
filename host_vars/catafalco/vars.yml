@@ -83,18 +83,14 @@ containers:
   - lidarr
   - navidrome
   - nebula_sync
-  - openwebui
-  - prometheus
   - prowlarr
   - radarr
-  - redlib
   - slskd
   - socket_proxy
   - sonarr
   - speedtest_tracker
   - stirling_pdf
   - uptime_kuma
-  - vllm
   - watchtower
   - wud
 

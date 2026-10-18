@@ -3,6 +3,9 @@ influxdb_container_name: influxdb
 influxdb_network_name: "{{ monitoring_network }}"
 influxdb_subdomain: influxdb
 influxdb_ui_subdomain: influxdb-ui
+
+# Port the InfluxDB 3 UI (influxdata/influxdb3-ui) listens on inside the container.
+influxdb_ui_port: 8080
 influxdb_dashboard_url: https://{{ influxdb_ui_subdomain }}.{{ host_local }}/
 influxdb_dashboard_name: InfluxDB
 influxdb_homer:

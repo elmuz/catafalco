@@ -18,7 +18,7 @@ An Ansible playbook that sets up an Ubuntu-based home media server/NAS with secu
 | **File Sharing** | Samba server |
 | **Networking** | Pi-hole, AdGuard DNS |
 | **File Sync** | MergerFS, Rsync, Rclone, Snapraid |
-| **Monitoring** | Grafana, InfluxDB, Telegraf, Prometheus, Uptime Kuma |
+| **Monitoring** | Grafana, InfluxDB, Telegraf, Uptime Kuma |
 | **Language Support** | Zsh configuration |
 | **Credential Management** | Ansible-vault (encrypted secrets) |
 
@@ -285,9 +285,9 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
 
 ### Grafana Dashboards
 - **Container:** `grafana` (image: `grafana/grafana:latest`)
-- **Datasources:** InfluxDB_v3_SQL (default, uid: `PA6F3E0496B9A4E62`), Prometheus (uid: `PBFA97CFB590B2093`)
+- **Datasources:** InfluxDB_v3_SQL (default, uid: `PA6F3E0496B9A4E62`)
 - **Dashboard template:** `roles/grafana/templates/provisioning.dashboards.system.json.j2`
-- **Provisioned dashboards:** System Monitor, vLLM
+- **Provisioned dashboards:** System Monitor, Docker Containers, S.M.A.R.T. Disk Health, Temperature Monitor
 
 ### Grafana + InfluxDB v3 SQL Rules
 1. **Use SQL syntax, NOT InfluxQL** — no `SELECT time, "field" FROM "measurement"`, use `SELECT time, field FROM measurement`

@@ -1,10 +1,10 @@
 ---
 - name: Check if hd-idle is installed
-  command:
+  ansible.builtin.command:
     cmd: which hd-idle
-  ignore_errors: true
   register: hd_idle_which
-  changed_when: hdidle.rc != 0
+  changed_when: false
+  failed_when: false
 
 - name: Install hd-idle
   when: hd_idle_which.rc != 0

@@ -37,6 +37,33 @@
     group: "{{ guid }}"
     mode: "0640"
 
+- name: Remove the Prometheus datasource when Prometheus is not deployed
+  when: "'prometheus' not in containers"
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ grafana_container_name }}/provisioning/datasources/prometheus.yml"
+    state: absent
+
+# Grafana only deletes a provisioned datasource when it is listed under
+# deleteDatasources on startup; removing its YAML file is not enough.
+- name: Keep a Grafana provisioning cleanup for the removed Prometheus datasource
+  when: "'prometheus' not in containers"
+  ansible.builtin.copy:
+    dest: "{{ docker_dir }}/{{ grafana_container_name }}/provisioning/datasources/zz-prometheus-cleanup.yml"
+    content: |
+      apiVersion: 1
+      deleteDatasources:
+        - name: Prometheus
+          orgId: 1
+    owner: "{{ guid }}"
+    group: "{{ guid }}"
+    mode: "0640"
+
+- name: Remove the Grafana provisioning cleanup when Prometheus is deployed
+  when: "'prometheus' in containers"
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ grafana_container_name }}/provisioning/datasources/zz-prometheus-cleanup.yml"
+    state: absent
+
 - name: Create the Grafana provisioning configuration for vLLM dashboard
   when: "'vllm' in containers"
   ansible.builtin.template:
@@ -45,6 +72,12 @@
     owner: "{{ guid }}"
     group: "{{ guid }}"
     mode: "0640"
+
+- name: Remove the vLLM dashboard when vLLM is not deployed
+  when: "'vllm' not in containers"
+  ansible.builtin.file:
+    path: "{{ docker_dir }}/{{ grafana_container_name }}/provisioning/dashboards/vllm.json"
+    state: absent
 
 - name: Create the Grafana provisioning configuration for System Monitor dashboard
   when: "'influxdb' in containers"

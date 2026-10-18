@@ -181,14 +181,63 @@
         tasks_from: fail2ban
       loop: "{{ swag_fail2ban_services | default([]) }}"
 
+# Swag acts as a reverse-proxy hub: it joins the private docker network of every
+# service (instead of all services sharing a single network). The service networks
+# must exist BEFORE the container is created so that they can be declared in its
+# definition; declared networks survive container recreations (playbook runs,
+# watchtower, manual `docker rm` + re-create), unlike `docker network connect`
+# side effects. Tags: they protect against a service added to `containers` whose
+# role has no network.yml (would otherwise abort the whole Swag role).
+- name: Select the containers whose roles provide a docker network definition
+  ansible.builtin.set_fact:
+    swag_network_services: "{{ (swag_network_services | default([])) + [item] }}"
+  loop: "{{ containers | reject('equalto', 'socket_proxy') | reject('equalto', 'watchtower') | reject('equalto', 'onlyoffice') }}"
+  when: "lookup('ansible.builtin.fileglob', 'roles/' + item + '/tasks/network.yml', wantlist=true) | length == 1"
+
+# The monitoring roles share one network but reference it through other roles'
+# defaults; put the aliases in scope so that the 'include_vars' below resolves
+# them regardless of the loop order.
+- name: Put shared monitoring network names in scope  # noqa var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    influxdb_network_name: "{{ monitoring_network | default('influxdb_network') }}"
+    prometheus_network_name: "{{ monitoring_network | default('influxdb_network') }}"
+    grafana_network_name: "{{ monitoring_network | default('influxdb_network') }}"
+
+- name: Load each container role's defaults to resolve its network name
+  ansible.builtin.include_vars:
+    file: "roles/{{ item }}/defaults/main.yml"
+  loop: "{{ swag_network_services | default([]) }}"
+  ignore_errors: true
+
+- name: Resolve the docker network name of each service
+  ansible.builtin.set_fact:
+    swag_service_networks: "{{ (swag_service_networks | default([])) + [lookup('vars', item ~ '_network_name')] }}"
+  loop: "{{ swag_network_services | default([]) }}"
+  when: "lookup('vars', item ~ '_network_name', default='') != ''"
+
+- name: Make sure each service docker network exists before Swag starts
+  community.docker.docker_network:
+    name: "{{ item }}"
+  loop: "{{ swag_service_networks | default([]) | unique }}"
+
+- name: Build the full list of networks the SWAG container joins
+  ansible.builtin.set_fact:
+    swag_container_networks: "{{ (swag_container_networks | default([{'name': swag_network_name, 'ipv4_address': swag_network_ip}])) + [{'name': item}] }}"
+  loop: "{{ swag_service_networks | default([]) | unique }}"
+
 - name: Make sure that SWAG container is created and running
   community.docker.docker_container:
     name: "{{ swag_container_name }}"
     image: lscr.io/linuxserver/swag:latest
     pull: true
-    networks:
-      - name: "{{ swag_network_name }}"
-        ipv4_address: "{{ swag_network_ip }}"
+    networks: "{{ swag_container_networks }}"
+    # Swag is the hub of every service network. Dynamic `docker network connect`
+    # attachments do not survive a container recreation, and the attach loop only
+    # runs during playbook runs - so exclude Swag from watchtower's out-of-band
+    # updates. Upgrades happen via the playbook (pull: true), which re-declares
+    # all networks; watch 'wud' for update notifications.
+    labels:
+      com.centurylinkltd.watchtower.enable: "false"
     etc_hosts: "{{ [{'key': site_url, 'value': '127.0.0.1'}] | items2dict }}"
     capabilities:
       - net_admin
@@ -197,12 +246,6 @@
     ports: "{{ swag_container_ports }}"
     volumes: "{{ swag_container_volumes }}"
     restart_policy: unless-stopped
-
-- name: Attach Swag to the network of each container
-  ansible.builtin.include_role:
-    name: "{{ item }}"
-    tasks_from: network
-  loop: "{{ containers | reject('equalto', 'socket_proxy') | reject('equalto', 'watchtower') | reject('equalto', 'onlyoffice') }}"
 
 - name: Pause until SWAG created configuration files
   ansible.builtin.wait_for:

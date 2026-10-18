@@ -152,12 +152,6 @@
         - containers
         - monitoring
 
-    - role: prometheus
-      tags:
-        - prometheus
-        - containers
-        - monitoring
-
     - role: influxdb
       tags:
         - influxdb
@@ -341,14 +335,4 @@
     - role: cypht
       tags:
         - cypht
-        - containers
-
-    - role: vllm
-      tags:
-        - vllm
-        - containers
-
-    - role: openwebui
-      tags:
-        - openwebui
         - containers
