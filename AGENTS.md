@@ -266,11 +266,21 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
 ### Telegraf Configuration
 - **Config file:** `/etc/telegraf/telegraf.conf` (managed by `roles/telegraf/templates/telegraf.conf.j2`)
 - **SMART devices:** generated from `data_disks`, `parity_disks`, `cache_disks` and
-  `system_disks` in `host_vars/<host>/vars.yml`. Each entry provides `device`, `model`,
-  `serial` and `smart_type` (`sat` or `nvme`); the template builds stable
-  `/dev/disk/by-id/... -d <type>` entries and a regex processor maps the tags back to
-  `sda`/`sdb`/`sdc`/`sdd`/`nvme0`/`nvme1`. SMART polling is `interval = "5m"` with
-  `nocheck = "standby"`, so standby disks are not woken.
+  `system_disks` in `host_vars/<host>/vars.yml`. Each entry provides `model`, `serial`
+  and `smart_type` (`sat` or `nvme`); **the serial is the disk identity** — there is no
+  `device` field, because kernel names are probe-order dependent and change when disks
+  are added, moved or the machine is rebooted. At deploy time the role finds the
+  matching `/dev/disk/by-id/ata-*` / `nvme-*` link by serial, asserts there is exactly
+  one, and resolves both that path (handed to smartctl, stable across reboots) and the
+  current kernel name (used by a regex processor to tag samples as `sda`/`sdb`/`nvme0`).
+  A missing, ambiguous or mistyped serial fails the play with an explicit message
+  instead of mislabelling another disk's data.
+  SMART polling is `interval = "5m"` with `nocheck = "standby"`, so standby disks are not
+  woken.
+- **Disk I/O tags:** `[[inputs.diskio]]` keeps the kernel-name `name` tag (existing
+  panels key on it) and adds `device_tags = ["ID_SERIAL_SHORT", "ID_MODEL"]`, so I/O
+  metrics can be joined to SMART on the serial instead of on `sda`/`nvme0`. Note the
+  diskio tag is `name`, not `device`; the SMART measurements use `device`.
 - **Environment variables:** `/etc/default/telegraf` (managed by `roles/telegraf/templates/telegraf.j2`)
 - **Key environment variable:** `INFLUX_URL="http://localhost:8181"` — must use local HTTP, NOT external HTTPS
 - **Network interfaces monitored:** `eth*`, `enp*`, `eno*`, `lo` (configured in telegraf.conf `[[inputs.net]]` section)

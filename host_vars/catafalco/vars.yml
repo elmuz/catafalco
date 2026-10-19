@@ -215,18 +215,20 @@ mounts_snapraid_content_path: "{{ mounts_root_location }}/snapraid-content"
 mergerfs_root: "{{ mounts_root_location }}/storage"
 cache_root: "{{ mergerfs_root }}_cache"
 
+# Disk identity is the serial number. Kernel names (sda, nvme1n1, ...) are
+# assigned by probe order, change when disks are added, moved or the machine
+# is rebooted, and are therefore never stored here. Roles resolve the current
+# by-id path and kernel name from the serial at deploy time.
 data_disks:
   - data_disk_id: 1
     label: Data1
     content: true
-    device: /dev/sdb
     model: ST18000NT001-3NF101
     serial: ZVTFF270
     smart_type: sat
   - data_disk_id: 2
     label: Data2
     content: true
-    device: /dev/sda
     model: ST18000NT001-3NF101
     serial: ZVTFE2SL
     smart_type: sat
@@ -235,7 +237,6 @@ cache_disks:
   - cache_disk_id: 1
     label: Cache1
     content: true
-    device: /dev/nvme0
     model: CT1000P2SSD8
     serial: 2146E5E54409
     smart_type: nvme
@@ -244,7 +245,6 @@ parity_disks:
   - parity_disk_id: 1
     label: Parity1
     content: true
-    device: /dev/sdc
     model: ST18000NT001-3NF101
     serial: ZVTFF3JB
     smart_type: sat
@@ -252,12 +252,10 @@ parity_disks:
 # Disks outside the mergerFS/SnapRAID pool that should still be monitored.
 system_disks:
   - name: System
-    device: /dev/sdd
     model: CT480BX500SSD1
     serial: 2421E8B28A83
     smart_type: sat
   - name: NVMe2
-    device: /dev/nvme1
     model: KINGSTON SNV3S1000G
     serial: 50026B7383E4529D
     smart_type: nvme

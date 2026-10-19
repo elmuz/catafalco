@@ -39,6 +39,117 @@
     capability: cap_sys_rawio,cap_dac_read_search,cap_sys_admin+ep
     state: present
 
+# The kernel device name (sda, nvme1n1, ...) is assigned by probe order and
+# changes when disks are added, moved or the machine is rebooted. Serial
+# numbers do not, so host_vars stores the serial as the disk's identity and
+# everything else is looked up here at deploy time. Two things are derived:
+# the /dev/disk/by-id path (stable across reboots, handed to smartctl) and the
+# *current* kernel name (needed because the regex processor tags samples as
+# sda/nvme0). The by-id link is matched by serial only: rebuilding its name
+# from model+serial broke whenever a firmware string changed.
+- name: Build the list of monitored SMART disks
+  ansible.builtin.set_fact:
+    telegraf_smart_disks: >-
+      {{ (data_disks | default([]))
+         + (parity_disks | default([]))
+         + (cache_disks | default([]))
+         + (system_disks | default([])) }}
+
+- name: Validate that the monitored serials are unique
+  ansible.builtin.assert:
+    that:
+      - >-
+        telegraf_smart_disks | map(attribute='serial') | list | length
+        == telegraf_smart_disks | map(attribute='serial') | unique | list | length
+    fail_msg: >-
+      The serial numbers in data_disks/parity_disks/cache_disks/system_disks
+      must be unique: the serial is the only disk identity stored in host_vars.
+
+- name: Locate the persistent by-id link of every monitored disk
+  ansible.builtin.find:
+    paths: /dev/disk/by-id
+    patterns:
+      - "ata-*_{{ item.serial }}"
+      - "nvme-*_{{ item.serial }}"
+    file_type: link
+    recurse: false
+  loop: "{{ telegraf_smart_disks }}"
+  register: telegraf_smart_disk_links
+  changed_when: false
+  check_mode: false
+  loop_control:
+    label: "{{ item.serial }}"
+
+- name: Validate that every monitored disk is present exactly once
+  ansible.builtin.assert:
+    that:
+      - item.matched | int == 1
+    fail_msg: >-
+      {{ item.item.label | default(item.item.name) }} ({{ item.item.model }},
+      serial {{ item.item.serial }}) matched {{ item.matched }} of the
+      expected ata-*/nvme-* links in /dev/disk/by-id. Check that the disk is
+      connected and that the serial in host_vars is correct.
+  loop: "{{ telegraf_smart_disk_links.results }}"
+  loop_control:
+    label: "{{ item.item.serial }}"
+
+- name: Map serial numbers to their by-id paths
+  ansible.builtin.set_fact:
+    telegraf_smart_id_paths: >-
+      {{ telegraf_smart_id_paths | default({})
+         | combine({item.item.serial: item.files[0].path}) }}
+  loop: "{{ telegraf_smart_disk_links.results }}"
+  loop_control:
+    label: "{{ item.item.serial }}"
+
+- name: Read the current kernel name behind each by-id link
+  ansible.builtin.command:
+    argv:
+      - readlink
+      - -f
+      - "{{ telegraf_smart_id_paths[item.serial] }}"
+  loop: "{{ telegraf_smart_disks }}"
+  register: telegraf_smart_disk_targets
+  changed_when: false
+  check_mode: false
+  loop_control:
+    label: "{{ item.serial }}"
+
+- name: Validate the resolved kernel names
+  ansible.builtin.assert:
+    that:
+      - item.rc == 0
+      - item.stdout | basename is match('^(sd[a-z]+|nvme[0-9]+n[0-9]+)$')
+    fail_msg: >-
+      Could not resolve the by-id link of {{ item.item.serial }} to a block
+      device (got "{{ item.stdout }}"). Check the disk and the udev by-id rules.
+  loop: "{{ telegraf_smart_disk_targets.results }}"
+  loop_control:
+    label: "{{ item.item.serial }}"
+
+# Keep the InfluxDB tags as sda/sdb/nvme0: the kernel names for NVMe are
+# nvme0n1/nvme1n1, while Telegraf and the Grafana dashboards use the
+# controller name without the trailing "n1".
+- name: Map serial numbers to the current kernel device names
+  ansible.builtin.set_fact:
+    telegraf_kernel_devices: >-
+      {{ telegraf_kernel_devices | default({})
+         | combine({item.item.serial: item.stdout | basename
+                    | regex_replace('^(nvme[0-9]+)n[0-9]+$', '\1')}) }}
+  loop: "{{ telegraf_smart_disk_targets.results }}"
+  loop_control:
+    label: "{{ item.item.serial }}"
+
+# The MCP host-service tools read `systemctl status` and `journalctl -u`.
+# Without the systemd-journal group a non-root session only sees its own
+# messages, so every host-service log request returns "No entries".
+- name: Allow the admin user to read the system journal
+  ansible.builtin.user:
+    name: "{{ username }}"
+    groups:
+      - systemd-journal
+    append: true
+
 - name: Template the main telegraf config
   ansible.builtin.template:
     src: telegraf.conf.j2

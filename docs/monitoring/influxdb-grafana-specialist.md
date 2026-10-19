@@ -112,6 +112,7 @@ Disk Health MCP (for disk/SMART diagnostics):
 | **HTTP 500 from InfluxDB** | Query exceeds 432-file scan limit (missing time range) | Add or tighten `WHERE time > now() - INTERVAL X HOUR/DAY` |
 | `context deadline exceeded` | Telegraf can't reach InfluxDB | Check `INFLUX_URL` is `http://localhost:8181` |
 | `connection refused` on external URL | Telegraf using HTTPS through proxy | Change to local HTTP URL |
+| SMART data belongs to another disk | `smart_device.device` tag is stale (Telegraf not re-run after a hardware change, so the deploy-time serial resolution is outdated) | Compare `serial_no` with `lsblk`; host_vars stores serials only, so re-run `--tags telegraf` — a wrong or ambiguous serial fails the play instead of mislabelling |
 
 ## Grafana Panel Types
 
