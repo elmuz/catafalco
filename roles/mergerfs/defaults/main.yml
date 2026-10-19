@@ -1,0 +1,28 @@
+---
+# Upstream mergerfs release to install.
+#
+# The distro package lags behind upstream (Debian 13 ships 2.40.2) and
+# upstream explicitly recommends using its prebuilt packages:
+# https://trapexit.github.io/mergerfs/latest/setup/installation/
+mergerfs_version: "2.42.0"
+
+# The prebuilt package name encodes the distribution release and the CPU
+# architecture, e.g. mergerfs_2.42.0.debian-trixie_amd64.deb.
+mergerfs_deb_distro: "{{ 'debian' if ansible_facts['distribution'] == 'Debian' else 'ubuntu' }}"
+mergerfs_deb_release: "{{ mergerfs_deb_distro }}-{{ ansible_facts['distribution_release'] }}"
+mergerfs_deb_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_facts['architecture']] | default(ansible_facts['architecture']) }}"
+mergerfs_deb_file: "mergerfs_{{ mergerfs_version }}.{{ mergerfs_deb_release }}_{{ mergerfs_deb_arch }}.deb"
+mergerfs_deb_url: "https://github.com/trapexit/mergerfs/releases/download/{{ mergerfs_version }}/{{ mergerfs_deb_file }}"
+mergerfs_deb_dir: /var/cache/apt/archives
+mergerfs_deb_path: "{{ mergerfs_deb_dir }}/{{ mergerfs_deb_file }}"
+
+# Checksums of the known release artifacts. Platforms without an entry are
+# installed without checksum verification (HTTPS only), so prefer adding one.
+mergerfs_deb_sha256:
+  mergerfs_2.42.0.debian-bookworm_amd64.deb: "sha256:6b01dde3bf9c4b45ca85c716d4eb46f41e0e6354268fed13a7a1d5790333b793"
+  mergerfs_2.42.0.debian-trixie_amd64.deb: "sha256:07241c090b33c56d07f09930bf71e3bfa1da86c326a3558b35d7ceaae7520337"
+  mergerfs_2.42.0.debian-trixie_arm64.deb: "sha256:ca9f5182db591f0b1ea573adea6c7089d10b5d845380a32cdfb50f24aca8c879"
+  mergerfs_2.42.0.ubuntu-jammy_amd64.deb: "sha256:2fded6b274721e89f7ac89f6063f6e6cf7684519c6562e4461157edad2cb2d53"
+  mergerfs_2.42.0.ubuntu-noble_amd64.deb: "sha256:7161ac65fb12cda88832a32226451d2dd83d1f56b84f3ed18f3e303233bc7760"
+  mergerfs_2.42.0.ubuntu-noble_arm64.deb: "sha256:114bbb6b7a83248e2784679eb43533ad91a976373862e8e6530b0696e262be88"
+mergerfs_deb_checksum: "{{ mergerfs_deb_sha256[mergerfs_deb_file] | default('') }}"

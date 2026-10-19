@@ -2,9 +2,22 @@
 - name: Install required system packages
   ansible.builtin.package:
     name:
-      - fuse
-      - mergerfs
-    state: latest
+      - fuse3
+    state: present
+
+# The distro repositories ship an old mergerfs (Debian 13: 2.40.2), while
+# upstream recommends installing its own packages. Pin the version so an
+# upgrade is always an explicit, reviewable change.
+- name: Download mergerfs package {{ mergerfs_version }}
+  ansible.builtin.get_url:
+    url: "{{ mergerfs_deb_url }}"
+    dest: "{{ mergerfs_deb_path }}"
+    checksum: "{{ mergerfs_deb_checksum | ternary(mergerfs_deb_checksum, omit) }}"
+    mode: "0644"
+
+- name: Install mergerfs {{ mergerfs_version }}
+  ansible.builtin.apt:
+    deb: "{{ mergerfs_deb_path }}"
 
 - name: Install the uncaching script
   ansible.builtin.template:

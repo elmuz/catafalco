@@ -26,7 +26,7 @@
 - name: Make sure that Deluge container is created and running
   community.docker.docker_container:
     name: "{{ deluge_container_name }}"
-    image: binhex/arch-delugevpn:2.2.0-1-04
+    image: binhex/arch-delugevpn:2.2.0-8-01
     pull: true
     networks:
       - name: "{{ deluge_network_name }}"
@@ -52,7 +52,10 @@
       DEBUG: "true"
       # The image's healthcheck greps for an openvpn|wg *process*, but kernel
       # WireGuard has no long-running daemon. Check the interface and web UI.
-      HEALTHCHECK_COMMAND: "wg show >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8112/ >/dev/null"
+      # ENABLE_HEALTHCHECK must be 'yes', otherwise healthcheck.sh exits 0
+      # immediately and the health status is meaningless.
+      ENABLE_HEALTHCHECK: "yes"
+      HEALTHCHECK_COMMAND: "wg show >/dev/null 2>&1 && curl -fsS --connect-timeout 5 --max-time 10 http://127.0.0.1:8112/ >/dev/null"
       UMASK: "000"
       PUID: "{{ guid }}"
       PGID: "{{ guid }}"
