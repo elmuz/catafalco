@@ -14,6 +14,11 @@ server {
     }
 
     location ~ (/influxdb)?/api {
+        # API clients (MCP servers, scripts) need InfluxDB's own JSON error body.
+        # errors.conf sets `proxy_intercept_errors on`, which would replace an
+        # upstream 500 (e.g. "Schema error: No field named ...") with the themed
+        # HTML 5xx page. Keep interception for the browser-facing `location /`.
+        proxy_intercept_errors off;
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
         set $upstream_app {{ influxdb_container_name }};

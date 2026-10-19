@@ -323,6 +323,7 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
 - Common error: `not sorted in ascending order by time` — Missing `ORDER BY time` in time_series query
 - Common error: `No field named XXX` — Field name mismatch between dashboard query and actual InfluxDB schema
 - Common error: **HTTP 500 from InfluxDB** — usually the 432-file scan limit (missing/insufficient time range), not a server error. Add or tighten `WHERE time > now() - INTERVAL X HOUR`
+- Common error: **HTTP 500 whose body is the themed `catafal.co` "Service Unavailable" HTML page** — SWAG's `errors.conf` sets `proxy_intercept_errors on` and was replacing InfluxDB's JSON error. The InfluxDB and Prometheus API locations override it with `proxy_intercept_errors off`; if the HTML comes back, that override is missing from the deployed `influxdb.subdomain.conf` (redeploy the `influxdb` role and restart SWAG). The MCP clients report this as `InfluxDB query failed (HTTP 500)` plus the HTML, which hides the real SQL error.
 - Check InfluxDB data: Use MCP `mcp__remote-server__get_service_logs(service="influxdb")` and search for query results
 - Grafana query logs: Use MCP `mcp__remote-server__get_service_logs(service="grafana")` and search for 'influx_flightsql'
 
@@ -372,6 +373,27 @@ ansible-playbook catafalco.yml --tags containers  # Telegraf is host-installed, 
 | `mcp__disk-health__query_influxdb_disk` | Query InfluxDB for historical disk metrics |
 
 **For disk-related tasks, prefer disk-health MCP tools over manual InfluxDB queries** — they handle data source fallbacks (InfluxDB → direct smartctl) and provide formatted reports.
+
+#### Host prerequisites for the MCP tools
+
+These are set up by this playbook and matter when a tool silently returns nothing:
+
+- **Journal access:** `username` is added to `systemd-journal` by the `telegraf` role. Without
+  it, `get_host_service_logs` returns "No entries" (journalctl exits 0 with a permission
+  hint on stderr). Open sessions keep their old groups, so the MCP server must reconnect.
+- **`iostat`:** `sysstat` is installed by the `telegraf` role; `get_io_stats` reports
+  `command not found` without it. `mdadm`/`zpool` are not installed on this SnapRAID host,
+  so `get_raid_status`/`get_zfs_status` are expected to report missing commands.
+- **SnapRAID status:** the `snapraid` role grants `username` an ACL on the content
+  directories (plus a default ACL for future files) and read access to the content files.
+  `snapraid status` creates a `<content>.lock` and reads the content file, so without the
+  ACL `get_snapraid_status` fails with `Permission denied`. Remove a stale lock left by a
+  killed run only after confirming no SnapRAID process is active.
+- **Ansible-managed containers:** roles that use `community.docker.docker_container` (for
+  example `invidious-db`, `speedtest_tracker-db`, `socket-proxy`) have no compose project
+  label and often no `/srv/<name>` directory. They must be listed in
+  `security.allowed_containers` in the remote-server MCP config, otherwise every tool
+  rejects them and `list_containers` shows their service as `-`.
 
 #### Common Remote Operations (Use MCP, NOT SSH)
 

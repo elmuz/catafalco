@@ -21,6 +21,9 @@ server {
             return 401;
         }
 
+        # API-only vhost: pass upstream error bodies through instead of the
+        # themed HTML page from errors.conf (see influxdb.subdomain.conf.j2).
+        proxy_intercept_errors off;
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
         set $upstream_app prometheus;
@@ -43,6 +46,7 @@ server {
             return 401;
         }
 
+        proxy_intercept_errors off;
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
         set $upstream_app prometheus;
