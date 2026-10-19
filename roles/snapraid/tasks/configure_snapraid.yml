@@ -19,6 +19,30 @@
     mode: "0755"
   loop: "{{ snapraid_content_files }}"
 
+# `snapraid status` is read-only for the array, but it still creates
+# `<content>.lock` next to the content file and reads the content file itself.
+# SnapRAID creates both as `root:root 0600`, so a non-root administrator (the
+# MCP executor user) gets "Permission denied". An ACL cannot change that:
+# SnapRAID writes a 0600 `<content>.tmp` and renames it into place, and the 0600
+# mode masks every inherited default-ACL entry out of existence. Grant the one
+# read-only subcommand through sudoers instead; the files stay root:root 0600.
+- name: Allow the admin user to run `snapraid status` without a password
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/snapraid-status
+    content: |
+      # Managed by Ansible (snapraid role).
+      # The MCP executor user needs root to read SnapRAID's content file and
+      # lock file, which SnapRAID creates as root:root 0600. This entry is
+      # redundant when the user already has blanket passwordless sudo (the
+      # catafalco host does, via security_sudoers_passwordless), but it keeps
+      # the requirement explicit and covers hosts with narrower sudo, where
+      # the exact-argument match limits the grant to this one subcommand.
+      {{ username }} ALL=(root) NOPASSWD: {{ snapraid_executable }} status
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
 - name: Generate SnapRAID configuration
   ansible.builtin.template:
     src: snapraid.j2

@@ -1,0 +1,47 @@
+---
+# A previous revision of this role granted the admin user an ACL on the SnapRAID
+# content directories and files instead of using sudo. That grant was not
+# durable (SnapRAID rewrites the content file through a 0600 temporary file that
+# masks inherited ACL entries) and is now replaced by
+# `/etc/sudoers.d/snapraid-status`, so it must be revoked.
+#
+# Keep these tasks until every host has run this version, then delete this file
+# and the `snapraid_cleanup_legacy_acl` switch in defaults/main.yml.
+- name: Install ACL support to revoke the legacy SnapRAID ACLs
+  ansible.builtin.package:
+    name: acl
+    state: present
+
+- name: Stat the SnapRAID content files
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    # Content files are ~650 MB each; only existence matters here.
+    get_checksum: false
+  loop: "{{ snapraid_content_files }}"
+  register: snapraid_content_files_stat
+
+- name: Revoke the legacy ACL from the SnapRAID content files
+  ansible.posix.acl:
+    path: "{{ item.item }}"
+    entity: "{{ username }}"
+    etype: user
+    state: absent
+  loop: "{{ snapraid_content_files_stat.results }}"
+  when: item.stat.exists
+
+- name: Revoke the legacy access ACL from the SnapRAID content directories
+  ansible.posix.acl:
+    path: "{{ item | dirname }}"
+    entity: "{{ username }}"
+    etype: user
+    state: absent
+  loop: "{{ snapraid_content_files }}"
+
+- name: Revoke the legacy default ACL from the SnapRAID content directories
+  ansible.posix.acl:
+    path: "{{ item | dirname }}"
+    entity: "{{ username }}"
+    etype: user
+    default: true
+    state: absent
+  loop: "{{ snapraid_content_files }}"

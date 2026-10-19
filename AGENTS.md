@@ -384,11 +384,20 @@ These are set up by this playbook and matter when a tool silently returns nothin
 - **`iostat`:** `sysstat` is installed by the `telegraf` role; `get_io_stats` reports
   `command not found` without it. `mdadm`/`zpool` are not installed on this SnapRAID host,
   so `get_raid_status`/`get_zfs_status` are expected to report missing commands.
-- **SnapRAID status:** the `snapraid` role grants `username` an ACL on the content
-  directories (plus a default ACL for future files) and read access to the content files.
-  `snapraid status` creates a `<content>.lock` and reads the content file, so without the
-  ACL `get_snapraid_status` fails with `Permission denied`. Remove a stale lock left by a
-  killed run only after confirming no SnapRAID process is active.
+- **SnapRAID status:** `snapraid status` must run as root. SnapRAID creates the content
+  file and its `<content>.lock` as `root:root 0600` (`state.c` writes a 0600
+  `<content>.tmp` and renames it into place; `util.c` opens the lock with `0600` and never
+  deletes it). ACLs do not fix this: the `0600` mode masks inherited default-ACL entries
+  to `---`, and the content inode is replaced on every sync. The `snapraid` role therefore
+  installs `/etc/sudoers.d/snapraid-status`, which allows `username` to run exactly
+  `/usr/local/bin/snapraid status` without a password, and the disk-health MCP runs
+  `sudo -n /usr/local/bin/snapraid status` (its command policy accepts only that literal
+  and keeps `sudo` blocked everywhere else). Note that `username` already gets
+  `ALL=(ALL) NOPASSWD: ALL` from `security_sudoers_passwordless`
+  (`geerlingguy.security`), so the dedicated entry is redundant on this host and only
+  matters on hosts with narrower sudo; the MCP-side restriction is what actually bounds
+  what can run. A leftover lock is normal — SnapRAID only `flock`s it; delete it only
+  after a killed run and only when no snapraid process runs.
 - **Ansible-managed containers:** roles that use `community.docker.docker_container` (for
   example `invidious-db`, `speedtest_tracker-db`, `socket-proxy`) have no compose project
   label and often no `/srv/<name>` directory. They must be listed in

@@ -26,6 +26,7 @@
     name:
       - telegraf
       - nvme-cli  # for SMART
+      - sysstat  # iostat
     state: latest
     update_cache: true
 
