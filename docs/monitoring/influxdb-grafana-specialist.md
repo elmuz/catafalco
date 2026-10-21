@@ -40,6 +40,22 @@ is not persisting — see T-21 in `docs/disk-and-mcp-assessment.md`. The role no
 when that happens (`influxdb_verify_persistence`), and prints the deployed binary's data-dir
 contract.
 
+### Retention and sizing (check before promising a history window)
+
+- Retention is per **database** and, in InfluxDB 3 Core, can only be set at creation:
+  `influxdb3 create database --retention-period 90d`. `influxdb3 update database` cannot change
+  it, so a wrong value means recreating the database (data loss). The role sets it from
+  `influxdb_retention_period` (default `90d`) and fails when the database keeps data forever.
+- Retention is the disk bound: expired data is dropped, so the store size is bounded by the
+  window (plus the compaction grace period).
+- Durable size comes from parquet, not from the WAL. Use
+  `SELECT count(*), sum(size_bytes), sum(row_count) FROM system.parquet_files` — a useful
+  bytes-per-row figure for projections. WAL files (`/srv/influxdb/db/…/wal/*.wal`, ~150 KB per
+  10 s flush here) are transient and are deleted after compaction; do not size a disk from them.
+- Measured ingest on `catafalco` (2026-10-22): ~12 800 rows / 10 min ≈ 1.85 M rows/day, with
+  `docker_container_*` at ~75 %. `[[inputs.docker]] interval = "60s"` would remove ~62 % of all
+  rows; `[[inputs.disk]]` is already 1 m and `[[inputs.smart]]` 5 m.
+
 ### Remote Server Access (MANDATORY)
 
 **All remote server operations MUST be done via MCP tools. NEVER use SSH commands.**

@@ -56,7 +56,7 @@
       # correctness does not depend on it alone, because the parent directory is
       # the mount and the probe below fails the play if writes land elsewhere.
       INFLUXDB3_DATA_DIR: "{{ influxdb_container_data_dir }}"
-      INFLUXDB3_DATABASE_NAME: "system-monitor"
+      INFLUXDB3_DATABASE_NAME: "{{ influxdb_database_name }}"
       INFLUXDB3_AUTH_TOKEN: "{{ influxdb_token }}"
       INFLUXDB3_ADMIN_TOKEN_FILE: "{{ influxdb_container_root }}/admin-token.json"
       INFLUXDB3_TLS_NO_VERIFY: "true"
@@ -143,6 +143,101 @@
       {{ (influxdb_cli_contract.stdout | default('')).splitlines()
          | select('search', '(?i)data[-_]dir|INFLUXDB3_(DB|DATA)_DIR')
          | list }}
+  when: influxdb_verify_persistence | bool
+
+# Retention. Core honours --retention-period only when the database is created,
+# so the role creates it explicitly and refuses to pretend a mismatch is fine.
+# A database that already exists with different retention can only be fixed by
+# dropping it, which is destructive -- that stays a deliberate operator action.
+- name: Read the retention of the database
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "{{ influxdb_container_name }}"
+      - influxdb3
+      - show
+      - retention
+      - --database
+      - "{{ influxdb_database_name }}"
+  register: influxdb_retention_before
+  changed_when: false
+  failed_when: false
+  when: influxdb_verify_persistence | bool
+
+- name: Create the database with the configured retention
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "{{ influxdb_container_name }}"
+      - influxdb3
+      - create
+      - database
+      - "{{ influxdb_database_name }}"
+      - --retention-period
+      - "{{ influxdb_retention_period }}"
+  register: influxdb_database_create
+  changed_when: influxdb_database_create.rc | default(1) == 0
+  # A writer (Telegraf) may create the database implicitly before this runs; the
+  # assertion below is what decides whether the result is acceptable.
+  failed_when: false
+  when:
+    - influxdb_verify_persistence | bool
+    - influxdb_retention_before.rc | default(1) != 0
+
+- name: Read the effective retention of the database
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "{{ influxdb_container_name }}"
+      - influxdb3
+      - show
+      - retention
+      - --database
+      - "{{ influxdb_database_name }}"
+  register: influxdb_retention_state
+  changed_when: false
+  failed_when: false
+  when: influxdb_verify_persistence | bool
+
+- name: Decide whether a finite retention is configured
+  ansible.builtin.set_fact:
+    influxdb_retention_configured_finite: >-
+      {{ influxdb_retention_period | lower not in ['none', 'never', 'infinite'] }}
+
+# Deliberately not a string comparison of the configured period: the CLI renders
+# durations its own way ("90d", "90 days", ...). What must never pass silently is
+# a database that keeps data forever while a finite window is configured.
+- name: Assert that the database applies the configured retention
+  ansible.builtin.assert:
+    that:
+      - influxdb_retention_state.rc | default(1) == 0
+      - not (influxdb_retention_configured_finite | bool)
+        or ((influxdb_retention_state.stdout | default('')) | lower
+            | regex_search('none|infinite|never|forever') is none)
+    fail_msg: >-
+      {{ influxdb_database_name }} does not apply the configured retention
+      ({{ influxdb_retention_period }}). 'influxdb3 show retention --database
+      {{ influxdb_database_name }}' reports:
+      "{{ influxdb_retention_state.stdout | default('') | trim }}"
+      {{ influxdb_retention_state.stderr | default('') | trim }}
+      InfluxDB 3 Core applies --retention-period only when a database is
+      created and cannot change it afterwards, so the database must be
+      recreated, which deletes its data. Do that deliberately, with Telegraf
+      stopped so it cannot recreate the database implicitly: systemctl stop
+      telegraf; docker exec {{ influxdb_container_name }} influxdb3 delete
+      database --hard-delete now {{ influxdb_database_name }}; re-run this tag;
+      systemctl start telegraf.
+  when: influxdb_verify_persistence | bool
+
+- name: Report the retention window
+  ansible.builtin.debug:
+    msg: >-
+      {{ influxdb_database_name }} retention {{ influxdb_retention_period }}:
+      {{ influxdb_retention_state.stdout | default('') | trim
+      | replace('\n', ' ') | replace('  ', ' ') }}
   when: influxdb_verify_persistence | bool
 
 # Waits for *any* file, not only a WAL file: the store (catalog included) is

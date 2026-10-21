@@ -22,6 +22,13 @@ influxdb_container_root: /var/lib/influxdb3
 # is what moved the store off the mount in 2026-07. The role prints this line
 # from `influxdb3 serve --help` on every run, so check it when bumping the image.
 influxdb_container_data_dir: "{{ influxdb_container_root }}/data"
+# Database and retention window. InfluxDB 3 Core only honours
+# `--retention-period` when the database is *created*; `influxdb3 update
+# database` cannot change it afterwards (upstream docs). Expired data is
+# dropped, so the retention window is also the disk bound. `none` keeps data
+# forever.
+influxdb_database_name: system-monitor
+influxdb_retention_period: "90d"
 influxdb_store_host_dir: "{{ docker_dir }}/{{ influxdb_container_name }}/db"
 # Fail the play if the store does not live on the bind mount. The check looks
 # for files created by the container inside the host directory after it starts.

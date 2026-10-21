@@ -360,6 +360,20 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
 - **Deploy:** `ansible-playbook catafalco.yml -K --tags influxdb`. A change to the volume list or
   to the data-dir env recreates the container; a fresh store starts at that point. The role
   prints the deployed binary's `--data-dir` line, so check it whenever the image tag changes.
+- **Retention:** `influxdb_retention_period` (default `90d`) is applied when the database is
+  created (`influxdb3 create database --retention-period`). InfluxDB 3 Core **cannot change**
+  the retention of an existing database — `influxdb3 update database` does not support it — so
+  the role fails if the database reports infinite retention while a finite window is configured,
+  and the only fix is recreating the database (which deletes its data). Retention is also the
+  disk bound: expired data is dropped, so the store cannot grow past the window. The check
+  matches "none/infinite/never/forever" rather than the exact duration string, because the CLI
+  renders periods its own way.
+- **Ingest measured (2026-10-22):** ~12 800 rows / 10 min (~1.85 M rows/day), of which
+  `docker_container_*` is ~75 %. Raw WAL is ~150 KB per 10 s (~1.3 GB/day) but WAL files are
+  deleted once compacted to parquet, so WAL size is not the disk cost; ask
+  `SELECT count(*), sum(size_bytes), sum(row_count) FROM system.parquet_files` for the durable
+  size. Levers if the store grows too fast: `[[inputs.docker]] interval` (10 s → 60 s cuts ~62 %
+  of all rows) or a shorter `influxdb_retention_period`.
 
 ### Grafana Panel & Field Gotchas
 - **Known Telegraf field names** (verify before querying): `temp` measurement uses field `temp` (NOT `temp_c`); `nvidia_smi` uses `temperature_gpu`; `smart_attribute` uses `raw_value` for `Temperature_Celsius` (NOT `value`). Full reference: `docs/monitoring/influxdb-grafana-specialist.md`
