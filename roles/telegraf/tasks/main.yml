@@ -43,11 +43,20 @@
 # The kernel device name (sda, nvme1n1, ...) is assigned by probe order and
 # changes when disks are added, moved or the machine is rebooted. Serial
 # numbers do not, so host_vars stores the serial as the disk's identity and
-# everything else is looked up here at deploy time. Two things are derived:
-# the /dev/disk/by-id path (stable across reboots, handed to smartctl) and the
-# *current* kernel name (needed because the regex processor tags samples as
-# sda/nvme0). The by-id link is matched by serial only: rebuilding its name
-# from model+serial broke whenever a firmware string changed.
+# everything else is looked up here at deploy time.
+#
+# Three things are derived: the /dev/disk/by-id path (stable across reboots,
+# handed to smartctl), a *static label* (Data1, Parity1, Cache1, ...) that the
+# regex processor writes into the `device` tag, and a static `serial_no` tag
+# (processors.template) written on every poll of the disk. The label is
+# semantic, so a reboot or a disk shuffle cannot retarget it; the serial stays
+# the identity and is what every consumer joins on. The static serial tag is
+# what keeps standby and failed polls attributable: smartctl emits no
+# serial_no field for them, and the label may change in host_vars. Earlier
+# revisions tagged samples with the kernel name resolved at deploy time, which
+# went stale on the next boot.
+# The by-id link is matched by serial only: rebuilding its name from
+# model+serial broke whenever a firmware string changed.
 - name: Build the list of monitored SMART disks
   ansible.builtin.set_fact:
     telegraf_smart_disks: >-
@@ -56,15 +65,33 @@
          + (cache_disks | default([]))
          + (system_disks | default([])) }}
 
-- name: Validate that the monitored serials are unique
+# data/parity/cache disks carry `label`, system disks carry `name`. Both are
+# static and human-readable, so they are safe to publish as a tag. The tag is
+# display-only: joins use serial_no (SMART) / ID_SERIAL_SHORT (diskio).
+- name: Build the static label of every monitored disk
+  ansible.builtin.set_fact:
+    telegraf_disk_labels: >-
+      {{ telegraf_disk_labels | default({})
+         | combine({item.serial:
+                    (item.label | default(item.name | default('disk-' ~ item.serial)))}) }}
+  loop: "{{ telegraf_smart_disks }}"
+  loop_control:
+    label: "{{ item.serial }}"
+
+- name: Validate that the monitored serials and effective labels are unique
   ansible.builtin.assert:
     that:
       - >-
         telegraf_smart_disks | map(attribute='serial') | list | length
         == telegraf_smart_disks | map(attribute='serial') | unique | list | length
+      - >-
+        telegraf_disk_labels.values() | list | length
+        == telegraf_disk_labels.values() | list | unique | list | length
     fail_msg: >-
       The serial numbers in data_disks/parity_disks/cache_disks/system_disks
-      must be unique: the serial is the only disk identity stored in host_vars.
+      must be unique (the serial is the disk identity), and the effective
+      labels (`label`, or `name` for system disks) must be unique too: they
+      are published as the `device` tag and drive the serial-tag processors.
 
 - name: Locate the persistent by-id link of every monitored disk
   ansible.builtin.find:
@@ -103,7 +130,10 @@
   loop_control:
     label: "{{ item.item.serial }}"
 
-- name: Read the current kernel name behind each by-id link
+# Only used as a sanity check that the by-id link still points at a block
+# device. The kernel name itself is NOT published any more: it is probe-order
+# dependent, so it can only be trusted at runtime (lsblk, diskio.name).
+- name: Resolve the block device behind each by-id link
   ansible.builtin.command:
     argv:
       - readlink
@@ -116,7 +146,7 @@
   loop_control:
     label: "{{ item.serial }}"
 
-- name: Validate the resolved kernel names
+- name: Validate the resolved block devices
   ansible.builtin.assert:
     that:
       - item.rc == 0
@@ -124,19 +154,6 @@
     fail_msg: >-
       Could not resolve the by-id link of {{ item.item.serial }} to a block
       device (got "{{ item.stdout }}"). Check the disk and the udev by-id rules.
-  loop: "{{ telegraf_smart_disk_targets.results }}"
-  loop_control:
-    label: "{{ item.item.serial }}"
-
-# Keep the InfluxDB tags as sda/sdb/nvme0: the kernel names for NVMe are
-# nvme0n1/nvme1n1, while Telegraf and the Grafana dashboards use the
-# controller name without the trailing "n1".
-- name: Map serial numbers to the current kernel device names
-  ansible.builtin.set_fact:
-    telegraf_kernel_devices: >-
-      {{ telegraf_kernel_devices | default({})
-         | combine({item.item.serial: item.stdout | basename
-                    | regex_replace('^(nvme[0-9]+)n[0-9]+$', '\1')}) }}
   loop: "{{ telegraf_smart_disk_targets.results }}"
   loop_control:
     label: "{{ item.item.serial }}"
@@ -150,6 +167,22 @@
     groups:
       - systemd-journal
     append: true
+
+# nvidia_smi is the only GPU input. Telegraf refuses to start the whole
+# agent (not just the input) when the configured executable is missing, so
+# only render it when the binary is actually present. This keeps the NVIDIA
+# drivers optional: uninstalling them must not take the monitoring stack down.
+- name: Check whether nvidia-smi is available
+  ansible.builtin.command:
+    cmd: nvidia-smi --version
+  register: telegraf_nvidia_smi_check
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Record whether the nvidia_smi input can be enabled
+  ansible.builtin.set_fact:
+    telegraf_nvidia_smi_present: "{{ telegraf_nvidia_smi_check.rc == 0 }}"
 
 - name: Template the main telegraf config
   ansible.builtin.template:
@@ -168,15 +201,48 @@
     mode: "0644"
 
 - name: Add telegraf user to the docker group
-  user:
+  ansible.builtin.user:
     name: telegraf
     groups:
       - docker
-      - sudo # this is required for SMART
     append: true
 
+# SMART is the only telegraf input that needs root. Grant only the two
+# binaries used by [[inputs.smart]] instead of adding the service account to
+# the sudo group, which would rely on a blanket passwordless rule.
+- name: Allow telegraf to read SMART data without a password
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/telegraf-smart
+    content: |
+      # Managed by Ansible (telegraf role).
+      # [[inputs.smart]] calls smartctl and nvme-cli with use_sudo = true.
+      # Keep the grant scoped to those binaries; do not add telegraf to the
+      # sudo group or restore a blanket passwordless-sudo rule.
+      #
+      # Suppress PAM session noise (six polls every five minutes) but keep
+      # sudo's command logging in the journal for auditability.
+      Defaults:telegraf !pam_session
+      telegraf ALL=(root) NOPASSWD: /usr/sbin/smartctl, /usr/sbin/nvme
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+# Older revisions added telegraf to the sudo group. Remove only that
+# membership and leave any other groups (e.g. docker) untouched.
+- name: Remove telegraf from the sudo group
+  ansible.builtin.command:
+    argv:
+      - gpasswd
+      - --delete
+      - telegraf
+      - "{{ system_sudo_group | default('sudo') }}"
+  register: telegraf_sudo_group_removal
+  changed_when: telegraf_sudo_group_removal.rc == 0
+  failed_when: telegraf_sudo_group_removal.rc not in [0, 3]  # 3 = not a member
+
 - name: Restart telegraf unit
-  systemd:
+  ansible.builtin.systemd:
     state: restarted
     daemon_reload: true
     name: telegraf

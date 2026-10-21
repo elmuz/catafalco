@@ -73,6 +73,39 @@ ansible-playbook catafalco.yml -K --tag docker
    ansible-playbook catafalco.yml -K --tags containers
    ```
 
+### Reverse-proxy confs (SWAG / nginx)
+
+Every role ships its vhost as `roles/<role>/templates/<name>.subdomain.conf.j2`. The
+`proxy_pass` target **must** be built from variables, never written as a literal hostname:
+
+```nginx
+location / {
+    include /config/nginx/proxy.conf;
+    include /config/nginx/resolver.conf;
+    set $upstream_app {{ <role>_container_name }};   # never "proxy_pass http://foo:8080;"
+    set $upstream_port 8080;
+    set $upstream_proto http;
+    proxy_pass $upstream_proto://$upstream_app:$upstream_port;
+}
+```
+
+A literal hostname is resolved when nginx loads its config, so if that container is stopped,
+not yet created, or renamed, every reload aborts with
+`[emerg] host not found in upstream "foo"` and nginx keeps the old config (or refuses to
+start with `SWAG_AUTORELOAD`). A single missing container then breaks *all* sites, not just
+its own vhost. With variables the name is resolved per request through Docker's embedded DNS
+(`/config/nginx/resolver.conf` → `resolver 127.0.0.11 valid=30s`), so a missing container only
+yields 502 for that vhost and heals itself within the resolver TTL.
+
+Caveats of the variable form:
+
+- The URI part of `proxy_pass` is sent verbatim instead of having the matched location prefix
+  replaced. To keep a subfolder proxy (`location /office/` → upstream `/`) strip the prefix
+  explicitly: `rewrite ^/office/(.*)$ /$1 break;` before the variable `proxy_pass`.
+- No `upstream {}` features (keepalive pool, `backup`, balancing) — fine for single containers.
+- `proxy_intercept_errors on` (from `roles/swag/files/errors.conf`) replaces the 502 with the
+  themed `5xx` page; add `proxy_intercept_errors off;` in locations that must return JSON.
+
 ---
 
 ## Directory Structure
@@ -156,7 +189,8 @@ catafalco/
 ├── files/                  # Static files (scripts, icons, etc.)
 ├── docs/                   # Agent-agnostic knowledge base
 │   ├── ansible/            # Ansible expertise, ansible-lint cheatsheet
-│   └── monitoring/         # InfluxDB/Grafana deep-dive reference
+│   ├── monitoring/         # InfluxDB/Grafana deep-dive reference
+│   └── disk-and-mcp-assessment.md  # OPEN: disk identity + privilege/MCP TODO
 └── .agents/
     └── skills/             # Cross-agent skills (Agent Skills standard)
 ```
@@ -271,12 +305,26 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
   `device` field, because kernel names are probe-order dependent and change when disks
   are added, moved or the machine is rebooted. At deploy time the role finds the
   matching `/dev/disk/by-id/ata-*` / `nvme-*` link by serial, asserts there is exactly
-  one, and resolves both that path (handed to smartctl, stable across reboots) and the
-  current kernel name (used by a regex processor to tag samples as `sda`/`sdb`/`nvme0`).
+  one, and hands that path to smartctl (stable across reboots).
   A missing, ambiguous or mistyped serial fails the play with an explicit message
   instead of mislabelling another disk's data.
   SMART polling is `interval = "5m"` with `nocheck = "standby"`, so standby disks are not
   woken.
+  **The `device` tag is a static label, not an identity** (`Data1`, `Data2`, `Parity1`,
+  `Cache1`, `System`, `NVMe2` — from `label`, or `name` for system disks). A regex
+  processor rewrites the by-id tag to that label, so a reboot or a disk shuffle cannot
+  retarget it. Never join on `device` / `name`: join on `serial_no` (SMART) or
+  `ID_SERIAL_SHORT` (`diskio`). Kernel names are runtime-only (lsblk, `diskio.name`).
+  **Every poll also carries a static `serial_no` tag** added by
+  `processors.template`, including standby and failed polls where smartctl reports no
+  serial. This keeps those rows attributable across a label change. The label is
+  display-only; the static serial tag is also display/config data, not a substitute
+  for the live serial field.
+  Before 2026-10-21 the tag was the kernel name resolved at deploy time, and one reboot
+  swapped the two NVMe drives and shifted three SATA disks, so history before the change
+  is mixed under a single `device` value — disambiguate it with the serial. The
+  reboot/shuffle proof after the fix is recorded as T-12 in
+  `docs/disk-and-mcp-assessment.md` (T-06/T-12).
 - **Disk I/O tags:** `[[inputs.diskio]]` keeps the kernel-name `name` tag (existing
   panels key on it) and adds `device_tags = ["ID_SERIAL_SHORT", "ID_MODEL"]`, so I/O
   metrics can be joined to SMART on the serial instead of on `sda`/`nvme0`. Note the
@@ -392,12 +440,23 @@ These are set up by this playbook and matter when a tool silently returns nothin
   installs `/etc/sudoers.d/snapraid-status`, which allows `username` to run exactly
   `/usr/local/bin/snapraid status` without a password, and the disk-health MCP runs
   `sudo -n /usr/local/bin/snapraid status` (its command policy accepts only that literal
-  and keeps `sudo` blocked everywhere else). Note that `username` already gets
-  `ALL=(ALL) NOPASSWD: ALL` from `security_sudoers_passwordless`
-  (`geerlingguy.security`), so the dedicated entry is redundant on this host and only
-  matters on hosts with narrower sudo; the MCP-side restriction is what actually bounds
-  what can run. A leftover lock is normal — SnapRAID only `flock`s it; delete it only
+  and keeps `sudo` blocked everywhere else). Since 2026-10-20 the blanket
+  `ALL=(ALL) NOPASSWD: ALL` grant has been removed on purpose (see
+  `docs/disk-and-mcp-assessment.md`, T-02), so scoped entries like this one are load-bearing:
+  `snapraid status` works, nothing else does. The MCP-side command restriction is what bounds
+  what can actually run. A leftover lock is normal — SnapRAID only `flock`s it; delete it only
   after a killed run and only when no snapraid process runs.
+- **No blanket passwordless sudo since 2026-10-20.** `%sudo ALL=(ALL) NOPASSWD: ALL` was
+  removed deliberately so tooling has to use scoped privileges. The repo now removes both
+  legacy `NOPASSWD` lines during provisioning (`roles/system/tasks/user.yml`), and
+  `host_vars/catafalco/vars.yml` sets `security_sudoers_passwordless: []` with a passworded
+  admin entry. Automation gets narrow `/etc/sudoers.d/` grants instead:
+  `telegraf-smart` (`/usr/sbin/smartctl`, `/usr/sbin/nvme`) and `snapraid-status`
+  (`snapraid status`). Host-verified 2026-10-20 23:35 CEST: `sudo -n true` fails, telegraf
+  is only in `docker`, SMART polls succeed, and the SSH-backed MCP tools recovered (the
+  earlier "connection closed" errors were a stale pooled connection, not a permanent sudo
+  dependency). The T-04 command-template audit remains; see
+  `docs/disk-and-mcp-assessment.md` T-02/T-03/T-04 and Appendix D.
 - **Ansible-managed containers:** roles that use `community.docker.docker_container` (for
   example `invidious-db`, `speedtest_tracker-db`, `socket-proxy`) have no compose project
   label and often no `/srv/<name>` directory. They must be listed in

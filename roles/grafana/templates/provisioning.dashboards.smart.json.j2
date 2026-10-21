@@ -1,5 +1,15 @@
 {#- Set the InfluxDB datasource UID -#}
 {% set DS_INFLUXDB = grafana_influxdb_datasource_uid -%}
+{#-
+  Disk identity is the serial number. Panels filter on serial_no and use the
+  static `device` label (Data1, Parity1, Cache1, ...) only for the legend.
+  Kernel names (sda, nvme0, ...) are probe-order dependent and must never be
+  used in a query predicate or a hard-coded panel.
+-#}
+{% set system_ssd = (system_disks | default([]) | selectattr('name', 'equalto', 'System') | list | first) | default({}) %}
+{% set system_label = system_ssd.label | default(system_ssd.name | default('unknown')) %}
+{% set cache_disk = (cache_disks | default([]) | first) | default({}) %}
+{% set cache_label = cache_disk.label | default(cache_disk.name | default('unknown')) %}
 {
   "annotations": {
     "list": [
@@ -141,7 +151,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "table",
-          "rawSql": "SELECT DISTINCT device, model, serial_no FROM smart_attribute WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY device",
+          "rawSql": "SELECT DISTINCT device, model, serial_no FROM smart_attribute WHERE host = '$server' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY serial_no",
           "refId": "A"
         }
       ],
@@ -231,7 +241,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -307,7 +317,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -376,7 +386,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, ROUND(COUNT(*) OVER (PARTITION BY device) * 1000000.0 / ($__to - $__from)) AS pct FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, ROUND(COUNT(*) OVER (PARTITION BY device) * 1000000.0 / ($__to - $__from)) AS pct FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -456,7 +466,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "table",
-          "rawSql": "SELECT device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Power_On_Hours' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Power_On_Hours' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -530,7 +540,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "table",
-          "rawSql": "SELECT device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Power_Cycle_Count' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Power_Cycle_Count' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -621,11 +631,11 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reallocated_Event_Count' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reallocated_Event_Count' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "Reallocated Events (sdd)",
+      "title": "Reallocated Events (selected disks)",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -691,7 +701,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reported_Uncorrect' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reported_Uncorrect' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -789,7 +799,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reallocated_Sector_Ct' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Reallocated_Sector_Ct' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -887,7 +897,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Current_Pending_Sector' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Current_Pending_Sector' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -985,7 +995,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Offline_Uncorrectable' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Offline_Uncorrectable' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -1083,7 +1093,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'UDMA_CRC_Error_Count' AND device IN (${device:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'UDMA_CRC_Error_Count' AND serial_no IN (${serial:sqlstring}) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -1117,7 +1127,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Estimated remaining lifespan for the Crucial BX500 SSD (sdd). Higher is better (100% = new, 0% = end of life). Uses percent_lifetime_remain from SMART data.",
+      "description": "Estimated remaining lifespan for {{ system_ssd.model }} ({{ system_label }}, serial {{ system_ssd.serial }}). Higher is better (100% = new, 0% = end of life). Uses percent_lifetime_remain from SMART data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1174,11 +1184,11 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, 'sdd' AS device, COALESCE(percent_lifetime_remain, 100.0 - percentage_used) AS life_remaining FROM smart_device WHERE host = '$server' AND device = 'sdd' AND (percent_lifetime_remain IS NOT NULL OR percentage_used IS NOT NULL) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, '{{ system_label }}' AS device, COALESCE(percent_lifetime_remain, 100.0 - percentage_used) AS life_remaining FROM smart_device WHERE host = '$server' AND serial_no = '{{ system_ssd.serial }}' AND (percent_lifetime_remain IS NOT NULL OR percentage_used IS NOT NULL) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "SSD Life Remaining (sdd)",
+      "title": "SSD Life Remaining ({{ system_label }})",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -1195,7 +1205,7 @@
         "type": "influxdb",
         "uid": "${DS_INFLUXDB}"
       },
-      "description": "Estimated remaining lifespan for the Crucial P2 NVMe (nvme0). Higher is better (100% = new, 0% = end of life). Uses 100 - percentage_used from NVMe SMART data.",
+      "description": "Estimated remaining lifespan for {{ cache_disk.model }} ({{ cache_label }}, serial {{ cache_disk.serial }}). Higher is better (100% = new, 0% = end of life). Uses 100 - percentage_used from NVMe SMART data.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1252,11 +1262,11 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, 'nvme0' AS device, COALESCE(percent_lifetime_remain, 100.0 - percentage_used) AS life_remaining FROM smart_device WHERE host = '$server' AND device = 'nvme0' AND (percent_lifetime_remain IS NOT NULL OR percentage_used IS NOT NULL) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, '{{ cache_label }}' AS device, COALESCE(percent_lifetime_remain, 100.0 - percentage_used) AS life_remaining FROM smart_device WHERE host = '$server' AND serial_no = '{{ cache_disk.serial }}' AND (percent_lifetime_remain IS NOT NULL OR percentage_used IS NOT NULL) AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
-      "title": "NVMe Life Remaining (nvme0)",
+      "title": "NVMe Life Remaining ({{ cache_label }})",
       "transformations": [
         {
           "id": "renameByRegex",
@@ -1331,14 +1341,14 @@
           "type": "influxdb",
           "uid": "${DS_INFLUXDB}"
         },
-        "definition": "SELECT DISTINCT(device) FROM smart_device WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR ORDER BY device",
+        "definition": "SELECT DISTINCT(serial_no) FROM smart_device WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR AND serial_no IS NOT NULL AND serial_no != '' ORDER BY serial_no",
         "hide": 0,
         "includeAll": true,
-        "label": "Disk",
+        "label": "Disk (serial)",
         "multi": true,
-        "name": "device",
+        "name": "serial",
         "options": [],
-        "query": "SELECT DISTINCT(device) FROM smart_device WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR ORDER BY device",
+        "query": "SELECT DISTINCT(serial_no) FROM smart_device WHERE host = '$server' AND time > now() - INTERVAL 24 HOUR AND serial_no IS NOT NULL AND serial_no != '' ORDER BY serial_no",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,

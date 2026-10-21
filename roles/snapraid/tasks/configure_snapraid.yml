@@ -32,11 +32,9 @@
     content: |
       # Managed by Ansible (snapraid role).
       # The MCP executor user needs root to read SnapRAID's content file and
-      # lock file, which SnapRAID creates as root:root 0600. This entry is
-      # redundant when the user already has blanket passwordless sudo (the
-      # catafalco host does, via security_sudoers_passwordless), but it keeps
-      # the requirement explicit and covers hosts with narrower sudo, where
-      # the exact-argument match limits the grant to this one subcommand.
+      # lock file, which SnapRAID creates as root:root 0600. This is a
+      # load-bearing scoped grant now that blanket passwordless sudo is gone;
+      # the exact-argument match limits it to this one read-only subcommand.
       {{ username }} ALL=(root) NOPASSWD: {{ snapraid_executable }} status
     owner: root
     group: root

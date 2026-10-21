@@ -358,10 +358,14 @@
     # read_method = "concurrent"
 
 {% if smart_disks %}
-# Normalize the by-id device tag back to the short kernel name used by the
-# existing dashboards and the disk-health MCP (sda, sdb, nvme0, ...).
-# The names are resolved on the target at deploy time (see tasks/main.yml), so
-# they follow disk-letter changes instead of going stale in host_vars.
+# Replace the by-id device tag with the disk's static label from host_vars
+# (Data1, Parity1, Cache1, ...). The label is semantic: it describes the role
+# of the disk, not its position, so a reboot or a disk shuffle cannot retarget
+# it. This tag is for display only — identity is serial_no (SMART) /
+# ID_SERIAL_SHORT (diskio), and every join/filter must use those.
+#
+# Do not put kernel names (sda, nvme0, ...) in a tag: they are probe-order
+# dependent and were stale from the first reboot until the role was re-run.
 [[processors.regex]]
   namepass = ["smart_device", "smart_attribute"]
 {% for disk in smart_disks %}
@@ -369,7 +373,24 @@
   [[processors.regex.tags]]
     key = "device"
     pattern = '^{{ smart_id | regex_escape }}$'
-    replacement = "{{ telegraf_kernel_devices[disk.serial] }}"
+    replacement = "{{ telegraf_disk_labels[disk.serial] }}"
+{% endfor %}
+
+# Failed polls (standby, timeout, sudo error) are written without a serial_no
+# tag, so without this they could only be matched through the mutable `device`
+# label. Publish the configured serial as a tag on every poll of the disk so a
+# standby row still names the physical disk even after a label change.
+#
+# This runs after the regex rewrite, so `device` is the static label by now;
+# the by-id basename is accepted as well in case the rewrite above stops
+# matching. Both keys are stable at deploy time; neither is a kernel name.
+{% for disk in smart_disks %}
+[[processors.template]]
+  namepass = ["smart_device", "smart_attribute"]
+  tag = "serial_no"
+  template = "{{ disk.serial }}"
+  [processors.template.tagpass]
+    device = ["{{ telegraf_disk_labels[disk.serial] }}", "{{ telegraf_smart_id_paths[disk.serial] | basename }}"]
 {% endfor %}
 {% endif %}
 
@@ -489,6 +510,7 @@
     [[inputs.mqtt_consumer.json_v2.object]]
     path = "ENERGY"
 
+{% if telegraf_nvidia_smi_present | default(false) | bool %}
 # Pulls statistics from nvidia GPUs attached to the host
 [[inputs.nvidia_smi]]
   ## Optional: path to nvidia-smi binary, defaults to $PATH via exec.LookPath
@@ -496,3 +518,4 @@
 
   ## Optional: timeout for GPU polling
   # timeout = "5s"
+{% endif %}

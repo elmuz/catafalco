@@ -50,7 +50,9 @@ Finally, run the playbook:
 ```
 ansible-playbook run.yml -l your-host-here -K
 ```
-The "-K" parameter is only necessary for the first run, since the playbook configures passwordless sudo for the main login user
+The "-K" parameter is required: the playbook keeps the main login user's sudo
+passworded and grants only narrow, scoped commands to automation (for example
+Telegraf's SMART polling and SnapRAID status).
 
 For consecutive runs, if you only want to update the Docker containers, you can run the playbook like this:
 ```

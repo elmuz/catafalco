@@ -8,3 +8,6 @@ hosts
 
 # Qwen CLI config (agent-specific; knowledge migrated to docs/ and .agents/)
 /.qwen/
+# Python bytecode (generated when a role script is run locally)
+__pycache__/
+*.pyc

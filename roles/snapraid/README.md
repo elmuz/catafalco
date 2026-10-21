@@ -38,10 +38,9 @@ which are `0` for a `0600` file, so the entry is stored but ineffective.
 Consequences:
 
 - `sudo -n` (non-interactive) is required: it fails instead of prompting.
-- On a host with blanket passwordless sudo (catafalco gets it from
-  `security_sudoers_passwordless`) this entry is redundant. On a host with
-  narrower sudo it is what makes the command work, and its exact-argument match
-  limits the grant to `snapraid status` alone.
+- Blanket passwordless sudo is deliberately not granted. This scoped entry is
+  what makes the command work, and its exact-argument match limits the grant to
+  `snapraid status` alone.
 - The disk-health MCP command policy accepts only this exact argv
   (`SNAPRAID_STATUS_SUDO_ARGV`) and keeps `sudo` blocked for everything else.
 - Moving the snapraid binary away from `/usr/local/bin` means updating both this

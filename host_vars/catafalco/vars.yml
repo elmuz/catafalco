@@ -50,7 +50,11 @@ msmtp_alias_default: "{{ email }}"
 #
 security_ssh_port: 69
 
-security_sudoers_passwordless: ["{{ username }}"]
+# No blanket passwordless sudo: automation gets narrow /etc/sudoers.d grants
+# (telegraf SMART, snapraid status), while the admin keeps passworded sudo.
+# Only consumed if the geerlingguy.security role is enabled.
+security_sudoers_passwordless: []
+security_sudoers_passworded: ["{{ username }}"]
 security_autoupdate_reboot: "true"
 security_autoupdate_mail_to: "{{ email }}"
 security_autoupdate_mail_on_error: true

@@ -16,12 +16,23 @@
     append: true
     state: present
 
-- name: Allow 'sudo' group to have passwordless sudo
+# Do not grant blanket passwordless sudo. The admin user stays in the sudo
+# group and gets the distribution's normal passworded rule; automation gets
+# scoped entries under /etc/sudoers.d (telegraf SMART, snapraid status).
+# These removal tasks also converge hosts provisioned by older revisions,
+# where the two NOPASSWD lines were written into /etc/sudoers.
+- name: Remove passwordless sudo for the sudo group
   ansible.builtin.lineinfile:
     path: /etc/sudoers
-    state: present
-    regexp: ^%{{ system_sudo_group }}
-    line: "%{{ system_sudo_group }} ALL=(ALL) NOPASSWD: ALL"
+    state: absent
+    regexp: '^%\s*{{ system_sudo_group }}\s+ALL=\(ALL(:ALL)?\)\s+NOPASSWD:\s*ALL\s*$'
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Remove passwordless sudo for the admin user
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    state: absent
+    regexp: '^{{ username | regex_escape }}\s+ALL=\(ALL(:ALL)?\)\s+NOPASSWD:\s*ALL\s*$'
     validate: /usr/sbin/visudo -cf %s
 
 - name: Copy the public SSH key
