@@ -14,9 +14,29 @@ Telegraf (host service, NOT container) → InfluxDB v3 Core (Docker :8181) → G
 
 - Telegraf is a **host-installed service**, not a container
 - Telegraf env: `INFLUX_URL="http://localhost:8181"` — must use local HTTP, never external HTTPS
-- InfluxDB container: `influxdb` (image: `influxdb:3-core`)
+- InfluxDB container: `influxdb` (image: `influxdb:3-core`, var `influxdb_image`)
 - Database: `system-monitor`
 - Common Telegraf inputs: cpu, disk, diskio, docker, mem, net, processes, smart, system, temp
+
+### Storage and history (check before trusting any trend)
+
+- The store is a bind mount of the **whole root**: `/srv/influxdb/db` → `/var/lib/influxdb3`.
+  Everything InfluxDB writes (catalog, WAL, parquet, object-store files) lives below it, so it
+  survives container recreation and image upgrades. `INFLUXDB3_DB_DIR` (`/var/lib/influxdb3/data`)
+  only decides *where inside* that root the store sits.
+- `/srv/influxdb/data` is the **pre-fix archive** (last written 2026-07-31) — not live data.
+- **Always verify the store is on the mount before drawing conclusions from a gap or a
+  suspiciously short history.** A store in the container's writable layer is deleted on every
+  recreate without any log line; it shows up only as `min(time)` ≈ container start time.
+
+```sql
+SELECT min(time) AS first_row, max(time) AS last_row, count(*) AS rows_ FROM smart_device
+```
+
+If `first_row` matches the container start (`get_service_status(service="influxdb")`), the store
+is not persisting — see T-21 in `docs/disk-and-mcp-assessment.md`. The role now fails the play
+when that happens (`influxdb_verify_persistence`), and prints the deployed binary's data-dir
+contract.
 
 ### Remote Server Access (MANDATORY)
 

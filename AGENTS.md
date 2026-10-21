@@ -335,11 +335,29 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
 - **Collected inputs:** cpu, disk, diskio, docker, intel_powerstat, mem, mqtt_consumer, net, nvidia_smi, processes, smart, swap, system, temp, upsd
 
 ### InfluxDB v3 Core
-- **Container:** `influxdb` (image: `influxdb:3-core`)
+- **Container:** `influxdb` (image: `influxdb:3-core`, overridable via `influxdb_image`)
 - **API port:** 8181 (FlightSQL/HTTP)
 - **Database:** `system-monitor`
 - **Query language:** SQL only (NOT InfluxQL)
-- **Query file limit:** InfluxDB v3 Core has a 432-file scan limit — always include time range constraints in queries
+- **Query file limit:** raise it with `INFLUXDB3_QUERY_FILE_LIMIT` (the role sets 2000) and always include time range constraints in queries
+- **Persistence:** the container mounts `<docker_dir>/influxdb/db` at `/var/lib/influxdb3`,
+  i.e. the store **root**, not the data dir. That is deliberate: everything InfluxDB writes
+  (`catalog`, `wal`, `dbs`, object-store files) lives below that root, so the store is on the
+  bind mount whether the binary honours `INFLUXDB3_DB_DIR`, falls back to a default, or a
+  future image renames the variable. A store written to the container's writable layer is
+  discarded on every recreate **without logging anything** — that happened here from
+  2026-07-31 to 2026-10-21 (T-21 in `docs/disk-and-mcp-assessment.md`).
+  The role therefore asserts that `/srv/influxdb/db` is mounted at `/var/lib/influxdb3` **and**
+  that a fresh `*.wal` file appears under it after the container starts; both fail the play
+  with the diagnostic commands instead of losing history. `/srv/influxdb/data` is the pre-fix
+  store (archive, last written 2026-07-31) and is not used by the running container.
+- **Image pinning:** `3-core` is a floating tag pulled on every run (and watchtower updates
+  containers), so pin `influxdb_image` for reproducible upgrades. The role records the deployed
+  binary's `data-dir` CLI contract on every run — when the store path moves again, that output
+  says what the version actually expects.
+- **Deploy:** `ansible-playbook catafalco.yml --tags influxdb` recreates the container when the
+  volume layout changes (expected once when migrating to the store root); the metrics history
+  starts fresh from that point.
 
 ### Grafana Panel & Field Gotchas
 - **Known Telegraf field names** (verify before querying): `temp` measurement uses field `temp` (NOT `temp_c`); `nvidia_smi` uses `temperature_gpu`; `smart_attribute` uses `raw_value` for `Temperature_Celsius` (NOT `value`). Full reference: `docs/monitoring/influxdb-grafana-specialist.md`

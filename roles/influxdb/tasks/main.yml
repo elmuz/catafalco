@@ -1,14 +1,19 @@
 ---
-- name: Create the necessary folders
+# The store root is mounted as a whole (see influxdb_container_root in
+# defaults): the database, its WAL, the catalog and the object-store files all
+# live below it, so one mount covers every path InfluxDB may pick. Older
+# revisions mounted `<dir>/data` directly at `/var/lib/influxdb3/data`; the
+# image changed which directory it honours, writes then went to the container's
+# writable layer, and a recreate discarded months of metrics (T-21 in
+# docs/disk-and-mcp-assessment.md). That host directory is left in place as an
+# archive.
+- name: Create the persisted store directory
   ansible.builtin.file:
-    path: "{{ docker_dir }}/{{ influxdb_container_name }}/{{ item }}"
+    path: "{{ influxdb_store_host_dir }}"
     state: directory
     owner: "1500"  # 'influxdb3' user within the container has UID and GID 1500
     group: "1500"
     mode: "0755"
-  loop:
-    - data
-    - plugins
 
 - name: Create the necessary folders (2)
   ansible.builtin.file:
@@ -38,7 +43,7 @@
 - name: Make sure that InfluxDB container is created and running
   community.docker.docker_container:
     name: "{{ influxdb_container_name }}"
-    image: influxdb:3-core
+    image: "{{ influxdb_image }}"
     pull: true
     networks:
       - name: "{{ influxdb_network_name }}"
@@ -46,18 +51,25 @@
     env:
       INFLUXDB3_NODE_IDENTIFIER_PREFIX: "{{ hostname }}"
       INFLUXDB3_OBJECT_STORE: file
-      INFLUXDB3_DB_DIR: "/var/lib/influxdb3/data"
+      # Kept explicit so the store path is predictable, but correctness no
+      # longer depends on this variable being honoured: the parent directory it
+      # points into is the mount.
+      INFLUXDB3_DB_DIR: "{{ influxdb_container_db_dir }}"
       INFLUXDB3_DATABASE_NAME: "system-monitor"
       INFLUXDB3_AUTH_TOKEN: "{{ influxdb_token }}"
-      INFLUXDB3_ADMIN_TOKEN_FILE: "/var/lib/influxdb3/admin-token.json"
+      INFLUXDB3_ADMIN_TOKEN_FILE: "{{ influxdb_container_root }}/admin-token.json"
       INFLUXDB3_TLS_NO_VERIFY: "true"
       INFLUXDB3_QUERY_FILE_LIMIT: "2000"
       INFLUXDB3_TELEMETRY_DISABLE_UPLOAD: "true"
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - "{{ docker_dir }}/{{ influxdb_container_name }}/admin-token.json:/var/lib/influxdb3/admin-token.json:ro"
-      - "{{ docker_dir }}/{{ influxdb_container_name }}/data:/var/lib/influxdb3/data"
-      - "{{ docker_dir }}/{{ influxdb_container_name }}/plugins:/var/lib/influxdb3/plugins"
+      # One directory holds the whole store: db, WAL, catalog and object-store
+      # files all live below it, so a renamed or ignored data-dir variable
+      # cannot put the store outside the mount.
+      - "{{ influxdb_store_host_dir }}:{{ influxdb_container_root }}"
+      # The token stays a read-only file mount on top of the directory mount.
+      - "{{ docker_dir }}/{{ influxdb_container_name }}/admin-token.json:{{ influxdb_container_root }}/admin-token.json:ro"
+    stop_timeout: "{{ influxdb_stop_timeout }}"
     ports:
       - 127.0.0.1:8181:8181/tcp
     restart_policy: unless-stopped
@@ -66,10 +78,103 @@
       swag.uptime-kuma.monitor.name: "{{ influxdb_dashboard_name }}"
       swag.uptime-kuma.monitor.url: "{{ influxdb_dashboard_url }}"
 
+# Two ways this deployment has already failed silently, both checked here: the
+# container may end up without the store mount, and the process may ignore the
+# data-dir variable and write into its writable layer. A missing mount or an
+# empty host directory is a hard failure from now on, because in both cases the
+# next recreate would delete the history without logging anything.
+- name: Read the InfluxDB container definition
+  community.docker.docker_container_info:
+    name: "{{ influxdb_container_name }}"
+  register: influxdb_container_info
+  when: influxdb_verify_persistence | bool
+
+- name: Assert that the store is on a bind mount
+  ansible.builtin.assert:
+    that:
+      - influxdb_container_info.container.State.Running | default(false)
+      - >-
+        influxdb_store_host_dir in
+        (influxdb_container_info.container.Mounts | default([])
+         | map(attribute='Source') | list)
+      - >-
+        influxdb_container_root in
+        (influxdb_container_info.container.Mounts | default([])
+         | map(attribute='Destination') | list)
+    fail_msg: >-
+      The {{ influxdb_container_name }} container does not mount
+      {{ influxdb_store_host_dir }} at {{ influxdb_container_root }}. Its data
+      would be written to the container's writable layer and discarded on the
+      next recreate. Check 'docker inspect {{ influxdb_container_name }}' for
+      leftover anonymous volumes or an older container definition.
+  when: influxdb_verify_persistence | bool
+
+# `influxdb:3-core` is a floating tag (and watchtower updates it), so the CLI
+# contract is not a constant: the flag/env names in one release are not
+# guaranteed in the next. Record what the deployed binary actually accepts on
+# every run, so a store that moves again can be diagnosed from the play output
+# instead of from three months of missing metrics.
+- name: Read the CLI contract of the deployed InfluxDB binary
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "{{ influxdb_container_name }}"
+      - influxdb3
+      - serve
+      - --help
+  register: influxdb_cli_contract
+  changed_when: false
+  failed_when: false
+  when: influxdb_verify_persistence | bool
+
+- name: Show the data-directory part of the CLI contract
+  ansible.builtin.debug:
+    msg: >-
+      {{ (influxdb_cli_contract.stdout | default('')).splitlines()
+         | select('search', '(?i)data[-_]dir|INFLUXDB3_(DB|DATA)_DIR')
+         | list }}
+  when: influxdb_verify_persistence | bool
+
+- name: Wait for a WAL file inside the persisted store
+  ansible.builtin.find:
+    paths: "{{ influxdb_store_host_dir }}"
+    patterns: "*.wal"
+    recurse: true
+    age: "-1h"
+  register: influxdb_store_probe
+  until: influxdb_store_probe.matched | default(0) > 0
+  retries: 18
+  delay: 10
+  failed_when: false
+  changed_when: false
+  when: influxdb_verify_persistence | bool
+
+- name: Assert that InfluxDB writes into the persisted store
+  ansible.builtin.assert:
+    that: influxdb_store_probe.matched | default(0) > 0
+    fail_msg: >-
+      InfluxDB produced no WAL file under {{ influxdb_store_host_dir }} since
+      the last hour, so it is writing somewhere else (the image may no longer
+      honour INFLUXDB3_DB_DIR). Find the real path with
+      'docker inspect -f {{ '{{' }}json .Mounts{{ '}}' }} {{ influxdb_container_name }}'
+      and 'docker exec {{ influxdb_container_name }} influxdb3 serve --help',
+      then make that path a child of {{ influxdb_container_root }}.
+  when: influxdb_verify_persistence | bool
+
+- name: Report where the store lives
+  ansible.builtin.debug:
+    msg: >-
+      Store root {{ influxdb_container_root }} -> {{ influxdb_store_host_dir }}
+      ({{ influxdb_store_probe.matched }} fresh WAL file(s) under
+      {{ influxdb_store_probe.files | map(attribute='path') | map('dirname')
+      | unique | join(', ') }})
+  when: influxdb_verify_persistence | bool
+
 - name: Make sure that InfluxDB Explorer container is created and running
   community.docker.docker_container:
     name: "{{ influxdb_container_name }}-explorer"
-    image: influxdata/influxdb3-ui
+    image: "{{ influxdb_ui_image }}"
     pull: true
     networks:
       - name: "{{ influxdb_network_name }}"
