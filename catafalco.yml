@@ -61,7 +61,7 @@
         - hd-idle
       when: enable_nas_stuff | default(false)
 
-    - role: stuvusit.smartd
+    - role: smartd
       become: true
       tags:
         - smartd

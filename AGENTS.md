@@ -136,6 +136,7 @@ catafalco/
 │   │   ├── mergerfs/       # MergerFS filesystem
 │   │   ├── mounts/         # Disk mounts
 │   │   ├── hd_idle/        # Hard drive idle timeout
+│   │   ├── smartd/         # SMART monitoring: by-id per disk, per-disk temp policy
 │   │   ├── snapraid/       # Disk array snapshot tool
 │   │   └── vladgh.samba/   # Samba server
 │   ├── Docker & Containers

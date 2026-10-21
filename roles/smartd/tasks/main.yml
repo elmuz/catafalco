@@ -1,0 +1,143 @@
+---
+# smartd must watch stable device paths. Kernel names (sda, nvme1n1, ...) are
+# probe-order dependent, so the serial in host_vars is the identity and the
+# /dev/disk/by-id link is resolved here at deploy time - the same rule the
+# Telegraf SMART input follows. See defaults/main.yml for the temperature
+# policy and for why this role does not use a DEVICESCAN line.
+- name: Build the list of disks smartd monitors
+  ansible.builtin.set_fact:
+    smartd_disks: >-
+      {{ (data_disks | default([]))
+         + (parity_disks | default([]))
+         + (cache_disks | default([]))
+         + (system_disks | default([])) }}
+
+- name: Validate the disks smartd monitors
+  ansible.builtin.assert:
+    that:
+      - smartd_disks | length > 0
+      - >-
+        smartd_disks | map(attribute='serial') | list | length
+        == smartd_disks | map(attribute='serial') | unique | list | length
+      - >-
+        smartd_temperature_ignored_serials
+        | difference(smartd_disks | map(attribute='serial') | list)
+        | length == 0
+    fail_msg: >-
+      smartd needs at least one disk in data_disks/parity_disks/cache_disks/
+      system_disks, every serial must be unique (the serial is the disk
+      identity), and every entry of smartd_temperature_ignored_serials must
+      name a monitored disk.
+
+- name: Locate the persistent by-id link of every monitored disk
+  ansible.builtin.find:
+    paths: /dev/disk/by-id
+    patterns:
+      - "ata-*_{{ item.serial }}"
+      - "nvme-*_{{ item.serial }}"
+    file_type: link
+    recurse: false
+  loop: "{{ smartd_disks }}"
+  register: smartd_disk_links
+  changed_when: false
+  check_mode: false
+  loop_control:
+    label: "{{ item.serial }}"
+
+- name: Validate that every monitored disk is present exactly once
+  ansible.builtin.assert:
+    that:
+      - item.matched | int == 1
+    fail_msg: >-
+      {{ item.item.label | default(item.item.name) }} ({{ item.item.model }},
+      serial {{ item.item.serial }}) matched {{ item.matched }} of the
+      expected ata-*/nvme-* links in /dev/disk/by-id. Check that the disk is
+      connected and that the serial in host_vars is correct.
+  loop: "{{ smartd_disk_links.results }}"
+  loop_control:
+    label: "{{ item.item.serial }}"
+
+- name: Map serial numbers to their by-id paths
+  ansible.builtin.set_fact:
+    smartd_id_paths: >-
+      {{ smartd_id_paths | default({})
+         | combine({item.item.serial: item.files[0].path}) }}
+  loop: "{{ smartd_disk_links.results }}"
+  loop_control:
+    label: "{{ item.item.serial }}"
+
+- name: Resolve the block device behind each by-id link
+  ansible.builtin.command:
+    argv:
+      - readlink
+      - -f
+      - "{{ smartd_id_paths[item.serial] }}"
+  loop: "{{ smartd_disks }}"
+  register: smartd_disk_targets
+  changed_when: false
+  check_mode: false
+  loop_control:
+    label: "{{ item.serial }}"
+
+- name: Validate the resolved block devices
+  ansible.builtin.assert:
+    that:
+      - item.rc == 0
+      - item.stdout | basename is match('^(sd[a-z]+|nvme[0-9]+n[0-9]+)$')
+    fail_msg: >-
+      Could not resolve the by-id link of {{ item.item.serial }} to a block
+      device (got "{{ item.stdout }}"). Check the disk and the udev by-id
+      rules.
+  loop: "{{ smartd_disk_targets.results }}"
+  loop_control:
+    label: "{{ item.item.serial }}"
+
+# The temperature thresholds are resolved here, not in the template, so the
+# effective policy of each disk is visible with a single `--check -v` run.
+- name: Describe every monitored disk for the smartd configuration
+  ansible.builtin.set_fact:
+    smartd_devices: >-
+      {{ smartd_devices | default([]) + [{
+           'label': item.label | default(item.name | default(item.serial)),
+           'model': item.model,
+           'serial': item.serial,
+           'path': smartd_id_paths[item.serial],
+           'type': item.smart_type | default('sat'),
+           'temperature': (
+             [0, 0, 0]
+             if item.serial in smartd_temperature_ignored_serials
+             else (
+               [smartd_nvme_temperature_diff,
+                smartd_nvme_temperature_info,
+                smartd_nvme_temperature_crit]
+               if (item.smart_type | default('sat')) == 'nvme'
+               else [smartd_ata_temperature_diff,
+                     smartd_ata_temperature_info,
+                     smartd_ata_temperature_crit]
+             )
+           ) | join(',')
+         }] }}
+  loop: "{{ smartd_disks }}"
+  loop_control:
+    label: "{{ item.serial }}"
+
+- name: Install smartmontools
+  ansible.builtin.apt:
+    name: smartmontools
+    state: present
+
+- name: Create the smartd configuration
+  ansible.builtin.template:
+    src: smartd.conf.j2
+    dest: "{{ smartd_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+    validate: smartd -q onecheck -c %s
+  notify: Restart smartd
+
+- name: Enable smartd
+  ansible.builtin.service:
+    name: "{{ smartd_service_name }}"
+    state: started
+    enabled: true

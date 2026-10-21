@@ -293,7 +293,20 @@ snapraid_content_files:
 #
 # SMART error reporting
 #
-smartd_default_mail_recipients: ["{{ email }}"]
+# smartd watches every disk in data_disks/parity_disks/cache_disks/
+# system_disks through its /dev/disk/by-id link, resolved from the serial at
+# deploy time (roles/smartd).
+smartd_mail_recipients: ["{{ email }}"]
+
+# Disks whose per-sensor NVMe temperatures are not temperatures. The KINGSTON
+# (NVMe2) reports Sensor 2 = 58 °C while its composite is 38 °C, so smartd
+# mailed a false "58 Celsius reached critical limit of 50 Celsius" every 30
+# minutes. smartd gets `-W 0,0,0` (no temperature reports) for these serials;
+# the composite stays covered by -H (NVMe Critical Warning) and by
+# Telegraf/Grafana (smart_device.temp_c, warning/critical_temperature_time).
+# Re-check after a smartmontools upgrade: >= 7.5 only checks the composite.
+smartd_temperature_ignored_serials:
+  - "50026B7383E4529D"
 #
 # Security
 #

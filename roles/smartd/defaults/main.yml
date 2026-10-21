@@ -1,0 +1,59 @@
+---
+# smartd monitors one explicit line per physical disk, addressed by the
+# /dev/disk/by-id link resolved from the serial in host_vars (tasks/main.yml).
+# Kernel names (sda, nvme1n1, ...) are assigned by probe order and change when
+# disks are added, moved or the machine is rebooted; a by-id link does not, so
+# a reboot can neither retarget the monitored device nor its thresholds, and
+# the journal names the disk by model+serial instead of sda.
+#
+# Temperature policy:
+#   ATA (HDDs and the SATA SSD) - SMART attribute 194/190 (Temperature
+#     Celsius), the drive's composite temperature. Warn at 45, critical at 50.
+#   NVMe - smartmontools < 7.5 evaluates the individual Temperature Sensor
+#     values, not only the composite, and some drives use the secondary
+#     sensors for other values (e.g. the maximum temperature). In this
+#     deployment the KINGSTON SNV3S1000G (serial 50026B7383E4529D) reports
+#     Sensor 2 = 58 °C while its composite is 38 °C, which produced a false
+#     "58 Celsius reached critical limit of 50 Celsius" mail every 30
+#     minutes while the per-serial composite stayed at 32-41 °C. NVMe
+#     defaults are therefore 60/70, and disks listed in
+#     `smartd_temperature_ignored_serials` get `-W 0,0,0` (all temperature
+#     reports off).
+#
+# Disabling the temperature report does not disable temperature monitoring:
+# `-H` still checks the NVMe Critical Warning byte (which the drive sets on
+# "temperature out of range"), and Telegraf collects the composite in
+# smart_device.temp_c plus warning/critical_temperature_time for Grafana and
+# the disk-health MCP. Use `smartd_temperature_ignored_serials` only for a
+# disk whose sensor values are known to be bogus, and say why in host_vars.
+smartd_config_path: /etc/smartd.conf
+smartd_service_name: smartmontools
+
+# Nightly short self-test, weekly long self-test. Kept identical to the
+# schedule this host ran before the by-id migration.
+smartd_test_schedule: "(L/../../6/01|S/../.././02)"
+
+# Skip checks while a disk is in standby (do not spin up HDDs), wake it for
+# every 15th skipped check, and do not log each skipped check.
+smartd_nocheck: "standby,15,q"
+
+smartd_mail_recipients: []
+smartd_mail_frequency: diminishing
+
+# ATA attribute IDs that report pending and uncorrectable sectors. Kept at the
+# upstream defaults so the ATA checks behave exactly as before the by-id
+# migration. ATA-only; smartd ignores them for NVMe.
+smartd_ata_pending_id: "197+"
+smartd_ata_uncorrectable_id: "198+"
+
+smartd_ata_temperature_diff: 10
+smartd_ata_temperature_info: 45
+smartd_ata_temperature_crit: 50
+
+smartd_nvme_temperature_diff: 5
+smartd_nvme_temperature_info: 60
+smartd_nvme_temperature_crit: 70
+
+# Serials (the disk identity) whose per-sensor NVMe temperatures are not
+# trustworthy. Their smartd line gets `-W 0`; see the policy above.
+smartd_temperature_ignored_serials: []

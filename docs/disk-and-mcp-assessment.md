@@ -1,6 +1,6 @@
 # Disk identity, privilege model and MCP tooling — fused assessment & TODO
 
-**Status:** OPEN · **Last updated:** 2026-10-21 23:55 CEST · **Host:** `catafalco`
+**Status:** OPEN · **Last updated:** 2026-10-22 00:52 CEST · **Host:** `catafalco`
 **Supersedes:** `docs/disk-identity-investigation.md` and
 `docs/mcp-tool-audit-2026-10-20.md` (both merged here and deleted).
 
@@ -10,7 +10,7 @@ are in the appendices. Keep it current rather than opening a second findings doc
 
 ---
 
-## Current state (2026-10-21)
+## Current state (2026-10-22)
 
 | Area | State | Consequence |
 |---|---|---|
@@ -18,12 +18,13 @@ are in the appendices. Keep it current rather than opening a second findings doc
 | Poll attribution | **Serial tag deployed 01:10 CEST, verified 01:15 CEST:** standby rows carry `serial_no` even when smartctl reports no serial | `get_disk_health` attributes the newest Parity1 standby poll; the overview still groups failures by the old label (MCP follow-up T-20) |
 | Mounts / filesystems | **Safe:** every filesystem came back on the intended disk | `LABEL=` mounts did their job; no data loss |
 | SMART collection | **Restored 23:35 CEST:** first successful poll after the fix; five disks `exit_status = 0`, one standby `exit_status = 2` | Dashboards and MCP are current again; stale/mismatch warnings are now implemented (T-05 done) |
+| smartd | **Fixed and deployed 2026-10-22 00:52 CEST (T-08):** one explicit `/dev/disk/by-id` line per disk, resolved from the serial at deploy time; NVMe uses 60/70 °C and the KINGSTON gets `-W 0,0,0` | Journal lines name model+serial instead of `sda`/`nvmeX`; a reboot cannot retarget a device or a threshold; the false 58 °C critical mail is gone |
 | Privilege model | **Scoped grants verified 23:35 CEST:** admin has passworded sudo, telegraf has only `docker` + `smartctl`/`nvme` NOPASSWD | Blanket grant is gone and the repo no longer restores it (T-02/T-03 done) |
 | MCP SSH channel | **Working after the operator reloaded the MCP (verified 2026-10-21 23:45 CEST):** `list_disks`, `get_mount_status`, `get_io_stats`, `get_host_service_*`, `get_snapraid_status` and the disk-health per-disk calls all answer | The post-boot capture checklist can run through the MCP again; the reload/reconnect step after a host reboot is the standing procedure (T-04) |
 | InfluxDB persistence | **Fixed, deployed and proven 2026-10-22 00:36 CEST (T-21):** a 2026-07 image upgrade replaced `INFLUXDB3_DB_DIR` with `INFLUXDB3_DATA_DIR`, so the store had moved into the container's writable layer. The role now mounts the store *root* (`/srv/influxdb/db` → `/var/lib/influxdb3`), sets the variable the image reads, and hard-fails when writes do not land there | History survives container recreation — verified: `min(time)` stayed at `22:30:10Z` across a recreate at `22:33:57Z`. Nothing before the fix is recoverable; any future regression fails the play in ~3 minutes instead of silently |
 | Credential handling | **Fixed and verified 2026-10-21 01:12 CEST:** rclone password rotated and masking live; the two local Samba accounts (`alessio`, `sara`) were rotated and verified with `smbclient` | `rclone.conf` returns `redacted: true` / `pass = ***`; deployed rclone password matches the vault; leaked Samba values no longer work (T-01 done) |
 | Key hypothesis | **H1 confirmed and closed by T-06:** kernel-name tags were baked at deploy time | The tag is now a static label and identity comes from the serial (T-07 superseded) |
-| Open hypotheses | **H2 resolved; H3 narrowed** by the T-12 hwmon capture | smartd's 58 °C is the KINGSTON (`NVMe2`) secondary sensor, not a different disk; only the KINGSTON exposes per-sensor hwmon entries, the CT1000 exposes composite only |
+| Open hypotheses | **H2 resolved; H3 narrowed** by the T-12 hwmon capture | smartd's 58 °C is the KINGSTON (`NVMe2`) secondary sensor, not a different disk; only the KINGSTON exposes per-sensor hwmon entries, the CT1000 exposes composite only. The false alarm is fixed by T-08 |
 
 **Standing rule:** join on `serial_no` (SMART) or `ID_SERIAL_SHORT` (`diskio`), never on
 `device` / `name`. Since 2026-10-21 the `device` tag is a static label and the kernel name is
@@ -575,10 +576,10 @@ with no manual Ansible run, and missing/ambiguous serials fail loudly.
 
 ### T-08 — Move smartd to by-id paths and fix NVMe temperature thresholds
 
-- [ ] Stop smartd from watching `/dev/sdX` / `/dev/nvmeX`, and stop the false 58 °C alarm.
+- [x] Stop smartd from watching `/dev/sdX` / `/dev/nvmeX`, and stop the false 58 °C alarm.
 
-**Why.** The **deployed** `/etc/smartd.conf` is one `DEVICESCAN` line, not a list of
-`/dev/sdX` entries, and smartd's state files are named by model-serial. So the historical
+**Why (state before the fix).** The deployed `/etc/smartd.conf` was one `DEVICESCAN` line,
+not a list of `/dev/sdX` entries, and smartd's state files are named by model-serial. So the historical
 "smartd follows stale kernel paths" worry does not apply to this host. The remaining issue is
 the false NVMe temperature alarm: every 30 min,
 `Device: /dev/nvme0, Temperature 58 Celsius reached critical limit of 50 Celsius
@@ -595,8 +596,51 @@ is about the KINGSTON's Sensor 2, not a misattributed disk (H2).
   `Temperature Sensor 1/2/3`.
 - Preserve the expected standby behaviour and skipped-check messages.
 
+**Status (2026-10-22 00:52 CEST): deployed and verified.** smartd is no longer driven by
+`DEVICESCAN`. A new `smartd` role (`roles/smartd`, replacing `stuvusit.smartd`, which is gone
+from `requirements.yml`) resolves every serial in
+data/parity/cache/`system_disks` to its `/dev/disk/by-id/ata-*_<serial>` or
+`nvme-*_<serial>` link at deploy time — the same rule as the Telegraf SMART input — and
+asserts that exactly one link matches per disk. The generated `/etc/smartd.conf` has one
+line per disk with a readable `# <label>: <model>, serial <serial>` header, `-d sat|nvme`,
+and the previous directive set unchanged (`-n standby,15,q -S on -H -l
+error/xerror/selftest/offlinests/scterc -e lookahead,on -s … -m … -M diminishing -f -p -C
+197+ -U 198+`).
+
+Temperature policy is now per device: ATA keeps `10,45,50` (attribute 194/190). NVMe uses
+`5,60,70`, because 50 °C is an HDD CRIT value, not an NVMe one. The KINGSTON (`NVMe2`,
+serial `50026B7383E4529D`) is listed in `smartd_temperature_ignored_serials` in `host_vars`
+and gets `-W 0,0,0`: smartmontools < 7.5 evaluates the individual NVMe
+`Temperature Sensor` values, and this drive reports Sensor 2 = 58 °C while its composite is
+38 °C (T-12 hwmon map). The composite stays covered by `-H` (NVMe Critical Warning, bit 1
+= temperature out of range) and by Telegraf/Grafana (`smart_device.temp_c`,
+`warning_/critical_temperature_time`). Re-check the ignore list after an upgrade to
+smartmontools ≥ 7.5: that release only checks the composite.
+
+Evidence captured right after `ansible-playbook catafalco.yml --tags smartd`
+(2026-10-22 00:52:35 CEST):
+
+- The role resolved all six by-id links, `smartd -q onecheck` accepted the generated file
+  (template `validate:`), and the daemon restarted with `Next check of 6 devices`.
+- Journal lines now name the stable path, e.g.
+  `Device: /dev/disk/by-id/nvme-KINGSTON_SNV3S1000G_50026B7383E4529D, state written to
+  /var/lib/smartmontools/smartd.KINGSTON_SNV3S1000G-50026B7383E4529D-n1.nvme.state` and
+  `Device: /dev/disk/by-id/ata-ST18000NT001-3NF101_ZVTFF3JB [SAT], initial Temperature is
+  24 Celsius` — the device field carries no kernel name (`sda`, `nvme1`).
+- There is no `initial Temperature` line at all for the KINGSTON: `-W 0,0,0` is in force,
+  so its 58 °C sensor cannot raise an alarm. The CT1000 still reports `initial
+  Temperature is 35 Celsius`.
+- State files keep their model-serial names, so the attribute baselines carried over
+  unchanged, and the HDD standby handling is untouched (they were asleep during the run
+  and `onecheck` still returned 0).
+
+The false alarm used to fire on the 30-minute check; the next scheduled check
+(`01:22:35 CEST`) is the confirmatory observation, but the device no longer has a
+temperature check at all, so there is nothing left to trigger it.
+
 **Done when.** No false critical-temperature mail; smartd log lines identify a stable serial;
-a reboot/shuffle does not retarget a threshold.
+a reboot/shuffle does not retarget a threshold. **Met:** a line points at a by-id link, not
+at a kernel name, and the false alarm's source is switched off.
 
 ---
 
@@ -915,7 +959,7 @@ a missing vault variable is the prime suspect for the play failing on the main-c
 3. **T-05** — make stale/mismatched health impossible to misread before using the tools again.
    ✅ 2026-10-21
 4. **T-06 / T-07 / T-08 / T-09 / T-11** — fix identity at the source, then the consumers.
-   T-06 and T-07 are done; T-08, T-09 and T-11 remain open. See the T-06 implementation note.
+   T-06, T-07 and T-08 are done; T-09 and T-11 remain open. See the T-06 and T-08 notes.
 5. **T-12** — prove it with a shuffle/reboot. ✅ 2026-10-21 01:15 CEST, see T-12.
 6. **P2 and P3** — remaining tool and host hygiene. T-20 is the MCP-side follow-up found
    while verifying the serial tag; it does not block the source-level identity proof.
@@ -1063,10 +1107,11 @@ kernel name from the SMART identity path. The remaining dependencies are:
    Composite + Sensors 1–3 and `hwmon2` = CT1000 (`Cache1`, `nvme0`) with Composite only,
    so the series are not interchangeable. Per-drive attribution still needs a PCI/by-id
    mapping, or hwmon should be dropped in favour of `smart_device.temp_c` (T-09).
-3. **smartd is no longer kernel-path dependent in this deployment.** `/etc/smartd.conf` is
-   one `DEVICESCAN` line and the state files are named by model-serial; the
-   `Device: /dev/nvmeX` text in the journal is informational. If explicit devices are ever pinned,
-   use `/dev/disk/by-id/*` rather than `/dev/sdX` (T-08).
+3. **smartd is no longer kernel-path dependent.** Since T-08 (2026-10-22) `roles/smartd`
+   writes one explicit `/dev/disk/by-id/*` line per disk, resolved from the serial at deploy
+   time, and the journal names that path (model+serial) instead of `/dev/sda`/`/dev/nvmeX`.
+   The state files are named by model-serial, so their baselines survive both the rename and
+   a re-enumeration.
 4. **disk-health MCP is serial-first now.** `get_disk_health`, `get_nvme_health` and
    `get_smart_attributes` resolve the live serial and select `serial_no = '<serial>'`; the
    device tag is only a fallback. `get_full_disk_report` partitions by `serial_no`. The
@@ -1110,12 +1155,13 @@ still T-05.
 
 ### Other evidence
 
-- **smartd false critical temperature:** every 30 min on `/dev/nvme0`,
-  `Temperature 58 Celsius reached critical limit of 50 Celsius (Min/Max 58/75)`, against
-  per-serial composites of 32–41 °C. 58 °C matches hwmon `nvme_sensor_2 = 57.85 °C` (composite
-  on the same sample: 35.85 °C). Either smartd checks a secondary NVMe sensor rather than the
-  composite, or its `/dev/nvme0` is not the disk Telegraf tags `nvme0`. The colliding hwmon
-  series prevent telling which drive owns sensor 1/2, so the 58 °C cannot be attributed yet.
+- **smartd false critical temperature (fixed 2026-10-22, T-08):** every 30 min on
+  `/dev/nvme0`, `Temperature 58 Celsius reached critical limit of 50 Celsius (Min/Max
+  58/75)`, against per-serial composites of 32–41 °C. 58 °C matches hwmon
+  `nvme_sensor_2 = 57.85 °C` (composite on the same sample: 35.85 °C). The T-12 hwmon map
+  attributed it to the KINGSTON (`NVMe2`), and the cause is smartmontools < 7.5 evaluating
+  the individual NVMe sensors. That disk now gets `-W 0,0,0` in `/etc/smartd.conf`; the
+  composite is covered by `-H` and Telegraf/Grafana.
 - **smartd skipped checks:** `Device: /dev/sda [SAT], is back in IDLE_A mode, resuming checks
   (9 checks skipped)`, `sdc … (7 checks skipped)` — expected `nocheck=standby` behaviour.
 - **Sparse SATA rows:** `sda` and `sdc` are sampled every ~60 min while `sdd` is sampled every
@@ -1150,8 +1196,8 @@ still T-05.
   post-reboot it names `/dev/nvme1`, which is still the KINGSTON, and logs
   `initial Temperature is 58 Celsius` at startup. `hwmon1` maps to the KINGSTON (`nvme1`)
   and exposes Sensor 2; the composite is ~38 °C. So smartd reads a secondary sensor, not a
-  different disk. The false critical alarm is a threshold/monitoring choice (T-08/T-09),
-  not misattribution.
+  different disk. The false critical alarm was a threshold/monitoring choice, not
+  misattribution; T-08 disables the per-sensor temperature check for that drive.
 - **H3 — RESOLVED / NARROWED 2026-10-21 01:13 CEST.** The hwmon map is explicit: `hwmon1`
   is the KINGSTON (`NVMe2`, `nvme1`) with Composite + Sensors 1–3; `hwmon2` is the CT1000
   (`Cache1`, `nvme0`) with Composite only. The previous "4 series for 2 drives" was one
@@ -1177,7 +1223,7 @@ ls -l /dev/disk/by-id/ | grep -vE -- '-part[0-9]+$'        # serial -> live kern
 for t in /mnt/data1 /mnt/data2 /mnt/parity1 /mnt/cache1 /mnt/storage; do
   echo "-- $t"; findmnt -no SOURCE,LABEL,TARGET "$t" || true
 done
-cat /etc/smartd.conf                                      # DEVICESCAN, state files by model-serial
+cat /etc/smartd.conf                                      # by-id lines (T-08), state files by model-serial
 # hwmon -> PCI/device attribution for the NVMe sensors:
 for h in /sys/class/hwmon/hwmon*; do
   echo "== $h $(cat $h/name 2>/dev/null) -> $(readlink -f $h/device 2>/dev/null)"

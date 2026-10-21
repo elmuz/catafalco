@@ -1,0 +1,38 @@
+# {{ ansible_managed }}
+#
+# One line per physical disk, addressed by its /dev/disk/by-id link. The link
+# is resolved from the serial in host_vars at deploy time, so a reboot or a
+# disk shuffle cannot retarget a device or its thresholds. Kernel names
+# (sda, nvme1n1, ...) are probe-order dependent and must not appear here.
+#
+# -W DIFF,INFO,CRIT is the temperature policy: report a change of DIFF
+# degrees, log at INFO, warn (mail) at CRIT.
+#   ATA disks : attribute 194/190 ({{ smartd_ata_temperature_info }}/{{ smartd_ata_temperature_crit }} °C)
+#   NVMe disks: composite temperature ({{ smartd_nvme_temperature_info }}/{{ smartd_nvme_temperature_crit }} °C)
+# A line with "-W 0,0,0" has all temperature reports disabled: smartmontools
+# < 7.5 evaluates the individual NVMe sensors, and those drives report
+# non-temperature values there (see smartd_temperature_ignored_serials in
+# host_vars). They stay covered by -H (NVMe Critical Warning, including
+# "temperature out of range") and by the composite temperature in
+# Telegraf/Grafana.
+{% for disk in smartd_devices %}
+# {{ disk.label }}: {{ disk.model }}, serial {{ disk.serial }}
+{% if disk.temperature == '0,0,0' %}
+# Temperature reporting disabled for this disk; its sensors are not
+# temperatures. Composite temperature is tracked in InfluxDB/Grafana.
+{% endif %}
+{{ disk.path }} -d {{ disk.type }} -n {{ smartd_nocheck }} -S on -H \
+    -l error \
+    -l xerror \
+    -l selftest \
+    -l offlinests \
+    -l scterc,0,0 \
+    -e lookahead,on \
+    -s {{ smartd_test_schedule }} \
+{% if smartd_mail_recipients %}
+    -m {{ smartd_mail_recipients | join(',') }} \
+    -M {{ smartd_mail_frequency }} \
+{% endif %}
+    -f -p -C {{ smartd_ata_pending_id }} -U {{ smartd_ata_uncorrectable_id }} -W {{ disk.temperature }}
+
+{% endfor %}
