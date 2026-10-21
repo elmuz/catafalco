@@ -51,10 +51,11 @@
     env:
       INFLUXDB3_NODE_IDENTIFIER_PREFIX: "{{ hostname }}"
       INFLUXDB3_OBJECT_STORE: file
-      # Kept explicit so the store path is predictable, but correctness no
-      # longer depends on this variable being honoured: the parent directory it
-      # points into is the mount.
-      INFLUXDB3_DB_DIR: "{{ influxdb_container_db_dir }}"
+      # The path inside the mount. The variable name must match what the image
+      # reads (`--data-dir`, env INFLUXDB3_DATA_DIR in the current release);
+      # correctness does not depend on it alone, because the parent directory is
+      # the mount and the probe below fails the play if writes land elsewhere.
+      INFLUXDB3_DATA_DIR: "{{ influxdb_container_data_dir }}"
       INFLUXDB3_DATABASE_NAME: "system-monitor"
       INFLUXDB3_AUTH_TOKEN: "{{ influxdb_token }}"
       INFLUXDB3_ADMIN_TOKEN_FILE: "{{ influxdb_container_root }}/admin-token.json"
@@ -89,10 +90,18 @@
   register: influxdb_container_info
   when: influxdb_verify_persistence | bool
 
+- name: Assert that the InfluxDB container is running
+  ansible.builtin.assert:
+    that: influxdb_container_info.container.State.Running | default(false)
+    fail_msg: >-
+      The {{ influxdb_container_name }} container is not running, so the store
+      cannot be verified. Check with
+      'docker logs --tail 50 {{ influxdb_container_name }}'.
+  when: influxdb_verify_persistence | bool
+
 - name: Assert that the store is on a bind mount
   ansible.builtin.assert:
     that:
-      - influxdb_container_info.container.State.Running | default(false)
       - >-
         influxdb_store_host_dir in
         (influxdb_container_info.container.Mounts | default([])
@@ -136,10 +145,12 @@
          | list }}
   when: influxdb_verify_persistence | bool
 
-- name: Wait for a WAL file inside the persisted store
+# Waits for *any* file, not only a WAL file: the store (catalog included) is
+# created at startup, while WAL files depend on Telegraf already feeding the
+# database. What matters here is that the writes land on the bind mount.
+- name: Wait for files inside the persisted store
   ansible.builtin.find:
     paths: "{{ influxdb_store_host_dir }}"
-    patterns: "*.wal"
     recurse: true
     age: "-1h"
   register: influxdb_store_probe
@@ -154,21 +165,31 @@
   ansible.builtin.assert:
     that: influxdb_store_probe.matched | default(0) > 0
     fail_msg: >-
-      InfluxDB produced no WAL file under {{ influxdb_store_host_dir }} since
-      the last hour, so it is writing somewhere else (the image may no longer
-      honour INFLUXDB3_DB_DIR). Find the real path with
-      'docker inspect -f {{ '{{' }}json .Mounts{{ '}}' }} {{ influxdb_container_name }}'
+      Nothing appeared under {{ influxdb_store_host_dir }} in the last hour, so
+      InfluxDB is writing somewhere else -- the data-dir variable the image
+      reads has probably changed again (see the --data-dir line printed above).
+      Confirm with 'docker inspect -f {{ '{{' }}json .Mounts{{ '}}' }} {{ influxdb_container_name }}'
       and 'docker exec {{ influxdb_container_name }} influxdb3 serve --help',
-      then make that path a child of {{ influxdb_container_root }}.
+      then point that env at a path below {{ influxdb_container_root }}.
+  when: influxdb_verify_persistence | bool
+
+- name: Look for WAL files in the persisted store
+  ansible.builtin.find:
+    paths: "{{ influxdb_store_host_dir }}"
+    patterns: "*.wal"
+    recurse: true
+  register: influxdb_wal_probe
+  changed_when: false
   when: influxdb_verify_persistence | bool
 
 - name: Report where the store lives
   ansible.builtin.debug:
     msg: >-
-      Store root {{ influxdb_container_root }} -> {{ influxdb_store_host_dir }}
-      ({{ influxdb_store_probe.matched }} fresh WAL file(s) under
-      {{ influxdb_store_probe.files | map(attribute='path') | map('dirname')
-      | unique | join(', ') }})
+      Store root {{ influxdb_container_root }} -> {{ influxdb_store_host_dir }}:
+      {{ influxdb_store_probe.matched }} file(s) written in the last hour,
+      {{ influxdb_wal_probe.matched }} WAL file(s) total, newest in
+      {{ (influxdb_store_probe.files | sort(attribute='mtime') | last).path
+      | dirname }}.
   when: influxdb_verify_persistence | bool
 
 - name: Make sure that InfluxDB Explorer container is created and running

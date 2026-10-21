@@ -20,7 +20,7 @@ are in the appendices. Keep it current rather than opening a second findings doc
 | SMART collection | **Restored 23:35 CEST:** first successful poll after the fix; five disks `exit_status = 0`, one standby `exit_status = 2` | Dashboards and MCP are current again; stale/mismatch warnings are now implemented (T-05 done) |
 | Privilege model | **Scoped grants verified 23:35 CEST:** admin has passworded sudo, telegraf has only `docker` + `smartctl`/`nvme` NOPASSWD | Blanket grant is gone and the repo no longer restores it (T-02/T-03 done) |
 | MCP SSH channel | **Working after the operator reloaded the MCP (verified 2026-10-21 23:45 CEST):** `list_disks`, `get_mount_status`, `get_io_stats`, `get_host_service_*`, `get_snapraid_status` and the disk-health per-disk calls all answer | The post-boot capture checklist can run through the MCP again; the reload/reconnect step after a host reboot is the standing procedure (T-04) |
-| InfluxDB persistence | **Broken, fixed in the role (T-21, 2026-10-22):** the store had been writing to the container's writable layer since 2026-07-31 (bind mount covered only the data dir, which the floating image stopped using), so the 22:55 CEST recreate wiped the history. The role now mounts and verifies the store *root* | Nothing written before the fix is recoverable (except the pre-2026-07-31 archive on disk); after the next `--tags influxdb` run a recreate can no longer lose data silently — the play fails instead |
+| InfluxDB persistence | **Cause confirmed and fixed in the role (T-21, 2026-10-22):** a 2026-07 image upgrade replaced `INFLUXDB3_DB_DIR` with `INFLUXDB3_DATA_DIR`, so the store moved to a path in the container's writable layer and the 22:55 CEST recreate wiped the history. The role now mounts the store *root*, sets the variable the image reads, and hard-fails when writes do not land on the mount | Nothing written before the fix is recoverable (except the pre-2026-07-31 archive on disk); after the next `--tags influxdb` run the history survives recreation by construction, and any future regression fails the play within ~3 minutes |
 | Credential handling | **Fixed and verified 2026-10-21 01:12 CEST:** rclone password rotated and masking live; the two local Samba accounts (`alessio`, `sara`) were rotated and verified with `smbclient` | `rclone.conf` returns `redacted: true` / `pass = ***`; deployed rclone password matches the vault; leaked Samba values no longer work (T-01 done) |
 | Key hypothesis | **H1 confirmed and closed by T-06:** kernel-name tags were baked at deploy time | The tag is now a static label and identity comes from the serial (T-07 superseded) |
 | Open hypotheses | **H2 resolved; H3 narrowed** by the T-12 hwmon capture | smartd's 58 °C is the KINGSTON (`NVMe2`) secondary sensor, not a different disk; only the KINGSTON exposes per-sensor hwmon entries, the CT1000 exposes composite only |
@@ -286,7 +286,9 @@ tests cover fresh, stale, failed and mismatched cases.
 ### T-21 — InfluxDB is not writing to its bind mount, so every recreate wipes the metrics
 
 - [x] Mount the store *root* (not the data dir) and assert at deploy time that writes land there.
-- [ ] Deploy the role and confirm the probe on the host (`--tags influxdb`).
+- [x] Set the data-dir variable the deployed image actually reads (named by the first deploy's
+      own `serve --help` dump).
+- [ ] Re-deploy and confirm the probe (`--tags influxdb`) plus one recreate.
 - [ ] Decide what to do with the archived pre-2026-07-31 store in `/srv/influxdb/data`.
 
 **Found 2026-10-21 23:45 CEST while verifying T-06 after boot #4.** The hosted InfluxDB has no
@@ -311,39 +313,42 @@ disk-health MCP cannot trend S.M.A.R.T. and cannot fall back to history; the T-0
 that tell a reader to disambiguate old rows by serial have nothing to disambiguate. Rows are
 lost silently — no error is logged, InfluxDB just starts from an empty store.
 
-**Root cause (2026-10-21 23:55 CEST).** The deployment relied on two things the image
-controls: the mount covered only `<dir>/data`, and `INFLUXDB3_DB_DIR` had to make InfluxDB use
-exactly that path. `influxdb:3-core` is a floating tag pulled on every run, and the store
-stopped being written on **2026-07-31 01:36** — right after the upgrade marked by
-`table-index-conversion-completed` (**2026-07-30 05:00**) — so the contract the mount was
-built on changed with an image update. From then on the process wrote outside the mount (the
-writable layer) and every recreate deleted it, without logging anything: it simply starts with
-an empty store, which is why this went unnoticed for eleven weeks.
+**Root cause (confirmed 2026-10-22 00:10 CEST).** The image renamed the variable. The role set
+`INFLUXDB3_DB_DIR`; the deployed binary advertises
 
-Two failure modes fit the evidence and both are plausible:
+```text
+--data-dir <DIR>   Location to store files locally [env: INFLUXDB3_DATA_DIR=]
+```
 
-1. `INFLUXDB3_DB_DIR` is no longer honoured by the current image, whose default data dir is
-   outside `/var/lib/influxdb3/data`.
-2. The deployed container lost the bind mount on recreate.
+so the setting was ignored and the process used the binary's default (a home-directory path
+inside the container, consistent with the `--data-dir ~/.influxdb_data` example in the same
+help text). From the 2026-07 image upgrade onwards the store was written to the container's
+writable layer: every recreate deleted it, without logging anything — the process simply
+starts with an empty store, which is why it went unnoticed for eleven weeks. The mount itself
+was never broken; the *path inside the mount* stopped being used.
 
-Neither had to be proven to fix the *class* of bug: the mount now covers the whole store root,
-so every path the binary can pick is inside it, and the deploy fails loudly if writes still do
-not land there. The next deploy prints the deployed binary's own `--data-dir` contract, which
-settles which of the two it was.
+The first deploy of the fixed role reproduced the failure and the guard caught it: the store
+mount assert passed, the WAL/file probe timed out after 3 minutes, and the play failed with the
+diagnostic message — the same run printed the `[env: INFLUXDB3_DATA_DIR=]` line that named the
+cause. That is the behaviour the check exists for: a hard failure instead of eleven silent
+weeks.
 
 **Fix (repo, 2026-10-22).** `roles/influxdb`:
 
 - Mounts `<docker_dir>/influxdb/db` at `/var/lib/influxdb3` — the **root** the DB, WAL,
-  catalog and object-store files live under — instead of mounting the data dir. `INFLUXDB3_DB_DIR`
-  is still set (`/var/lib/influxdb3/data`) so the layout stays predictable, but correctness no
-  longer depends on it: a default or a renamed variable lands under the same mount.
+  catalog and object-store files live under — instead of mounting the data dir.
+- Sets the variable the deployed image actually reads, `INFLUXDB3_DATA_DIR`
+  (`/var/lib/influxdb3/data`), and drops the stale `INFLUXDB3_DB_DIR`. Correctness does not rest
+  on the name alone: the parent directory is the mount, so a default or a future rename still
+  lands inside it, and the probe fails the play if writes go elsewhere.
 - `stop_timeout: 30` so a recreate/reboot lets InfluxDB flush its WAL instead of being killed
   after the 10 s Docker default.
 - Fails the play unless **both** hold after the container starts: the
   `<docker_dir>/influxdb/db → /var/lib/influxdb3` bind mount is present (checked with
-  `docker_container_info`), and a `*.wal` file younger than an hour exists under it (retried for
-  ~3 minutes). Failure prints the two diagnostic commands.
-- Records the deployed binary's `--data-dir` / `INFLUXDB3_DB_DIR` line from
+  `docker_container_info`), and files younger than an hour exist under it (retried for ~3
+  minutes; any file, because the catalog is written at startup while WAL files depend on
+  Telegraf feeding the DB). Failure prints the two diagnostic commands.
+- Records the deployed binary's `--data-dir` / `INFLUXDB3_DATA_DIR` line from
   `docker exec influxdb influxdb3 serve --help` on every run, so the contract of the running
   version is in the play output.
 - Image and UI image are now variables (`influxdb_image`, `influxdb_ui_image`) so a host can pin
@@ -358,8 +363,9 @@ settles which of the two it was.
 # 1. Deploy. The container is recreated because its volume layout changed; the
 #    fresh store starts here (the pre-fix rows are gone either way).
 ansible-playbook catafalco.yml -K --tags influxdb
-# expect: "Store root /var/lib/influxdb3 -> /srv/influxdb/db (N fresh WAL file(s)
-#          under ...)" plus the data-dir line of the deployed binary's --help.
+# expect: the --data-dir line of the deployed binary's --help, then
+# "Store root /var/lib/influxdb3 -> /srv/influxdb/db: N file(s) written in the
+#  last hour, M WAL file(s) total, newest in /srv/influxdb/db/data/catafalco/wal".
 
 # 2. Prove it survives a *recreate*, not just a restart: recreate once more
 #    (re-run the tag, or `docker rm -f influxdb` followed by a role run) and

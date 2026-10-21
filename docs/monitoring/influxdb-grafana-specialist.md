@@ -22,8 +22,10 @@ Telegraf (host service, NOT container) → InfluxDB v3 Core (Docker :8181) → G
 
 - The store is a bind mount of the **whole root**: `/srv/influxdb/db` → `/var/lib/influxdb3`.
   Everything InfluxDB writes (catalog, WAL, parquet, object-store files) lives below it, so it
-  survives container recreation and image upgrades. `INFLUXDB3_DB_DIR` (`/var/lib/influxdb3/data`)
-  only decides *where inside* that root the store sits.
+  survives container recreation and image upgrades. The data-dir variable
+  (`INFLUXDB3_DATA_DIR` in the current image, `/var/lib/influxdb3/data`) only decides *where
+  inside* that root the store sits. The name matters: a 2026-07 image upgrade replaced
+  `INFLUXDB3_DB_DIR`, and silently moved the store out of the mount.
 - `/srv/influxdb/data` is the **pre-fix archive** (last written 2026-07-31) — not live data.
 - **Always verify the store is on the mount before drawing conclusions from a gap or a
   suspiciously short history.** A store in the container's writable layer is deleted on every

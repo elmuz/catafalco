@@ -10,16 +10,21 @@ influxdb_image: influxdb:3-core
 influxdb_ui_image: influxdata/influxdb3-ui
 
 # Persistence layout. The container's *root* directory is mounted, not its data
-# directory: whatever path InfluxDB decides to use (INFLUXDB3_DB_DIR, a default,
-# or a future renamed variable) then lands inside the bind mount instead of the
-# container's writable layer. See docs/disk-and-mcp-assessment.md (T-21) for the
-# incident this prevents: a store in the writable layer is silently discarded on
-# every container recreate.
+# directory: whatever path InfluxDB decides to use (the data-dir variable, a
+# default, or a future renamed variable) then lands inside the bind mount
+# instead of the container's writable layer. See docs/disk-and-mcp-assessment.md
+# (T-21): a store in the writable layer is discarded on every container recreate
+# without logging anything.
 influxdb_container_root: /var/lib/influxdb3
-influxdb_container_db_dir: "{{ influxdb_container_root }}/data"
+# Must match the variable the deployed binary actually reads: the current image
+# advertises `--data-dir <DIR> [env: INFLUXDB3_DATA_DIR=]`. Earlier revisions
+# used INFLUXDB3_DB_DIR, which the image stopped honouring -- that silent change
+# is what moved the store off the mount in 2026-07. The role prints this line
+# from `influxdb3 serve --help` on every run, so check it when bumping the image.
+influxdb_container_data_dir: "{{ influxdb_container_root }}/data"
 influxdb_store_host_dir: "{{ docker_dir }}/{{ influxdb_container_name }}/db"
 # Fail the play if the store does not live on the bind mount. The check looks
-# for a fresh WAL file under the host directory after the container starts.
+# for files created by the container inside the host directory after it starts.
 influxdb_verify_persistence: true
 # InfluxDB needs time to flush its WAL on SIGTERM; the Docker default (10s) can
 # cut that short on a recreate or a host shutdown.
