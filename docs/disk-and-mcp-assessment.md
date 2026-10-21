@@ -289,7 +289,9 @@ tests cover fresh, stale, failed and mismatched cases.
 - [x] Set the data-dir variable the deployed image actually reads (named by the first deploy's
       own `serve --help` dump).
 - [x] Re-deploy, confirm the probe, and prove the store survives a container *recreate*.
-- [ ] Decide what to do with the archived pre-2026-07-31 store in `/srv/influxdb/data`.
+- [x] Archive decision: the operator deleted `/srv/influxdb/data` on 2026-10-22; the live store
+      is the only one, `/srv/influxdb/db` (the empty `/srv/influxdb/plugins` remains, unmounted).
+- [ ] One-time, on the host: recreate `system-monitor` so the configured retention applies.
 
 **Found 2026-10-21 23:45 CEST while verifying T-06 after boot #4.** The hosted InfluxDB has no
 history left and is not using its bind mount:
@@ -387,9 +389,39 @@ The transient "table `smart_device` not found" right after the recreate is expec
 is created by the first write, and SMART polls every 5 minutes — the 22:30Z poll raced the
 container start, the 22:35Z poll created it.
 
-**Done when.** ~~Rows written after the migration survive a container recreate~~ **met**, and
-the role fails loudly if a future image ever moves the store off the mount again. Remaining
-(item 4): delete or archive `/srv/influxdb/data`.
+**Retention (2026-10-22).** Persisting the store only bounded the *location*, not the *window*:
+with no retention the database grows forever. InfluxDB 3 Core applies `--retention-period` **only
+when a database is created** — `influxdb3 update database` explicitly does not support changing
+it — so `roles/influxdb` now creates the database with `influxdb_retention_period` (default
+`90d`) and fails when an existing database reports infinite retention while a finite window is
+configured. The check matches `none/infinite/never/forever` instead of the duration string,
+because the CLI renders periods its own way.
+
+Measured on this host before choosing the window: ~12 800 rows per 10 min ≈ **1.85 M rows/day**
+(`docker_container_*` ≈ 75 %, `cpu`/`diskio`/`temp` ≈ 13 %, `disk` 1 m and `smart` 5 m inputs
+negligible) and ~150 KB of raw WAL per 10 s flush. WAL size is **not** the disk cost — files are
+deleted once compacted — so the durable figure has to come from
+`SELECT count(*), sum(size_bytes), sum(row_count) FROM system.parquet_files`; at the time of
+writing no snapshot had been taken yet, so it is still unmeasured and no disk projection is
+claimed here.
+
+**Pending on the host (deliberate, not automated).** The running database was auto-created by
+the first Telegraf write and therefore has infinite retention. Recreating it deletes its data,
+so the role reports it instead of doing it:
+
+```bash
+sudo systemctl stop telegraf          # otherwise the next write re-creates the DB implicitly
+docker exec influxdb influxdb3 delete database --hard-delete now system-monitor
+ansible-playbook catafalco.yml -K --tags influxdb   # creates it with the configured retention
+sudo systemctl start telegraf
+```
+
+Until that runs, `--tags influxdb` fails at the retention assertion — by design, since the
+alternative is years of unbounded growth.
+
+**Done when.** ~~Rows written after the migration survive a container recreate~~ **met**, the
+role fails loudly if a future image ever moves the store off the mount again, and a finite
+retention is in effect.
 
 ---
 
