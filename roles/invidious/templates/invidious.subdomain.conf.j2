@@ -8,6 +8,7 @@ server {
     error_log /var/log/nginx/error.log crit;
 
     location / {
+        include /config/nginx/resolver.conf;
         add_header Access-Control-Allow-Origin *;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;    # so Invidious knows domain
@@ -21,7 +22,16 @@ server {
     }
 
     location /companion {
-        proxy_pass http://{{ invidious_container_name }}-companion:8282;
+        include /config/nginx/resolver.conf;
+        # The upstream MUST be built from variables: a literal hostname is resolved
+        # when nginx loads its config, so a stopped/still-starting companion container
+        # aborts every reload with "host not found in upstream" and takes the whole
+        # SWAG down. With variables + resolver, DNS is resolved per request (cached by
+        # resolver.conf) and a missing upstream only yields 502 for this vhost.
+        set $upstream_app {{ invidious_container_name }}-companion;
+        set $upstream_port 8282;
+        set $upstream_proto http;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
     }
 
     if ($https = '') { return 301 https://$host$request_uri; }  # if not connected to HTTPS, perma-redirect to HTTPS

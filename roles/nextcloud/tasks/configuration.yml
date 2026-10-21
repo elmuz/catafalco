@@ -109,7 +109,7 @@
         container: "{{ nextcloud_container_name }}"
         command: "occ config:app:set onlyoffice {{ item[0] }} --value={{ item[1] }}"
       loop:
-        - ["DocumentServerUrl", "https://{{ nextcloud_subdomain }}.{{ site_url }}/{{ onlyoffice_subfolder }}/"]
+        - ["DocumentServerUrl", "https://{{ nextcloud_subdomain }}.{{ site_url }}/{{ nextcloud_onlyoffice_subfolder }}/"]
         - ["DocumentServerInternalUrl", "http://{{ onlyoffice_container_name }}/"]
         - ["StorageUrl", "http://{{ nextcloud_container_name }}/"]
         - ["jwt_header", "AuthorizationJwt"]

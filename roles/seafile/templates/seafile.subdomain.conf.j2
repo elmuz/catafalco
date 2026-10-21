@@ -6,6 +6,7 @@ server {
 
 {% if seafile_enable_notification_server is true %}
     location /notification {
+        include /config/nginx/resolver.conf;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -17,6 +18,7 @@ server {
 {% endif %}
 {% if seafile_enable_seasearch is true %}
     location /seasearch/ {
+        include /config/nginx/resolver.conf;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";

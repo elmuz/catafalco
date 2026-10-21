@@ -52,11 +52,21 @@ server {
     }
 
 {% if 'onlyoffice' in containers %}
-    location /{{ onlyoffice_subfolder }}/ {
+    location /{{ nextcloud_onlyoffice_subfolder }}/ {
         include /config/nginx/resolver.conf;
         proxy_http_version 1.1;
-        proxy_set_header X-Forwarded-Host $http_host/{{ onlyoffice_subfolder }};
-        proxy_pass http://{{ nextcloud_onlyoffice_host }}/;
+        proxy_set_header X-Forwarded-Host $http_host/{{ nextcloud_onlyoffice_subfolder }};
+        # The upstream MUST be built from variables: a literal hostname is resolved
+        # when nginx loads its config, so a stopped onlyoffice container aborts every
+        # reload with "host not found in upstream" and takes the whole SWAG down.
+        # The rewrite reproduces the prefix stripping the literal form did implicitly
+        # (with variables, the URI part of proxy_pass is sent verbatim, so the location
+        # prefix is no longer replaced).
+        set $upstream_app {{ nextcloud_onlyoffice_host }};
+        set $upstream_port 80;
+        set $upstream_proto http;
+        rewrite ^/{{ nextcloud_onlyoffice_subfolder }}/(.*)$ /$1 break;
+        proxy_pass $upstream_proto://$upstream_app:$upstream_port;
     }
 {% endif %}
 }
