@@ -20,7 +20,7 @@ are in the appendices. Keep it current rather than opening a second findings doc
 | SMART collection | **Restored 23:35 CEST:** first successful poll after the fix; five disks `exit_status = 0`, one standby `exit_status = 2` | Dashboards and MCP are current again; stale/mismatch warnings are now implemented (T-05 done) |
 | Privilege model | **Scoped grants verified 23:35 CEST:** admin has passworded sudo, telegraf has only `docker` + `smartctl`/`nvme` NOPASSWD | Blanket grant is gone and the repo no longer restores it (T-02/T-03 done) |
 | MCP SSH channel | **Working after the operator reloaded the MCP (verified 2026-10-21 23:45 CEST):** `list_disks`, `get_mount_status`, `get_io_stats`, `get_host_service_*`, `get_snapraid_status` and the disk-health per-disk calls all answer | The post-boot capture checklist can run through the MCP again; the reload/reconnect step after a host reboot is the standing procedure (T-04) |
-| InfluxDB persistence | **Cause confirmed and fixed in the role (T-21, 2026-10-22):** a 2026-07 image upgrade replaced `INFLUXDB3_DB_DIR` with `INFLUXDB3_DATA_DIR`, so the store moved to a path in the container's writable layer and the 22:55 CEST recreate wiped the history. The role now mounts the store *root*, sets the variable the image reads, and hard-fails when writes do not land on the mount | Nothing written before the fix is recoverable (except the pre-2026-07-31 archive on disk); after the next `--tags influxdb` run the history survives recreation by construction, and any future regression fails the play within ~3 minutes |
+| InfluxDB persistence | **Fixed, deployed and proven 2026-10-22 00:36 CEST (T-21):** a 2026-07 image upgrade replaced `INFLUXDB3_DB_DIR` with `INFLUXDB3_DATA_DIR`, so the store had moved into the container's writable layer. The role now mounts the store *root* (`/srv/influxdb/db` → `/var/lib/influxdb3`), sets the variable the image reads, and hard-fails when writes do not land there | History survives container recreation — verified: `min(time)` stayed at `22:30:10Z` across a recreate at `22:33:57Z`. Nothing before the fix is recoverable; any future regression fails the play in ~3 minutes instead of silently |
 | Credential handling | **Fixed and verified 2026-10-21 01:12 CEST:** rclone password rotated and masking live; the two local Samba accounts (`alessio`, `sara`) were rotated and verified with `smbclient` | `rclone.conf` returns `redacted: true` / `pass = ***`; deployed rclone password matches the vault; leaked Samba values no longer work (T-01 done) |
 | Key hypothesis | **H1 confirmed and closed by T-06:** kernel-name tags were baked at deploy time | The tag is now a static label and identity comes from the serial (T-07 superseded) |
 | Open hypotheses | **H2 resolved; H3 narrowed** by the T-12 hwmon capture | smartd's 58 °C is the KINGSTON (`NVMe2`) secondary sensor, not a different disk; only the KINGSTON exposes per-sensor hwmon entries, the CT1000 exposes composite only |
@@ -288,7 +288,7 @@ tests cover fresh, stale, failed and mismatched cases.
 - [x] Mount the store *root* (not the data dir) and assert at deploy time that writes land there.
 - [x] Set the data-dir variable the deployed image actually reads (named by the first deploy's
       own `serve --help` dump).
-- [ ] Re-deploy and confirm the probe (`--tags influxdb`) plus one recreate.
+- [x] Re-deploy, confirm the probe, and prove the store survives a container *recreate*.
 - [ ] Decide what to do with the archived pre-2026-07-31 store in `/srv/influxdb/data`.
 
 **Found 2026-10-21 23:45 CEST while verifying T-06 after boot #4.** The hosted InfluxDB has no
@@ -373,13 +373,23 @@ ansible-playbook catafalco.yml -K --tags influxdb
 SELECT min(time), count(*) FROM smart_device WHERE time > now() - INTERVAL 1 DAY
 ```
 
-`min(time)` must stay at the migration timestamp after the second recreate, and new
-`*.wal` files must keep appearing under `/srv/influxdb/db` (visible with
-`list_service_files("influxdb", "db")` or the role's own probe on the next run).
+**Verified on the host (2026-10-22 00:30–00:36 CEST).**
 
-**Done when.** Rows written after the migration survive a container recreate (not just a
-restart) — `SELECT min(time)` stays put — and the role fails loudly if a future image ever
-moves the store off the mount again.
+| Check | Evidence |
+|---|---|
+| Store lives on the mount | `/srv/influxdb/db/data/catafalco/{catalog,wal,table-index-conversion-completed}`, created 00:30–00:32 CEST, `1500:1500` |
+| Deploy probe | passed on the second run (files present within the first retry window) |
+| Survives a **recreate** | container `StartedAt` moved `22:30:04Z → 22:33:57Z`; `SELECT min(time), count(*) FROM cpu` stayed at **`2026-10-21T22:30:10Z`** (rows 208 → 364) |
+| Restart replays the persisted WAL | `influxdb3_wal::object_store: completed replaying wal files time_taken=14.79ms` |
+| Telegraf writing into it | 22:35:00Z poll: all six disks, static labels + `serial_no` tags, HDDs `exit_status = 2` (standby), SSDs `0` |
+
+The transient "table `smart_device` not found" right after the recreate is expected: the table
+is created by the first write, and SMART polls every 5 minutes — the 22:30Z poll raced the
+container start, the 22:35Z poll created it.
+
+**Done when.** ~~Rows written after the migration survive a container recreate~~ **met**, and
+the role fails loudly if a future image ever moves the store off the mount again. Remaining
+(item 4): delete or archive `/srv/influxdb/data`.
 
 ---
 
