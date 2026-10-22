@@ -190,8 +190,7 @@ catafalco/
 ├── files/                  # Static files (scripts, icons, etc.)
 ├── docs/                   # Agent-agnostic knowledge base
 │   ├── ansible/            # Ansible expertise, ansible-lint cheatsheet
-│   ├── monitoring/         # InfluxDB/Grafana deep-dive reference
-│   └── disk-and-mcp-assessment.md  # OPEN: disk identity + privilege/MCP TODO
+│   └── monitoring/         # InfluxDB/Grafana deep-dive reference
 └── .agents/
     └── skills/             # Cross-agent skills (Agent Skills standard)
 ```
@@ -324,8 +323,18 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
   Before 2026-10-21 the tag was the kernel name resolved at deploy time, and one reboot
   swapped the two NVMe drives and shifted three SATA disks, so history before the change
   is mixed under a single `device` value — disambiguate it with the serial. The
-  reboot/shuffle proof after the fix is recorded as T-12 in
-  `docs/disk-and-mcp-assessment.md` (T-06/T-12).
+  reboot/shuffle proof after the fix is recorded as T-12 in the git history (T-06/T-12).
+  **The label is a slot/role name, not enumeration** (`NVMe2` = second M.2 slot as wired,
+  not `nvme2`). It is bound to the serial, so removing a disk means deleting its
+  `host_vars` entry (the roles then fail loudly if the serial is still listed); the
+  drive's history stays keyed on `serial_no` and survives (T-10).
+- **Disk temperatures are per-serial SMART data.** `[[inputs.temp]]` drops every `nvme_*`
+  sensor (`[inputs.temp.tagdrop] sensor = ["nvme_*"]`) because the `temp` measurement has
+  no disk identity and the two NVMe drives collided on `sensor=Composite`. Use
+  `smart_device.temp_c` (composite) or `smart_attribute` `Temperature_Celsius` /
+  `Temperature_Sensor_N` (per serial) instead. CPU/motherboard sensors (`coretemp_*`,
+  `acpitz`) stay in `temp`. See the `inputs.temp` comment in
+  `roles/telegraf/templates/telegraf.conf.j2` (T-09).
 - **Disk I/O tags:** `[[inputs.diskio]]` keeps the kernel-name `name` tag (existing
   panels key on it) and adds `device_tags = ["ID_SERIAL_SHORT", "ID_MODEL"]`, so I/O
   metrics can be joined to SMART on the serial instead of on `sda`/`nvme0`. Note the
@@ -348,8 +357,7 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
   image renames it again. The variable the image reads today is `INFLUXDB3_DATA_DIR`
   (`--data-dir`); the role used `INFLUXDB3_DB_DIR`, which a 2026-07 image upgrade started
   ignoring, so the store silently moved to a path inside the container's writable layer and
-  every recreate deleted it (2026-07-31 → 2026-10-21, T-21 in
-  `docs/disk-and-mcp-assessment.md`).
+  every recreate deleted it (2026-07-31 → 2026-10-21, T-21).
   The role therefore asserts that `/srv/influxdb/db` is mounted at `/var/lib/influxdb3` **and**
   that files appear under it after the container starts; both fail the play with the
   diagnostic commands instead of losing history. `/srv/influxdb/data` is the pre-fix
@@ -380,7 +388,7 @@ Telegraf (host service) → InfluxDB v3 Core (Docker container: port 8181) → G
 - **Known Telegraf field names** (verify before querying): `temp` measurement uses field `temp` (NOT `temp_c`); `nvidia_smi` uses `temperature_gpu`; `smart_attribute` uses `raw_value` for `Temperature_Celsius` (NOT `value`). Full reference: `docs/monitoring/influxdb-grafana-specialist.md`
 - **Legend labels** show `field_name tag_value`; strip the prefix with a `renameByRegex` transformation (`"regex": ".*\\s+(.*)"`, `"renamePattern": "$1"`)
 - **`spanNulls: false`** for panels where gaps carry meaning (idle disks), `spanNulls: true` for continuous metrics
-- **Sensor notes:** `acpitz` (ACPI thermal zone) often reports stale/constant values — not a bug; prefer SMART `Temperature_Celsius` over `nvme_composite` for NVMe temps
+- **Sensor notes:** `acpitz` (ACPI thermal zone) often reports stale/constant values — not a bug. NVMe temperatures are not in `temp` any more (T-09); use the per-serial SMART `Temperature_Celsius` / `Temperature_Sensor_N` rows
 
 ### Grafana Dashboards
 - **Container:** `grafana` (image: `grafana/grafana:latest`)
@@ -476,8 +484,8 @@ These are set up by this playbook and matter when a tool silently returns nothin
   `/usr/local/bin/snapraid status` without a password, and the disk-health MCP runs
   `sudo -n /usr/local/bin/snapraid status` (its command policy accepts only that literal
   and keeps `sudo` blocked everywhere else). Since 2026-10-20 the blanket
-  `ALL=(ALL) NOPASSWD: ALL` grant has been removed on purpose (see
-  `docs/disk-and-mcp-assessment.md`, T-02), so scoped entries like this one are load-bearing:
+  `ALL=(ALL) NOPASSWD: ALL` grant has been removed on purpose (T-02), so scoped entries like
+  this one are load-bearing:
   `snapraid status` works, nothing else does. The MCP-side command restriction is what bounds
   what can actually run. A leftover lock is normal — SnapRAID only `flock`s it; delete it only
   after a killed run and only when no snapraid process runs.
@@ -490,8 +498,8 @@ These are set up by this playbook and matter when a tool silently returns nothin
   (`snapraid status`). Host-verified 2026-10-20 23:35 CEST: `sudo -n true` fails, telegraf
   is only in `docker`, SMART polls succeed, and the SSH-backed MCP tools recovered (the
   earlier "connection closed" errors were a stale pooled connection, not a permanent sudo
-  dependency). The T-04 command-template audit remains; see
-  `docs/disk-and-mcp-assessment.md` T-02/T-03/T-04 and Appendix D.
+  dependency). The T-04 command-template audit remains (T-02/T-03/T-04 and Appendix D, git
+  history).
 - **Ansible-managed containers:** roles that use `community.docker.docker_container` (for
   example `invidious-db`, `speedtest_tracker-db`, `socket-proxy`) have no compose project
   label and often no `/srv/<name>` directory. They must be listed in

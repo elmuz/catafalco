@@ -4,9 +4,8 @@
 # live below it, so one mount covers every path InfluxDB may pick. Older
 # revisions mounted `<dir>/data` directly at `/var/lib/influxdb3/data`; the
 # image changed which directory it honours, writes then went to the container's
-# writable layer, and a recreate discarded months of metrics (T-21 in
-# docs/disk-and-mcp-assessment.md). That host directory is left in place as an
-# archive.
+# writable layer, and a recreate discarded months of metrics (T-21). That host
+# directory is left in place as an archive.
 - name: Create the persisted store directory
   ansible.builtin.file:
     path: "{{ influxdb_store_host_dir }}"
