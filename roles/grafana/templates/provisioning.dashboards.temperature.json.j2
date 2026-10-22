@@ -364,7 +364,7 @@
             "uid": "${DS_INFLUXDB}"
           },
           "format": "time_series",
-          "rawSql": "SELECT time, device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
+          "rawSql": "SELECT time, CONCAT_WS(' · ', model, serial_no) AS device, raw_value FROM smart_attribute WHERE host = '$server' AND name = 'Temperature_Celsius' AND time >= $__timeFrom() AND time <= $__timeTo() ORDER BY time",
           "refId": "A"
         }
       ],
@@ -373,7 +373,7 @@
         {
           "id": "renameByRegex",
           "options": {
-            "regex": ".*\\s+(.*)",
+            "regex": "^\\S+\\s+(.*)",
             "renamePattern": "$1"
           }
         }
@@ -486,7 +486,7 @@
         {
           "id": "renameByRegex",
           "options": {
-            "regex": ".*\\s+(.*)",
+            "regex": "^\\S+\\s+(.*)",
             "renamePattern": "$1"
           }
         }

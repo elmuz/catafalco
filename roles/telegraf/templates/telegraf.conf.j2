@@ -402,7 +402,23 @@
   # fielddrop = ["uptime_format"]
 
 [[inputs.temp]]
-  # no configuration
+  ## CPU (coretemp) and motherboard (acpitz) sensors only.
+  ##
+  ## NVMe temperatures are DROPPED here on purpose. This plugin has no disk
+  ## identity: the schema is only host/sensor/temp, and the sensor names are
+  ## `nvme_composite`, `nvme_sensor_1`, ... without any tag that says which
+  ## drive emitted them. Two NVMe drives therefore collide on the same tag
+  ## set, and InfluxDB keeps one of the two values per timestamp.
+  ##
+  ## Disk temperature is collected per serial by [[inputs.smart]] instead:
+  ##   smart_device.temp_c                      (composite)
+  ##   smart_attribute.name = 'Temperature_Celsius' / 'Temperature_Sensor_N'
+  ## Those rows carry serial_no + the static `device` label, so each series
+  ## belongs to exactly one physical disk. The trade-off is resolution: SMART
+  ## polls every 5m, hwmon polled every 10s. Values agree (hwmon applies a
+  ## small per-drive offset), and the composite is the number that matters.
+  [inputs.temp.tagdrop]
+    sensor = ["nvme_*"]
 
 [[inputs.upsd]]
   ## A running NUT server to connect to.

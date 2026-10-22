@@ -223,6 +223,10 @@ cache_root: "{{ mergerfs_root }}_cache"
 # assigned by probe order, change when disks are added, moved or the machine
 # is rebooted, and are therefore never stored here. Roles resolve the current
 # by-id path and kernel name from the serial at deploy time.
+#
+# `label` is a stable slot/role name (Data1, Cache1, ...) bound to the serial.
+# It is not enumeration: the disk keeps its label whichever kernel name it gets.
+# See the note above system_disks for the invariant and for disk removal.
 data_disks:
   - data_disk_id: 1
     label: Data1
@@ -254,6 +258,26 @@ parity_disks:
     smart_type: sat
 
 # Disks outside the mergerFS/SnapRAID pool that should still be monitored.
+#
+# `label` (data/parity/cache) or `name` (system) is a SLOT/ROLE NAME chosen by
+# the operator, not a kernel name. It is bound to the serial, published as the
+# static `device` tag, and shown in dashboards only as a convenience. It is
+# never derived from sda/nvmeXn1 enumeration, so a reboot cannot change which
+# physical disk it means, and a re-enumeration cannot retarget it.
+#
+# `NVMe2` therefore means "the second M.2 slot as wired on this board", not
+# "the drive the kernel happens to call nvme1n1". The two NVMe names have
+# swapped across boots before (boot #1/#2), so never use the number to look up
+# a device; use the serial (T-10).
+#
+# Removing a disk:
+#   - Delete its entry here (the telegraf and smartd roles assert that every
+#     listed serial resolves to exactly one by-id link, so a stale entry fails
+#     the play loudly instead of silently monitoring the wrong disk).
+#   - Its history is NOT lost: SMART rows are tagged with serial_no, and
+#     Grafana selects/joins on serial_no, not on this label.
+#   - Reusing a label for a replacement disk is safe (identity is the serial),
+#     but never reuse a serial.
 system_disks:
   - name: System
     model: CT480BX500SSD1

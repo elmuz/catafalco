@@ -36,7 +36,7 @@ SELECT min(time) AS first_row, max(time) AS last_row, count(*) AS rows_ FROM sma
 ```
 
 If `first_row` matches the container start (`get_service_status(service="influxdb")`), the store
-is not persisting — see T-21 in `docs/disk-and-mcp-assessment.md`. The role now fails the play
+is not persisting (T-21). The `influxdb` role now fails the play
 when that happens (`influxdb_verify_persistence`), and prints the deployed binary's data-dir
 contract.
 
@@ -180,7 +180,7 @@ Telegraf plugin field names often differ from documentation or expectations. Alw
 | `coretemp_core_*` | Individual CPU core temperatures | Real per-core readings from Intel MSR |
 | `coretemp_package_id_0` | CPU package temperature | Reports hottest core / package-level temp, NOT an average |
 | `acpitz` | ACPI Thermal Zone (motherboard) | Often reports stale/constant values on many motherboards — not a bug, the firmware sensor simply doesn't update frequently |
-| `nvme_composite` | NVMe SSD temperature from thermal zones | Overlaps with SMART data — prefer the SMART `Temperature_Celsius` measurement instead |
+| `nvme_composite` | ~~NVMe SSD temperature from thermal zones~~ | **Dropped since T-09 (2026-10-22).** The `temp` measurement has no disk identity, so two NVMe drives collided on `sensor=Composite`. `[[inputs.temp]]` now drops all `nvme_*` sensors; use the per-serial SMART `Temperature_Celsius` / `Temperature_Sensor_N` attributes instead |
 | `pch_*` | Platform Controller Hub (chipset) temperature | Intel chipset sensor |
 
 ### `[[inputs.nvidia_smi]]` temperature
@@ -190,7 +190,8 @@ Telegraf plugin field names often differ from documentation or expectations. Alw
 ## Dashboard Layout Best Practices
 
 - **Extract modified dashboards from Grafana UI** → copy the JSON, strip the `id` field, replace the datasource UID with `{{ grafana_influxdb_datasource_uid }}` for the datasource panel, write back to template.
-- **Always add `renameByRegex` transformation** to time_series panels with tag values: `"regex": ".*\\s+(.*)", "renamePattern": "$1"` to strip field name prefix from legend labels.
+- **Always add `renameByRegex` transformation** to time_series panels with tag values: `"regex": "^\\S+\\s+(.*)", "renamePattern": "$1"` to strip the `field_name` prefix from legend labels. Use the anchored `\S+` form, not `.*\s+`: the latter is greedy and truncates a label that itself contains spaces (e.g. the `model · serial` disk labels).
+- **Disk legends use `model · serial`, not the slot label.** Build it in SQL with `CONCAT_WS(' · ', model, serial_no) AS device` and keep the `device` column name so series grouping/transformations still work. The serial picker should return `serial_no AS __value` and `CONCAT_WS(' · ', MAX(model), serial_no) AS __text` grouped by serial (rows without a model would otherwise duplicate the option). Never key a panel on the `device` label: it is a slot/role name (T-10).
 - **Use `spanNulls: false`** in panels where gaps carry meaning (idle disks), `spanNulls: true` for normal continuous metrics.
 
 ## Deploy Workflow
