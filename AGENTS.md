@@ -570,7 +570,14 @@ livestreams do not play at all** — and that is an upstream limitation, not a b
   the companion log is expected: the primary `WEB` client returns no URLs and `TV_SIMPLY`
   takes over (fine for VOD, useless for live).
 - **Every trending entry can be live**, so "latest trends → open a video" reproduces the
-  failure reliably; the trending grid does not mark them as live.
+  failure reliably; the trending grid does not mark them as live. Any VOD (search result,
+  direct `/watch?v=` link) plays.
+- **The browser is not the culprit.** Reproduced 2026-10-24 with the user's own Firefox
+  profile (uBlock Origin, FoxyProxy, Bitwarden, DuckDuckGo, addy.io, To Google Translate,
+  `media.autoplay.default=5`): VODs play with a click, livestreams show `.vjs-waiting`
+  forever. All MSE codecs report supported. Do not chase add-ons, codecs or the profile —
+  and note that with `media.autoplay.default=5` a programmatic `video.play()` is rejected, so
+  any scripted check must click the play button instead (details: I-10 in the track doc).
 - **Don't pin or roll back images**: the companion's manifest route has been built from
   `youtubei.js` `toDash()` since 2024-11, so no released tag has ever produced a playable live
   manifest. Upstream: `iv-org/invidious-companion#7` (open), `#375` (closed as duplicate).

@@ -1,6 +1,6 @@
 # Invidious: livestreams never start (empty DASH manifest)
 
-**Status:** OPEN — upstream, not actionable in this repo · **Last updated:** 2026-10-24 00:35 CEST
+**Status:** OPEN — upstream, not actionable in this repo · **Last updated:** 2026-10-24 00:56 CEST
 **Track:** **I** — new
 **Host:** `catafalco` (`invidious.catafal.co`, Invidious `2026.10.22-b852c4b`)
 **Scope:** `roles/invidious` (Invidious + `invidious-companion` + `invidious-db`), the SWAG
@@ -31,9 +31,16 @@ vhost `invidious.subdomain.conf`, and the web player in the browser.
 | **I-07** | Ruled out: SWAG/nginx, Docker networking, the vhost variables, DB, PO token, companion auth (`check`), `ip=` URL locking, host load, Ansible rendering | §7 |
 | **I-08** | Upstream knows and has not shipped a fix: `iv-org/invidious-companion#7` (**open**, "handle hls for apple devices and hls livestream"), `#375` (the exact symptom, closed **as duplicate**). `youtubei.js` main still has the same filter (checked 2026-10-24, v18.3.0 released 2026-10-23) | §8 |
 | **I-09** | **No image pin or rollback helps.** The companion's `/api/manifest/dash` route has been built from `youtubei.js`'s `toDash()` since 2024-11 (file history), so no released companion ever emitted a playable live DASH manifest | §8 |
+| **I-10** | **The browser is not involved.** Reproduced with the user's *own* Firefox profile (uBO, FoxyProxy, Bitwarden, DuckDuckGo, addy.io, To Google Translate, `media.autoplay.default=5`): with a trusted click on `.vjs-big-play-button`, VODs reach `playing: true` / `waiting: false` with `currentTime` advancing, while livestreams sit at `waiting: true`, `readyState 0`, `duration NaN` — literally the spinner. All MSE codecs report supported (`avc1`, `mp4a`, `vp9`, `opus`, `av01`); `canPlayType` = `"probably"` | §7 |
 
-**Do not re-investigate I-02…I-06 as a local misconfiguration.** Re-run §9 after an image
-update; that is the whole maintenance procedure.
+**Do not re-investigate I-02…I-06 as a local misconfiguration, and do not suspect the
+browser (I-10).** Re-run §9 after an image update; that is the whole maintenance procedure.
+
+### The trap in one line
+
+The home/trending page is a **grid of livestreams** (15/15 at measurement time) that is not
+marked as live. Every click there is a guaranteed infinite spinner; *any* VOD — search
+result, direct link — plays. §11 lists what to use instead until upstream ships.
 
 ---
 
@@ -220,6 +227,7 @@ noise, not the bug (`[INFO] Successfully validated PO token with video: …` fol
 | Companion auth (`check=` / `secret_key`) | Requests are accepted (400 "ID incorrect." would be returned otherwise). |
 | `ip=`-locked googlevideo URLs | The VOD byte-range fetch from the laptop (shared public IP) returns 206 + valid MP4; the failure is identical in shape for streams the browser never even requests. |
 | Video.js / browser | VODs play in the same browser build; the exception is caused by the empty MPD (I-03). |
+| The user's Firefox profile (I-10) | Profile clone of the live one, driven over Marionette with a **trusted** click: VODs play, livestreams spin. Codec probe: `MediaSource.isTypeSupported` = true for `avc1.42E01E`, `mp4a.40.2`, `vp9`, `opus`, `av01`; `canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"')` = `probably`. Two caveats when reproducing: this profile sets `media.autoplay.default=5`, so a programmatic `video.play()` is rejected (looks like a stall) — click the player instead; and it only reproduces headless with `Marionette:SetContext {"value": "content"}`. |
 | Disk/CPU/memory on the host | `get_server_health`: load 0.22, 52 GiB available, `/` 32 %, no unhealthy container; playback is a direct stream, nothing is transcoded. |
 
 ---
@@ -290,3 +298,28 @@ Checklist when the Invidious/companion images change (watchtower pulls them):
 - `roles/invidious/tasks/main.yml` — companion container + healthcheck (a green healthcheck only
   proves `/api/v1/trending` answers; it has never implied playback works).
 - `roles/invidious/templates/invidious.subdomain.conf.j2` — vhost (not involved, see §7).
+
+---
+
+## 11. Interim use and options considered
+
+**What works today:** search results (`/search?q=…`) and any direct `/watch?v=…` link — every
+VOD plays. **What does not:** the home/trending grid while it is full of livestreams (§1). For
+a specific live event, open it on YouTube via the watch page's "Watch on YouTube" link.
+
+Observation, not part of this bug: `/api/v1/popular` currently returns `[]` and
+`/feed/popular` renders no items at all (6 256 B, zero `/watch` links), so "use Popular
+instead of Trending" is not an option today. Cause unverified — treat as a separate report.
+
+Options evaluated and rejected:
+
+| Option | Why not |
+|---|---|
+| Reorder the companion's fallback client list (`TV_SIMPLY` → `ANDROID_VR`/`MWEB`) hoping for OTF-flagged live formats | The list is hardcoded (`youtubePlayerReq.ts`), so it needs a custom companion image, and it is unverified that another client returns OTF formats for live |
+| Manifest shim that synthesises `SegmentTemplate`/`$Number$` from the live URLs | Needs segment duration/sequence data the player response does not carry; adds a maintained service on the playback critical path |
+| Pin or roll back the companion image | I-09: no released tag ever worked |
+| "Disable livestreams" (`disable_proxy: livestreams`) | Only gates the `seg.ts` proxy; the player still receives the empty MPD, so the spinner stays |
+| A \<script\> injected through SWAG (`sub_filter`) to replace the spinner with a banner | Works around the symptom in the proxy layer, not the cause; fragile against upstream template/JS changes |
+
+Revisit when `iv-org/invidious-companion#7` closes — or, if live viewing becomes a hard
+requirement, build a patched companion image deliberately and record the patch here.
