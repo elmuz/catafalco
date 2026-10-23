@@ -1,4 +1,16 @@
 ---
+# Version to install. 'latest' resolves the newest GitHub release; pin an
+# exact version (for example "15.1") for reproducible upgrades. A pinned
+# version is what makes an upgrade deliberate: with 'latest' every playbook
+# run silently installs whatever upstream published that day.
+snapraid_version: latest
+
+# SnapRAID 15+ refuses to read content files written before 14.x, and a major
+# release may change the on-disk format again. Crossing a major version is
+# therefore opt-in: migrate the content file with the last release of the
+# installed major first (see README), then set this to true for one run.
+snapraid_allow_major_upgrade: false
+
 # Paths to executables
 snapraid_btrfs_executable: /usr/local/bin/snapraid-btrfs
 snapraid_executable: /usr/local/bin/snapraid

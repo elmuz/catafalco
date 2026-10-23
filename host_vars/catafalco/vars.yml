@@ -289,7 +289,10 @@ system_disks:
     smart_type: nvme
 
 # SnapRAID
-snapraid_force_install: true
+# Pinned: the role only installs what is declared here, so an upstream release
+# is never pulled in silently by an unrelated playbook run (a major bump
+# changes the content-file format). Bump this and run `--tags snapraid`.
+snapraid_version: "15.1"
 
 snapraid_data_disks: "{{ data_disks }}"
 snapraid_parity_disks: "{{ parity_disks }}"

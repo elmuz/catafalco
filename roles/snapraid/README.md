@@ -5,7 +5,15 @@ array, and sets up weekly sync/scrub runs.
 
 ## Current design
 
-- **SnapRAID version:** latest upstream release (currently v15.x).
+- **SnapRAID version:** `snapraid_version` (`latest` by default; pinned to
+  `15.1` on catafalco). The role resolves the release, verifies the published
+  sha256 of the tarball before compiling it as root, refuses to skip a major
+  version unless `snapraid_allow_major_upgrade` is set, and refuses to swap the
+  binary while a snapraid process is running. After `make install` it asserts
+  that `snapraid --version` reports the requested version.
+- **Upgrading:** bump `snapraid_version`, then
+  `ansible-playbook catafalco.yml -K --tags snapraid`. Never run it during a
+  sync/scrub; the role aborts if a snapraid process is active.
 - **Snapshots:** external `snapraid-btrfs` + `snapper` integration, driven by
   `snapraid-btrfs-runner.py`.
 - **Scheduling:** `snapraid-btrfs-runner.timer` (weekly, Sunday 03:00 with a
@@ -71,11 +79,32 @@ the pre-migration content file is at:
 /var/local/snapraid/snapraid.content.v12.bak
 ```
 
+## v15.1 (2026-10-23) assessment
+
+v15.1 is a maintenance release on top of the v15.0 feature work; nothing in it
+changes how this array is operated.
+
+- **Synthetic device IDs on Linux** — only used by the separate *SnapRAID
+  Daemon* to keep per-device history when hardware IDs are missing. Not used
+  here (no daemon), so no impact.
+- **Content-file safety fix** — `touch`, `scrub`, `rehash` and `rewrite` now
+  fail with a clear error when the array has never been synced, and the
+  `--gui-touch-before`-before-first-sync inconsistency check is fixed. The
+  runner only calls `scrub` after a successful sync (and `touch` is disabled
+  here), so this host is not affected today; the explicit error is still the
+  behaviour we want if the content file is ever lost or rebuilt from scratch.
+- **BSD make compatibility** — irrelevant on Ubuntu.
+
+The interesting v15 feature remains the native `snapshot` option from v15.0,
+which applies directly to this btrfs-backed array (see below).
+
 ## TODO: evaluate v15 native snapshot support
 
 SnapRAID v15 added a native `snapshot` configuration option. When enabled,
 SnapRAID creates and manages read-only filesystem snapshots itself for
-`sync`, `scrub`, `check`, and `fix`.
+`sync`, `scrub`, `check`, and `fix`. This is the feature that matters for this
+host: the data disks are btrfs subvolumes, and `snapraid-btrfs` + `snapper`
+exist only to provide SnapRAID with a frozen view during `scrub`/`check`/`fix`.
 
 Supported filesystems:
 

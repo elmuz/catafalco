@@ -19,36 +19,93 @@
 # NOTE: SnapRAID 15+ no longer reads content files written by versions older
 # than 14.x. Existing arrays must first run `snapraid sync` with a 14.x binary
 # (14.10 is the last 14.x release) to migrate the content file before upgrading.
-- name: Get latest release information from GitHub for SnapRAID
-  block:
-    - name: Get GitHub latest release page
-      ansible.builtin.uri:
-        url: https://api.github.com/repos/amadvance/snapraid/releases/latest
-        return_content: true
-        force: false
-      register: snapraid_github_release_page
-      check_mode: false
+- name: Get SnapRAID release information from GitHub
+  ansible.builtin.uri:
+    url: >-
+      https://api.github.com/repos/amadvance/snapraid/releases/{{
+      'latest' if snapraid_version == 'latest'
+      else 'tags/v' ~ snapraid_version }}
+    return_content: true
+    force: false
+  register: snapraid_github_release_page
+  check_mode: false
 
-    - name: Set latest SnapRAID version fact
-      ansible.builtin.set_fact:
-        snapraid_latest_version: "{{ snapraid_github_release_page.json.tag_name | regex_replace('^v', '') }}"
-
-- name: Compare installed SnapRAID version with the latest version
+- name: Set the SnapRAID target version fact
   ansible.builtin.set_fact:
-    snapraid_update_needed: "{{ snapraid_latest_version != snapraid_installed_version }}"
+    snapraid_target_version: >-
+      {{ snapraid_github_release_page.json.tag_name | regex_replace('^v', '') }}
+
+# The tarball is compiled and installed as root, so verify it against the
+# sha256 GitHub publishes for the release asset instead of trusting the TLS
+# connection alone.
+- name: Set the SnapRAID tarball checksum fact
+  ansible.builtin.set_fact:
+    snapraid_tarball_checksum: >-
+      {{ snapraid_github_release_page.json.assets
+      | selectattr('name', 'equalto', 'snapraid-' ~ snapraid_target_version ~ '.tar.gz')
+      | map(attribute='digest') | first | default('')
+      | regex_replace('^sha256:', '') }}
+
+- name: Assert that the release publishes a sha256 for the tarball
+  ansible.builtin.assert:
+    that:
+      - snapraid_tarball_checksum | length == 64
+    fail_msg: >-
+      No sha256 digest found for snapraid-{{ snapraid_target_version }}.tar.gz
+      in the GitHub release metadata. Refusing to compile an unverified
+      tarball as root; check the release assets or pick another version.
+    quiet: true
+
+- name: Guard against an unplanned SnapRAID major upgrade
+  ansible.builtin.assert:
+    that:
+      - snapraid_installed_version == '0' or
+        (snapraid_installed_version.split('.') | first) ==
+        (snapraid_target_version.split('.') | first)
+    fail_msg: >-
+      SnapRAID {{ snapraid_installed_version }} is installed and the target is
+      {{ snapraid_target_version }}. A major upgrade changes the content-file
+      format: read the release notes, migrate the content file with the last
+      release of the installed major (see roles/snapraid/README.md), then set
+      snapraid_allow_major_upgrade: true for one run.
+    quiet: true
+  when: not (snapraid_allow_major_upgrade | bool)
+
+- name: Compare installed SnapRAID version with the target version
+  ansible.builtin.set_fact:
+    snapraid_update_needed: "{{ snapraid_target_version != snapraid_installed_version }}"
 
 - name: Debug `snapraid_installed_version`
   ansible.builtin.debug:
     var: snapraid_installed_version
 
-- name: Debug snapraid_latest_version
+- name: Debug snapraid_target_version
   ansible.builtin.debug:
-    var: snapraid_latest_version
+    var: snapraid_target_version
 
 - name: Install/update SnapRAID
   when:
     - snapraid_update_needed
   block:
+    # Replacing the binary mid-run would let a runner invocation start with one
+    # version and finish (touch/sync/scrub) with another.
+    - name: Check that no SnapRAID operation is running
+      ansible.builtin.command:
+        cmd: pgrep -x snapraid
+      register: snapraid_running
+      changed_when: false
+      check_mode: false
+      failed_when: snapraid_running.rc not in [0, 1]
+
+    - name: Refuse to replace the binary during a SnapRAID run
+      ansible.builtin.assert:
+        that:
+          - snapraid_running.rc == 1
+        fail_msg: >-
+          A snapraid process is running (pid {{ snapraid_running.stdout }}).
+          Let the sync/scrub/check finish, then run this role again.
+        quiet: true
+
     - name: Install required packages for SnapRAID installation
       ansible.builtin.apt:
         name:
@@ -59,29 +116,46 @@
 
     - name: Download SnapRAID tarball
       ansible.builtin.get_url:
-        url: "https://github.com/amadvance/snapraid/releases/download/v{{ snapraid_latest_version }}/snapraid-{{ snapraid_latest_version }}.tar.gz"
-        dest: /tmp/snapraid-{{ snapraid_latest_version }}.tar.gz
+        url: "https://github.com/amadvance/snapraid/releases/download/v{{ snapraid_target_version }}/snapraid-{{ snapraid_target_version }}.tar.gz"
+        dest: /tmp/snapraid-{{ snapraid_target_version }}.tar.gz
+        checksum: "sha256:{{ snapraid_tarball_checksum }}"
 
     - name: Extract SnapRAID tarball
       ansible.builtin.unarchive:
-        src: /tmp/snapraid-{{ snapraid_latest_version }}.tar.gz
+        src: /tmp/snapraid-{{ snapraid_target_version }}.tar.gz
         dest: /tmp/
         remote_src: true
 
     - name: Configure SnapRAID
       ansible.builtin.command:
         cmd: ./configure
-        chdir: "/tmp/snapraid-{{ snapraid_latest_version }}"
+        chdir: "/tmp/snapraid-{{ snapraid_target_version }}"
 
     - name: Compile SnapRAID
       ansible.builtin.command:
         cmd: make
-        chdir: "/tmp/snapraid-{{ snapraid_latest_version }}"
+        chdir: "/tmp/snapraid-{{ snapraid_target_version }}"
 
     - name: Install SnapRAID
       ansible.builtin.command:
         cmd: make install
-        chdir: "/tmp/snapraid-{{ snapraid_latest_version }}"
+        chdir: "/tmp/snapraid-{{ snapraid_target_version }}"
+
+    - name: Verify the installed SnapRAID binary reports the target version
+      ansible.builtin.command: snapraid --version
+      register: snapraid_installed_after_upgrade
+      changed_when: false
+      check_mode: false
+
+    - name: Assert the upgrade actually installed the target version
+      ansible.builtin.assert:
+        that:
+          - snapraid_target_version in snapraid_installed_after_upgrade.stdout
+        fail_msg: >-
+          `snapraid --version` reported
+          "{{ snapraid_installed_after_upgrade.stdout | trim }}" after installing
+          {{ snapraid_target_version }}. Check `which snapraid` and PATH.
+        quiet: true
 
     - name: Set SnapRAID executable path (1)
       ansible.builtin.command: "which snapraid"
@@ -100,5 +174,5 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - /tmp/snapraid-{{ snapraid_latest_version }}.tar.gz
-        - /tmp/snapraid-{{ snapraid_latest_version }}
+        - /tmp/snapraid-{{ snapraid_target_version }}.tar.gz
+        - /tmp/snapraid-{{ snapraid_target_version }}
