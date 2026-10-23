@@ -40,6 +40,14 @@
       interval: 5m
       start_period: 30s
 
+# Known upstream limitation (2026-10-24): livestreams do not play. This companion renders the
+# DASH manifest with youtubei.js FormatUtils.toDash(), which drops live formats that lack
+# initRange/indexRange (they are not flagged OTF and not post-live-DVR), so the manifest is an
+# empty <Period/> and dash.js never starts. Invidious' own HLS fallback needs
+# streamingData.hlsManifestUrl, which the player response no longer carries. Ordinary videos
+# are unaffected. Do not "fix" this by changing the vhost, the network or the image tag:
+# no released companion has ever emitted a playable live manifest. Details, evidence and the
+# re-check procedure: docs/issues/invidious-livestreams.md (track I).
 - name: Make sure that Invidious companion container is created and running
   community.docker.docker_container:
     name: "{{ invidious_container_name }}-companion"
@@ -96,6 +104,9 @@
       - "{{ invidious_container_name }}-db"
     state: started
     restart_policy: unless-stopped
+    # NOTE: this only proves the API answers. The dash manifest endpoint returns 200 with an
+    # empty <Period/> for livestreams, so "healthy" has never meant "playback works"
+    # (docs/issues/invidious-livestreams.md, I-02).
     healthcheck:
       test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/trending || exit 1
       interval: 5m
