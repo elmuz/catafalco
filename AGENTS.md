@@ -190,6 +190,7 @@ catafalco/
 ├── files/                  # Static files (scripts, icons, etc.)
 ├── docs/                   # Agent-agnostic knowledge base
 │   ├── ansible/            # Ansible expertise, ansible-lint cheatsheet
+│   ├── issues/             # Open investigation tracks (see its README table)
 │   └── monitoring/         # InfluxDB/Grafana deep-dive reference
 └── .agents/
     └── skills/             # Cross-agent skills (Agent Skills standard)
@@ -542,6 +543,52 @@ mcp__remote-server__get_server_health()
 
 # Restart a service
 mcp__remote-server__restart_service(service="grafana")
+```
+
+---
+
+## Invidious (video frontend)
+
+> Full investigation, evidence and re-check procedure: `docs/issues/invidious-livestreams.md`
+> (track **I**). Read it before touching `roles/invidious`.
+
+**Current state (2026-10-24):** container `Up (healthy)`, ordinary videos play, **active
+livestreams do not play at all** — and that is an upstream limitation, not a broken deploy.
+
+- **Healthy ≠ plays.** The container healthcheck only proves `GET /api/v1/trending` answers
+  200. The dash manifest route answers **200 with an empty body** for live streams, so no
+  monitor turns red while the player spins forever.
+- **Why live dies:** `invidious-companion` renders the manifest with `youtubei.js`
+  `FormatUtils.toDash()`, whose `StreamingInfo.getFormatGroupings()` drops every format
+  without `init_range`/`init_range` unless it is flagged OTF or post-live-DVR. Live formats
+  as delivered today are neither, so the MPD is a 417-byte `<Period/>` with
+  `mediaPresentationDuration="PTNaNS"`, and `dash.js` aborts parsing it. The web player's
+  live path is HLS, but `streamingData.hlsManifestUrl` is absent, so there is no fallback.
+- **Not the cause:** SWAG vhost/`resolver.conf`, Docker networks, Postgres, the PO token
+  (validated every 5 min, no errors), `check=`/`secret_key`, `ip=`-locked googlevideo URLs.
+  The `[WARNING] No URLs found for adaptive formats. Falling back to other YT clients.` line in
+  the companion log is expected: the primary `WEB` client returns no URLs and `TV_SIMPLY`
+  takes over (fine for VOD, useless for live).
+- **Every trending entry can be live**, so "latest trends → open a video" reproduces the
+  failure reliably; the trending grid does not mark them as live.
+- **Don't pin or roll back images**: the companion's manifest route has been built from
+  `youtubei.js` `toDash()` since 2024-11, so no released tag has ever produced a playable live
+  manifest. Upstream: `iv-org/invidious-companion#7` (open), `#375` (closed as duplicate).
+
+One-line check (a fixed live stream shows `<Representation>` instead of `<Period/>`):
+
+```sh
+id=$(curl -s 'https://invidious.catafal.co/api/v1/trending?region=IT' \
+     | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["videoId"])')
+# count elements, not lines: the whole MPD is one line
+curl -sL "https://invidious.catafal.co/api/manifest/dash/id/$id" | grep -o '<Representation' | wc -l  # 0 = broken
+```
+
+VOD playback baseline (must stay non-zero — a regression here is a *new* bug):
+
+```sh
+curl -sL 'https://invidious.catafal.co/api/manifest/dash/id/xRMPKQweySE' \
+  | grep -o '<Representation' | wc -l   # 16 today
 ```
 
 ---
