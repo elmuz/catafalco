@@ -11,3 +11,6 @@ hosts
 # Python bytecode (generated when a role script is run locally)
 __pycache__/
 *.pyc
+
+# Pi harness
+.pi
