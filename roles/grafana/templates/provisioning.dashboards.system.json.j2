@@ -23,7 +23,7 @@
       }
     ]
   },
-  "description": "Comprehensive system monitoring dashboard for Telegraf metrics collected from catafalco home server",
+  "description": "Comprehensive system monitoring dashboard for Telegraf metrics collected from the {{ hostname }} home server",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -1502,8 +1502,8 @@
       },
       {
         "current": {
-          "text": "catafalco",
-          "value": "catafalco"
+          "text": "{{ hostname }}",
+          "value": "{{ hostname }}"
         },
         "datasource": {
           "type": "influxdb",
