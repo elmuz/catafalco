@@ -24,7 +24,7 @@
       PGID: "{{ guid }}"
       TZ: "{{ timezone }}"
       SITE_ROOT: https://healthchecks.{{ host_local }}
-      SITE_NAME: CataFalco
+      SITE_NAME: "{{ healthchecks_site_name | default(hostname) }}"
       SUPERUSER_EMAIL: "{{ email }}"
       SUPERUSER_PASSWORD: "{{ healthchecks_password }}"
       DEFAULT_FROM_EMAIL: "{{ email_login }}"
