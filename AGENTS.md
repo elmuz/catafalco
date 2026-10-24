@@ -1,6 +1,6 @@
-# Catafalco
+# MANIAC
 
-An Ansible playbook that sets up an Ubuntu-based home media server/NAS with security hardening, NAS features (mergerFS, snapshot/backup solutions), media servers, email notifications, auto-updates, and more.
+**MANIAC** — *My Ansible Nifty Infrastructure As Code* — is an Ansible playbook that sets up an Ubuntu-based home media server/NAS with security hardening, NAS features (mergerFS, snapshot/backup solutions), media servers, email notifications, auto-updates, and more.
 
 **Note:** Continuously being developed - don't expect it to work perfectly on the first run.
 
@@ -31,8 +31,8 @@ An Ansible playbook that sets up an Ubuntu-based home media server/NAS with secu
 sudo apt install ansible -y
 
 # Step 2: Clone repository
-git clone https://github.com/alessio/catafalco.git
-cd catafalco
+git clone https://github.com/elmuz/maniac.git
+cd maniac
 
 # Step 3: Copy and customize inventory
 cp hosts_example hosts
@@ -52,8 +52,10 @@ ansible-galaxy install -r requirements.yml
 # Step 7: Add your host to the inventory
 # Edit hosts file to add your hostname entry
 
-# Step 8: Run playbook
-ansible-playbook catafalco.yml -l your-host -K
+# Step 8: Run the playbook that targets your host
+# Playbooks are named after the host or group they target (see "Playbooks" below):
+# copy the closest one and set its `hosts:` line to your hostname.
+ansible-playbook catafalco.yml -K
 
 # For consecutive runs (only update containers):
 ansible-playbook catafalco.yml --tags="port,containers"
@@ -111,8 +113,8 @@ Caveats of the variable form:
 ## Directory Structure
 
 ```
-catafalco/
-├── catafalco.yml           # Main playbook - full media server setup
+maniac/
+├── catafalco.yml           # Main playbook - full media server setup (targets the `catafalco` host)
 ├── pihole.yml              # Pi-hole focused playbook
 ├── nilde.yml               # Alternative/simplified configuration
 ├── ansible.cfg             # Ansible configuration
@@ -638,11 +640,17 @@ ansible-playbook catafalco.yml --check --list-tags
 
 ## Playbooks
 
-| Playbook | Description |
-|----------|-------------|
-| `catafalco.yml` | Full media server setup |
-| `pihole.yml` | Pi-hole focused setup |
-| `nilde.yml` | Alternative/simplified configuration example |
+**Playbooks are named after the host or group they target:** `catafalco.yml` manages the
+`catafalco` host, `pihole.yml` the `dns` group, `nilde.yml` the `nilde` host. There is no generic
+`site.yml`/`run.yml` entry point — a new machine means copying the closest playbook and changing
+its `hosts:` line. References to `catafalco` inside a role are about that machine, not about the
+project.
+
+| Playbook | Targets | Description |
+|----------|---------|-------------|
+| `catafalco.yml` | host `catafalco` | Full media server setup |
+| `pihole.yml` | group `dns` | Pi-hole focused setup |
+| `nilde.yml` | host `nilde` | Alternative/simplified configuration example |
 
 ---
 
